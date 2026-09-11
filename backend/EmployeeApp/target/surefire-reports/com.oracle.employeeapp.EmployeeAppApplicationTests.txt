@@ -1,0 +1,4 @@
+-------------------------------------------------------------------------------
+Test set: com.oracle.employeeapp.EmployeeAppApplicationTests
+-------------------------------------------------------------------------------
+Tests run: 1, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 4.249 s -- in com.oracle.employeeapp.EmployeeAppApplicationTests
