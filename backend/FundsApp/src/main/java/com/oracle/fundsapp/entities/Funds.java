@@ -1,5 +1,4 @@
 package com.oracle.fundsapp.entities;
-import java.math.BigDecimal;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -10,11 +9,11 @@ import lombok.NoArgsConstructor;
 import lombok.Setter;
 
 @Entity
-@Table(name = "fund")
+@Table(name = "funds")
 @Getter
 @Setter
 @NoArgsConstructor
-public class Fund {
+public class Funds {
 
     @Id
     @Column(name = "id", nullable = false)
@@ -23,6 +22,6 @@ public class Fund {
     @Column(name = "user_id", nullable = false)
     private int  userId; // Foreign key
 
-    @Column(name = "fund_balance", nullable = false, precision = 15, scale = 2)
-    private BigDecimal fundBalance;
+    @Column(name = "fund_balance", nullable = false)
+    private Double fundBalance;
 }
