@@ -1,13 +1,13 @@
-package com.oracle.productapp;
+package com.oracle.bankaccountsapp;
 
 import org.junit.jupiter.api.Test;
 import org.springframework.boot.test.context.SpringBootTest;
 
 @SpringBootTest
-class ProductappApplicationTests {
+class BankappApplicationTests {
 
-	@Test
-	void contextLoads() {
-	}
+    @Test
+    void contextLoads() {
+    }
 
 }

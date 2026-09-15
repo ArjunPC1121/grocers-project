@@ -1,7 +1,4 @@
-package com.oracle.bankdetailsapp.entities;
-
-
-import java.math.BigDecimal;
+package com.oracle.bankaccountsapp.entities;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -12,7 +9,7 @@ import lombok.NoArgsConstructor;
 import lombok.Setter;
 
 
-    @Entity
+@Entity
 @Table(name = "bank_account")
 @Getter
 @Setter
@@ -23,12 +20,9 @@ public class BankAccount {
     @Column(name = "account_number", nullable = false, length = 30)
     private String accountNumber; // PK; String preserves leading zeroes
 
-    @Column(name = "balance", nullable = false, precision = 15, scale = 2)
-    private BigDecimal balance;
+    @Column(name = "balance", nullable = false)
+    private Double balance;
 
     @Column(name = "user_id", nullable = false)
     private int  userId; // FK to the user record
 }
-
-    
-
