@@ -12,16 +12,15 @@ import jakarta.persistence.ManyToOne;
 import jakarta.persistence.PrePersist;
 import jakarta.persistence.PreUpdate;
 import jakarta.persistence.Table;
-import jakarta.validation.constraints.DecimalMin;
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Positive;
+import jakarta.validation.constraints.PositiveOrZero;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
 import lombok.ToString;
-
-import java.math.BigDecimal;
 
 @Data
 @NoArgsConstructor
@@ -29,32 +28,31 @@ import java.math.BigDecimal;
 @Entity
 @Table(name = "order_items")
 public class OrderItem {
-
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Integer id;
 
-    @NotNull(message = "Product ID is required")
+    @NotNull
     @Column(name = "product_id", nullable = false)
     private Integer productId;
 
-    @Column(name = "product_name", length = 255)
+    @Column(name = "product_name", nullable = false, length = 255)
     private String productName;
 
-    @NotNull(message = "Quantity is required")
-    @Min(value = 1, message = "Quantity must be at least 1")
+    @NotNull
+    @Min(1)
     @Column(nullable = false)
     private Integer quantity;
 
-    @NotNull(message = "Unit price is required")
-    @DecimalMin(value = "0.00", inclusive = false, message = "Unit price must be greater than 0")
-    @Column(name = "unit_price", nullable = false, precision = 12, scale = 2)
-    private BigDecimal unitPrice;
+    @NotNull
+    @Positive
+    @Column(name = "unit_price", nullable = false)
+    private Double unitPrice;
 
-    @NotNull(message = "Subtotal is required")
-    @DecimalMin(value = "0.00", inclusive = true, message = "Subtotal cannot be negative")
-    @Column(nullable = false, precision = 12, scale = 2)
-    private BigDecimal subtotal = BigDecimal.ZERO;
+    @NotNull
+    @PositiveOrZero
+    @Column(nullable = false)
+    private Double subtotal = 0.0d;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "order_id", nullable = false)
@@ -63,11 +61,15 @@ public class OrderItem {
     @EqualsAndHashCode.Exclude
     private Order order;
 
+    public void recalculateSubtotal() {
+        if (quantity != null && unitPrice != null) {
+            subtotal = Math.round(unitPrice * quantity * 100.0d) / 100.0d;
+        }
+    }
+
     @PrePersist
     @PreUpdate
-    private void calculateSubtotal() {
-        if (quantity != null && unitPrice != null) {
-            subtotal = unitPrice.multiply(BigDecimal.valueOf(quantity));
-        }
+    void beforeSave() {
+        recalculateSubtotal();
     }
 }

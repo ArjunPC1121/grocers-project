@@ -1,0 +1,5 @@
+package com.oracle.orderapp.exceptions;
+import org.springframework.http.HttpStatus;
+public class DownstreamConflictException extends OrderAppException {
+    public DownstreamConflictException(String code, String message) { super(code, message, HttpStatus.CONFLICT); }
+}

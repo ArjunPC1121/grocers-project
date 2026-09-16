@@ -1,0 +1,6 @@
+package com.oracle.orderapp.entities;
+
+public enum CheckoutStep {
+    STARTED, INVENTORY_DECREMENTED, FUNDS_DEBITED, ORDER_SAVED,
+    CART_CHECKED_OUT, COMPLETED, COMPENSATING, COMPENSATED, FAILED
+}

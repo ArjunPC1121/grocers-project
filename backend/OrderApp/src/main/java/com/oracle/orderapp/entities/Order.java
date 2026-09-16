@@ -14,16 +14,15 @@ import jakarta.persistence.PrePersist;
 import jakarta.persistence.PreUpdate;
 import jakarta.persistence.Table;
 import jakarta.persistence.Version;
-import jakarta.validation.constraints.DecimalMin;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.PositiveOrZero;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
 import lombok.ToString;
 
-import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
@@ -34,7 +33,6 @@ import java.util.List;
 @Entity
 @Table(name = "orders")
 public class Order {
-
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Integer id;
@@ -42,28 +40,29 @@ public class Order {
     @Version
     private Long version;
 
-    @NotBlank(message = "Order number is required")
+    @NotBlank
     @Column(name = "order_number", nullable = false, unique = true, length = 50)
     private String orderNumber;
 
-    @NotNull(message = "Customer ID is required")
+    @NotNull
     @Column(name = "customer_id", nullable = false)
     private Integer customerId;
 
-    @Column(name = "cart_id")
+    @NotNull
+    @Column(name = "cart_id", nullable = false)
     private Integer cartId;
 
-    @NotNull(message = "Order status is required")
+    @NotNull
     @Enumerated(EnumType.STRING)
     @Column(nullable = false, length = 30)
-    private OrderStatus status = OrderStatus.CREATED;
+    private OrderStatus status = OrderStatus.PLACED;
 
-    @NotNull(message = "Total amount is required")
-    @DecimalMin(value = "0.00", inclusive = true, message = "Total amount cannot be negative")
-    @Column(name = "total_amount", nullable = false, precision = 12, scale = 2)
-    private BigDecimal totalAmount = BigDecimal.ZERO;
+    @NotNull
+    @PositiveOrZero
+    @Column(name = "total_amount", nullable = false)
+    private Double totalAmount = 0.0d;
 
-    @NotBlank(message = "Delivery address is required")
+    @NotBlank
     @Column(name = "delivery_address", nullable = false, length = 1000)
     private String deliveryAddress;
 
@@ -85,17 +84,20 @@ public class Order {
     @EqualsAndHashCode.Exclude
     private List<OrderItem> items = new ArrayList<>();
 
+    public void addItem(OrderItem item) {
+        items.add(item);
+        item.setOrder(this);
+    }
+
     @PrePersist
-    private void onCreate() {
+    void onCreate() {
         LocalDateTime now = LocalDateTime.now();
-        if (orderedAt == null) {
-            orderedAt = now;
-        }
+        orderedAt = orderedAt == null ? now : orderedAt;
         updatedAt = now;
     }
 
     @PreUpdate
-    private void onUpdate() {
+    void onUpdate() {
         updatedAt = LocalDateTime.now();
     }
 }
