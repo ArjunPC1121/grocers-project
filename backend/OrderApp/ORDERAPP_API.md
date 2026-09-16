@@ -2,6 +2,8 @@
 
 OrderApp runs on port `8085` and owns only order, order-item, checkout-attempt, and cancellation-attempt data. User, Employee, Cart, Products, and Funds interactions are synchronous REST calls configured in `application.properties`.
 
+Clients may send `X-Correlation-Id`; OrderApp returns it on the response and forwards it to every downstream REST call. If it is absent, OrderApp uses the idempotency key when available or generates a correlation id.
+
 All examples use PowerShell and assume the service is running locally.
 
 ```powershell
@@ -60,3 +62,7 @@ Invoke-RestMethod -Method Get -Uri "$base/reports?from=2026-09-01T00:00:00&to=20
 ## Error contract
 
 Errors include `timestamp`, HTTP `status`, stable `code`, `message`, request `path`, `correlationId`, and validation `fieldErrors`. Dependency timeouts return `503 DOWNSTREAM_UNAVAILABLE`; malformed dependency responses return `502 DOWNSTREAM_CONTRACT_ERROR`; an incomplete checkout reversal returns `503 COMPENSATION_INCOMPLETE`.
+
+## Operations and configuration
+
+`GET /actuator/health` provides a service health check. Database URL, username, password, schema mode, and SQL logging are configurable with `DB_URL`, `DB_USERNAME`, `DB_PASSWORD`, `DDL_AUTO`, and `SHOW_SQL`.

@@ -16,6 +16,7 @@ import com.oracle.orderapp.entities.CheckoutStep;
 import com.oracle.orderapp.entities.Order;
 import com.oracle.orderapp.entities.OrderStatus;
 import com.oracle.orderapp.exceptions.DownstreamConflictException;
+import com.oracle.orderapp.exceptions.DownstreamContractException;
 import com.oracle.orderapp.exceptions.DownstreamUnavailableException;
 import com.oracle.orderapp.exceptions.OrderAppException;
 import com.oracle.orderapp.repositories.CheckoutAttemptRepository;
@@ -172,6 +173,25 @@ class CheckoutServiceImplTest {
 
         assertEquals("COMPENSATION_INCOMPLETE", failure.getCode());
         verify(productClient).restore(any());
+    }
+
+    @Test
+    void blankProductNameInInventorySnapshotIsRejectedAndInventoryIsRestored() {
+        when(userClient.verify(41)).thenReturn(new UserVerificationResponse(41, true,
+                "user@example.com", "12 Market Road"));
+        when(cartClient.get(25)).thenReturn(new CartResponse(25, 41, "ACTIVE", null,
+                List.of(new CartItemResponse(10, 2))));
+        when(productClient.decrement(any())).thenAnswer(invocation -> {
+            InventoryDecrementRequest request = invocation.getArgument(0);
+            return new InventoryResponse(request.orderNumber(), "DECREMENTED",
+                    List.of(new InventoryItemResponse(10, "   ", 2, 80.0d, 160.0d)));
+        });
+
+        assertThrows(DownstreamContractException.class,
+                () -> service.checkout(41, "checkout-1", new CheckoutRequest(25)));
+
+        verify(productClient).restore(any());
+        verify(fundsClient, never()).debit(any());
     }
 
     @Test

@@ -69,7 +69,11 @@ class OrderAppHttpOrchestrationTest {
         HttpResponse<String> first = checkout("checkout-http-1");
         assertEquals(201, first.statusCode(), first.body() + " requests=" + DOWNSTREAM.requests);
         assertTrue(first.body().contains("\"status\":\"PLACED\""));
+        assertEquals("corr-checkout-http-1",
+                first.headers().firstValue("X-Correlation-Id").orElseThrow());
         assertEquals(1, orders.count());
+        assertTrue(DOWNSTREAM.requests.stream().allMatch(
+                request -> "corr-checkout-http-1".equals(request.correlationId())));
 
         long mutations = DOWNSTREAM.mutationCount();
         HttpResponse<String> replay = checkout("checkout-http-1");
@@ -116,6 +120,18 @@ class OrderAppHttpOrchestrationTest {
                 orders.findByOrderNumber("ORD-CANCEL-1").orElseThrow().getStatus());
     }
 
+    @Test
+    void actuatorHealthEndpointIsAvailable() throws Exception {
+        HttpRequest request = HttpRequest.newBuilder(
+                        URI.create("http://localhost:" + port + "/actuator/health"))
+                .GET().build();
+
+        HttpResponse<String> response = HTTP.send(request, HttpResponse.BodyHandlers.ofString());
+
+        assertEquals(200, response.statusCode(), response.body());
+        assertTrue(response.body().contains("\"status\":\"UP\""));
+    }
+
     private HttpResponse<String> checkout(String key) throws Exception {
         return send("POST", "/grocers/api/orders/checkout", "{\"cartId\":25}",
                 "X-User-Id", "41", key);
@@ -132,12 +148,13 @@ class OrderAppHttpOrchestrationTest {
                 .header("Content-Type", "application/json")
                 .header(identityHeader, identity)
                 .header("Idempotency-Key", key)
+                .header("X-Correlation-Id", "corr-" + key)
                 .method(method, HttpRequest.BodyPublishers.ofString(body))
                 .build();
         return HTTP.send(request, HttpResponse.BodyHandlers.ofString());
     }
 
-    private record Recorded(String method, String path, String body) {
+    private record Recorded(String method, String path, String body, String correlationId) {
         String summary() { return method + " " + path; }
     }
 
@@ -165,7 +182,8 @@ class OrderAppHttpOrchestrationTest {
         private void handle(HttpExchange exchange) throws IOException {
             String path = exchange.getRequestURI().getPath();
             String body = new String(exchange.getRequestBody().readAllBytes(), StandardCharsets.UTF_8);
-            requests.add(new Recorded(exchange.getRequestMethod(), path, body));
+            requests.add(new Recorded(exchange.getRequestMethod(), path, body,
+                    exchange.getRequestHeaders().getFirst("X-Correlation-Id")));
             int status = 200;
             String response;
             if (path.equals("/grocers/api/users/41/verification")) {

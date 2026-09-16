@@ -59,6 +59,9 @@ public class OrderManagementServiceImpl implements OrderManagementService {
             if (attempt.getStep() == CancellationStep.COMPLETED) return mapper.toResponse(order);
         } else {
             if (order.getStatus() == OrderStatus.CANCELLED) return mapper.toResponse(order);
+            if (cancellations.findByOrderNumber(orderNumber).isPresent())
+                throw new InvalidStateException("CANCELLATION_ALREADY_STARTED",
+                        "A cancellation has already started for this order; retry with its original key");
             try {
                 attempt = cancellations.save(CancellationAttempt.start(key, orderNumber, employeeId, reason));
             } catch (DataIntegrityViolationException concurrentRequest) {

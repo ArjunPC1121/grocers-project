@@ -6,4 +6,5 @@ import java.util.Optional;
 
 public interface CancellationAttemptRepository extends JpaRepository<CancellationAttempt, Integer> {
     Optional<CancellationAttempt> findByOperationKey(String operationKey);
+    Optional<CancellationAttempt> findByOrderNumber(String orderNumber);
 }

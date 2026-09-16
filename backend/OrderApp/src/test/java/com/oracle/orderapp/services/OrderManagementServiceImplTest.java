@@ -13,6 +13,7 @@ import com.oracle.orderapp.entities.OrderStatus;
 import com.oracle.orderapp.entities.CancellationAttempt;
 import com.oracle.orderapp.entities.CancellationStep;
 import com.oracle.orderapp.exceptions.DownstreamContractException;
+import com.oracle.orderapp.exceptions.InvalidStateException;
 import com.oracle.orderapp.repositories.CancellationAttemptRepository;
 import com.oracle.orderapp.repositories.OrderRepository;
 import com.oracle.orderapp.services.abstractions.EmployeeClient;
@@ -122,5 +123,21 @@ class OrderManagementServiceImplTest {
                 new OrderCancellationRequest("Damaged package")));
 
         assertEquals(OrderStatus.PLACED, order.getStatus());
+    }
+
+    @Test
+    void differentKeyCannotStartASecondCancellationForTheSameOrder() {
+        CancellationAttempt existing = CancellationAttempt.start(
+                "cancel-original", "ORD-1", 7, "Customer request");
+        when(cancellationRepository.findByOperationKey("cancel-other")).thenReturn(Optional.empty());
+        when(cancellationRepository.findByOrderNumber("ORD-1")).thenReturn(Optional.of(existing));
+
+        InvalidStateException failure = assertThrows(InvalidStateException.class,
+                () -> service.cancel(7, "cancel-other", "ORD-1",
+                        new OrderCancellationRequest("Customer request")));
+
+        assertEquals("CANCELLATION_ALREADY_STARTED", failure.getCode());
+        verify(productClient, never()).restore(any());
+        verify(fundsClient, never()).refund(any());
     }
 }

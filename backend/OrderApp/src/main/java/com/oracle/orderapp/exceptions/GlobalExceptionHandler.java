@@ -1,5 +1,6 @@
 package com.oracle.orderapp.exceptions;
 
+import com.oracle.orderapp.config.CorrelationIdFilter;
 import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.http.*;
 import org.springframework.web.bind.MethodArgumentNotValidException;
@@ -31,7 +32,9 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(Exception.class)
     ResponseEntity<ApiError> unexpected(Exception e,HttpServletRequest request){LOGGER.error("Unhandled request failure",e);return body(HttpStatus.INTERNAL_SERVER_ERROR,"INTERNAL_ERROR","Unexpected server error",request,List.of());}
     private ResponseEntity<ApiError> body(HttpStatus status,String code,String message,HttpServletRequest r,List<ApiError.FieldErrorDetail> fields){
-        String correlation=r.getHeader("Idempotency-Key");
+        Object stored = r.getAttribute(CorrelationIdFilter.ATTRIBUTE);
+        String correlation = stored instanceof String value ? value : r.getHeader(CorrelationIdFilter.HEADER);
+        if (correlation == null || correlation.isBlank()) correlation = r.getHeader("Idempotency-Key");
         return ResponseEntity.status(status).body(new ApiError(Instant.now(),status.value(),code,message,r.getRequestURI(),correlation,fields));
     }
 }

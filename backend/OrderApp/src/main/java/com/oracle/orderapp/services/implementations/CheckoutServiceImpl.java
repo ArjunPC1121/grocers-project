@@ -248,7 +248,8 @@ public class CheckoutServiceImpl implements CheckoutService {
                 java.util.stream.Collectors.toMap(CartItemResponse::productId, CartItemResponse::quantity));
         Set<Integer> returnedIds = new HashSet<>();
         for (InventoryItemResponse item : inventory.items()) {
-            if (item.productId() == null || item.productName() == null || item.quantity() == null
+            if (item.productId() == null || item.productName() == null || item.productName().isBlank()
+                    || item.quantity() == null
                     || item.unitPrice() == null || item.subtotal() == null || item.unitPrice() < 0.0d
                     || !Double.isFinite(item.unitPrice()) || !Double.isFinite(item.subtotal())
                     || !returnedIds.add(item.productId())

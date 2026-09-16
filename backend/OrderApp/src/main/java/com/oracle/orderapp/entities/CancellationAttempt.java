@@ -14,7 +14,7 @@ public class CancellationAttempt {
     @Id @GeneratedValue(strategy = GenerationType.IDENTITY) private Integer id;
     @Version private Long version;
     @Column(name = "operation_key", nullable = false, unique = true, length = 100) private String operationKey;
-    @Column(name = "order_number", nullable = false, length = 50) private String orderNumber;
+    @Column(name = "order_number", nullable = false, unique = true, length = 50) private String orderNumber;
     @Column(name = "employee_id", nullable = false) private Integer employeeId;
     @Column(name = "reason", nullable = false, length = 1000) private String reason;
     @Enumerated(EnumType.STRING) @Column(nullable = false, length = 30) private CancellationStep step;
