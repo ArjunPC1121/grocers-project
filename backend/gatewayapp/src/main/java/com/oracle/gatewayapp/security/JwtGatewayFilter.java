@@ -32,13 +32,18 @@ public class JwtGatewayFilter implements GlobalFilter {
     private static final String USER_ID_HEADER = "X-Authenticated-User-Id";
     private static final String EMAIL_HEADER = "X-Authenticated-User-Email";
     private static final String ROLE_HEADER = "X-Authenticated-Role";
+    private static final String MUST_CHANGE_PASSWORD_HEADER = "X-Must-Change-Password";
+    private static final String GATEWAY_REQUEST_HEADER = "X-Gateway-Request";
     private final SecretKey signingKey;
+    private final String internalRequestSecret;
 
-    public JwtGatewayFilter(@Value("${app.jwt.secret}") String secret) {
+    public JwtGatewayFilter(@Value("${app.jwt.secret}") String secret,
+                            @Value("${app.gateway.internal-secret}") String internalRequestSecret) {
         if (secret == null || secret.getBytes(StandardCharsets.UTF_8).length < 32) {
             throw new IllegalStateException("JWT_SECRET must contain at least 32 bytes");
         }
         this.signingKey = Keys.hmacShaKeyFor(secret.getBytes(StandardCharsets.UTF_8));
+        this.internalRequestSecret = internalRequestSecret;
     }
 
     @Override
@@ -62,8 +67,10 @@ public class JwtGatewayFilter implements GlobalFilter {
             String userId = claims.getSubject();
             String email = claims.get("email", String.class);
             String role = claims.get("role", String.class);
+            Boolean mustChangePassword = claims.get("mustChangePassword", Boolean.class);
 
-            if (userId == null || email == null || role == null || !isAuthorized(path, role)) {
+            if (userId == null || email == null || role == null || !isAuthorized(path, role)
+                    || (Boolean.TRUE.equals(mustChangePassword) && !isAllowedWhilePasswordChangeIsRequired(path, exchange.getRequest().getMethod()))) {
                 return reject(exchange, HttpStatus.FORBIDDEN);
             }
 
@@ -71,9 +78,13 @@ public class JwtGatewayFilter implements GlobalFilter {
                 headers.remove(USER_ID_HEADER);
                 headers.remove(EMAIL_HEADER);
                 headers.remove(ROLE_HEADER);
+                headers.remove(MUST_CHANGE_PASSWORD_HEADER);
+                headers.remove(GATEWAY_REQUEST_HEADER);
                 headers.set(USER_ID_HEADER, userId);
                 headers.set(EMAIL_HEADER, email);
                 headers.set(ROLE_HEADER, role);
+                headers.set(MUST_CHANGE_PASSWORD_HEADER, Boolean.toString(Boolean.TRUE.equals(mustChangePassword)));
+                headers.set(GATEWAY_REQUEST_HEADER, internalRequestSecret);
             }).build();
             return chain.filter(exchange.mutate().request(request).build());
         } catch (JwtException | IllegalArgumentException exception) {
@@ -93,6 +104,11 @@ public class JwtGatewayFilter implements GlobalFilter {
             return Set.of("EMPLOYEE", "ADMIN").contains(role);
         }
         return Set.of("USER", "EMPLOYEE", "ADMIN").contains(role);
+    }
+
+    private boolean isAllowedWhilePasswordChangeIsRequired(String path, HttpMethod method) {
+        return (method == HttpMethod.PUT || method == HttpMethod.PATCH)
+                && path.matches(".*/employees/\\d+/password$");
     }
 
     private Mono<Void> reject(ServerWebExchange exchange, HttpStatus status) {

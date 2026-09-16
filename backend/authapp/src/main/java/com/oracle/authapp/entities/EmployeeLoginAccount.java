@@ -17,7 +17,11 @@ public class EmployeeLoginAccount {
     @Column(nullable = false)
     private String password;
 
+    @Column(name = "must_change_password", nullable = false)
+    private boolean mustChangePassword;
+
     public Integer getId() { return id; }
     public String getEmail() { return email; }
     public String getPassword() { return password; }
+    public boolean isMustChangePassword() { return mustChangePassword; }
 }

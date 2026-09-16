@@ -42,21 +42,21 @@ public class AuthService {
             throw new AccountLockedException();
         }
         verifyPassword(request.password(), account.getPassword());
-        return response(account.getId(), account.getEmail(), LoginRole.USER);
+        return response(account.getId(), account.getEmail(), LoginRole.USER, false);
     }
 
     public AuthResponse loginEmployee(LoginRequest request) {
         EmployeeLoginAccount account = employeeAccounts.findByEmailIgnoreCase(request.email())
                 .orElseThrow(InvalidCredentialsException::new);
         verifyPassword(request.password(), account.getPassword());
-        return response(account.getId(), account.getEmail(), LoginRole.EMPLOYEE);
+        return response(account.getId(), account.getEmail(), LoginRole.EMPLOYEE, account.isMustChangePassword());
     }
 
     public AuthResponse loginAdmin(LoginRequest request) {
         AdminLoginAccount account = adminAccounts.findByEmailIgnoreCase(request.email())
                 .orElseThrow(InvalidCredentialsException::new);
         verifyPassword(request.password(), account.getPassword());
-        return response(account.getId(), account.getEmail(), LoginRole.ADMIN);
+        return response(account.getId(), account.getEmail(), LoginRole.ADMIN, false);
     }
 
     private void verifyPassword(String rawPassword, String storedHash) {
@@ -65,12 +65,14 @@ public class AuthService {
         }
     }
 
-    private AuthResponse response(Integer id, String email, LoginRole role) {
+    private AuthResponse response(Integer id, String email, LoginRole role, boolean mustChangePassword) {
         return new AuthResponse(
-                jwtService.createToken(id, email, role),
+                jwtService.createToken(id, email, role, mustChangePassword),
                 "Bearer",
                 jwtService.expirationFor(role) / 1000,
-                role.name()
+                role.name(),
+                mustChangePassword,
+                mustChangePassword ? "You must change your default password before continuing." : "Login successful."
         );
     }
 }

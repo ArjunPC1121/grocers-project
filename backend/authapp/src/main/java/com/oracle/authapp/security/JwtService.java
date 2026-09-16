@@ -24,13 +24,14 @@ public class JwtService {
         this.signingKey = Keys.hmacShaKeyFor(properties.secret().getBytes(StandardCharsets.UTF_8));
     }
 
-    public String createToken(Integer accountId, String email, LoginRole role) {
+    public String createToken(Integer accountId, String email, LoginRole role, boolean mustChangePassword) {
         Instant issuedAt = Instant.now();
         Instant expiresAt = issuedAt.plusMillis(expirationFor(role));
         return Jwts.builder()
                 .subject(accountId.toString())
                 .claim("email", email)
                 .claim("role", role.name())
+                .claim("mustChangePassword", mustChangePassword)
                 .issuedAt(Date.from(issuedAt))
                 .expiration(Date.from(expiresAt))
                 .signWith(signingKey)

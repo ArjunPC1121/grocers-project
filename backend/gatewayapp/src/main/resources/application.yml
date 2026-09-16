@@ -55,6 +55,8 @@ server:
   port: 8091
 
 app:
+  gateway:
+    internal-secret: ${GATEWAY_INTERNAL_SECRET:replace-this-shared-secret-in-production}
   jwt:
     secret: arjun_akash_abhiram_pragathi_pranav
   cors:

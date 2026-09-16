@@ -4,5 +4,7 @@ public record AuthResponse(
         String accessToken,
         String tokenType,
         long expiresInSeconds,
-        String role
+        String role,
+        boolean mustChangePassword,
+        String message
 ) { }
