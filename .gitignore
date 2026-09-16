@@ -1,0 +1,22 @@
+# Maven and Java build output
+**/target/
+*.class
+
+# IDE and editor metadata
+.idea/
+*.iml
+*.ipr
+*.iws
+.classpath
+.project
+.settings/
+.factorypath
+.apt_generated/
+.springBeans
+.sts4-cache/
+
+# Local-only files
+.env
+.env.*
+*.log
+hs_err_pid*
