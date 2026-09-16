@@ -33,46 +33,28 @@ ALTER TABLE orders RENAME COLUMN customer_id TO user_id;
 
 Do not rely on `spring.jpa.hibernate.ddl-auto=update` to interpret a column rename. A fresh schema requires no manual migration.
 
-## Insomnia environment
+## Fixed test data used below
 
-Create an Insomnia environment with the following JSON. Replace identifiers with records that exist in your running services.
+The examples use user `41`, employee `7`, products `10` and `11`, and active carts `25` and `26`. Every URL is complete and can be pasted directly into Insomnia without configuring a base environment.
 
-```json
-{
-  "userBase": "http://localhost:8080",
-  "employeeBase": "http://localhost:8082",
-  "productsBase": "http://localhost:8083",
-  "cartBase": "http://localhost:8084",
-  "orderBase": "http://localhost:8085",
-  "fundsBase": "http://localhost:8088",
-  "userId": 41,
-  "employeeId": 7,
-  "cartId": 25,
-  "productId": 10,
-  "orderNumber": "replace-after-checkout",
-  "checkoutKey": "checkout-insomnia-001",
-  "cancelKey": "cancel-insomnia-001",
-  "from": "2026-09-01T00:00:00",
-  "to": "2026-10-01T00:00:00"
-}
-```
+After checkout, replace `ORD-PASTE-ACTUAL-ORDER-NUMBER` in later URLs with the `orderNumber` returned by OrderApp. Generate a new checkout or cancellation key whenever you want a new operation. Retain the same key only when testing an idempotent retry.
 
-Use `{{ _.variableName }}` in Insomnia to reference a value. Generate a new checkout or cancellation key whenever you want a new operation. Retain the same key only when testing an idempotent retry.
+> **Downstream compatibility:** The current UserApp, EmployeeApp, ProductsApp, CartApp, and FundsApp source trees define their entity tables, but most REST endpoints required by OrderApp are not yet implemented there. The seed SQL creates the required data only. End-to-end checkout also requires every downstream endpoint documented in this guide to be implemented with the shown request and response contracts.
 
 ## Preconditions
 
 Before checkout:
 
-1. User `{{ _.userId }}` must exist, be valid, and have a nonblank delivery address.
-2. Cart `{{ _.cartId }}` must belong to that user, have status `ACTIVE`, and contain at least one item.
+1. User `41` must exist, be valid, and have a nonblank delivery address.
+2. Cart `25` must belong to that user, have status `ACTIVE`, and contain at least one item.
 3. ProductsApp must have sufficient current stock for every cart item. CartApp only verifies availability when adding an item; OrderApp performs the atomic decrement during checkout.
 4. FundsApp must contain sufficient funds for the user.
-5. Employee `{{ _.employeeId }}` must be valid before employee operations can be tested.
+5. Employee `7` must be valid before employee operations can be tested.
 
 ### Verify the user contract
 
 ```http
-GET {{ _.userBase }}/grocers/api/users/{{ _.userId }}/verification
+GET http://localhost:8080/grocers/api/users/41/verification
 ```
 
 Expected shape:
@@ -89,7 +71,7 @@ Expected shape:
 ### Verify the employee contract
 
 ```http
-GET {{ _.employeeBase }}/grocers/api/employees/{{ _.employeeId }}/verification
+GET http://localhost:8082/grocers/api/employees/7/verification
 ```
 
 Expected shape:
@@ -104,7 +86,7 @@ Expected shape:
 ### Inspect the active cart
 
 ```http
-GET {{ _.cartBase }}/grocers/api/carts/{{ _.cartId }}
+GET http://localhost:8084/grocers/api/carts/25
 ```
 
 Expected shape:
@@ -129,7 +111,7 @@ Expected shape:
 ### 1. Health check
 
 ```http
-GET {{ _.orderBase }}/actuator/health
+GET http://localhost:8085/actuator/health
 ```
 
 Expected status: `200 OK`.
@@ -137,9 +119,9 @@ Expected status: `200 OK`.
 ### 2. Checkout a cart
 
 ```http
-POST {{ _.orderBase }}/grocers/api/orders/checkout
-X-User-Id: {{ _.userId }}
-Idempotency-Key: {{ _.checkoutKey }}
+POST http://localhost:8085/grocers/api/orders/checkout
+X-User-Id: 41
+Idempotency-Key: checkout-insomnia-001
 X-Correlation-Id: insomnia-checkout-001
 Content-Type: application/json
 ```
@@ -152,7 +134,7 @@ Body:
 }
 ```
 
-Use the numeric value from `{{ _.cartId }}` if it differs from the example.
+Cart `25` is the delivery-flow cart. Use cart `26` with a new idempotency key when creating the separate order for cancellation testing.
 
 Expected status: `201 Created`.
 
@@ -202,8 +184,8 @@ Expected result: the same order is returned and ProductsApp, FundsApp, and CartA
 ### 4. Get one user order
 
 ```http
-GET {{ _.orderBase }}/grocers/api/orders/{{ _.orderNumber }}
-X-User-Id: {{ _.userId }}
+GET http://localhost:8085/grocers/api/orders/ORD-PASTE-ACTUAL-ORDER-NUMBER
+X-User-Id: 41
 ```
 
 Expected status: `200 OK`. OrderApp verifies the caller through UserApp and returns `403 Forbidden` if the order belongs to another user.
@@ -211,8 +193,8 @@ Expected status: `200 OK`. OrderApp verifies the caller through UserApp and retu
 ### 5. Get user order history
 
 ```http
-GET {{ _.orderBase }}/grocers/api/orders/users/{{ _.userId }}
-X-User-Id: {{ _.userId }}
+GET http://localhost:8085/grocers/api/orders/users/41
+X-User-Id: 41
 ```
 
 Expected status: `200 OK`. Results are ordered newest first. The caller cannot request another user's history.
@@ -222,15 +204,15 @@ Expected status: `200 OK`. Results are ordered newest first. The caller cannot r
 All orders:
 
 ```http
-GET {{ _.orderBase }}/grocers/api/orders/employee
-X-Employee-Id: {{ _.employeeId }}
+GET http://localhost:8085/grocers/api/orders/employee
+X-Employee-Id: 7
 ```
 
 Filter by status:
 
 ```http
-GET {{ _.orderBase }}/grocers/api/orders/employee?status=PLACED
-X-Employee-Id: {{ _.employeeId }}
+GET http://localhost:8085/grocers/api/orders/employee?status=PLACED
+X-Employee-Id: 7
 ```
 
 Valid status values are `PLACED`, `SHIPPED`, `OUT_FOR_DELIVERY`, `DELIVERED`, and `CANCELLED`. OrderApp verifies the caller through EmployeeApp.
@@ -240,8 +222,8 @@ Valid status values are `PLACED`, `SHIPPED`, `OUT_FOR_DELIVERY`, `DELIVERED`, an
 The only allowed delivery path is `PLACED` → `SHIPPED` → `OUT_FOR_DELIVERY` → `DELIVERED`. Send these requests sequentially for an order that you do not plan to cancel.
 
 ```http
-PATCH {{ _.orderBase }}/grocers/api/orders/{{ _.orderNumber }}/status
-X-Employee-Id: {{ _.employeeId }}
+PATCH http://localhost:8085/grocers/api/orders/ORD-PASTE-ACTUAL-ORDER-NUMBER/status
+X-Employee-Id: 7
 Content-Type: application/json
 ```
 
@@ -276,15 +258,15 @@ Expected status: `200 OK` for each valid next step. Skipping or reversing a step
 All orders in a time range:
 
 ```http
-GET {{ _.orderBase }}/grocers/api/orders/reports?from={{ _.from }}&to={{ _.to }}
-X-Employee-Id: {{ _.employeeId }}
+GET http://localhost:8085/grocers/api/orders/reports?from=2026-09-01T00:00:00&to=2026-10-01T00:00:00
+X-Employee-Id: 7
 ```
 
 Filter by user and product:
 
 ```http
-GET {{ _.orderBase }}/grocers/api/orders/reports?from={{ _.from }}&to={{ _.to }}&userId={{ _.userId }}&productId={{ _.productId }}
-X-Employee-Id: {{ _.employeeId }}
+GET http://localhost:8085/grocers/api/orders/reports?from=2026-09-01T00:00:00&to=2026-10-01T00:00:00&userId=41&productId=10
+X-Employee-Id: 7
 ```
 
 `from` is inclusive and `to` is exclusive. `userId` and `productId` are optional. Expected response shape:
@@ -309,12 +291,28 @@ An invalid or empty date range returns `400 Bad Request` with code `INVALID_REPO
 
 ### 9. Cancel an order as an employee
 
-Create a second order and save its number in `orderNumber`; do not advance it to `DELIVERED`.
+First create a second order from cart `26` so the delivery-flow order from cart `25` remains independent:
 
 ```http
-POST {{ _.orderBase }}/grocers/api/orders/{{ _.orderNumber }}/cancel
-X-Employee-Id: {{ _.employeeId }}
-Idempotency-Key: {{ _.cancelKey }}
+POST http://localhost:8085/grocers/api/orders/checkout
+X-User-Id: 41
+Idempotency-Key: checkout-insomnia-002
+X-Correlation-Id: insomnia-checkout-002
+Content-Type: application/json
+```
+
+```json
+{
+  "cartId": 26
+}
+```
+
+Copy this checkout's returned order number into the cancellation URL below. Do not advance this order to `DELIVERED`.
+
+```http
+POST http://localhost:8085/grocers/api/orders/ORD-PASTE-ACTUAL-ORDER-NUMBER/cancel
+X-Employee-Id: 7
+Idempotency-Key: cancel-insomnia-001
 X-Correlation-Id: insomnia-cancel-001
 Content-Type: application/json
 ```
@@ -353,19 +351,19 @@ Every downstream request receives `X-Correlation-Id`. Mutation idempotency is ca
 #### UserApp verification
 
 ```http
-GET {{ _.userBase }}/grocers/api/users/{{ _.userId }}/verification
+GET http://localhost:8080/grocers/api/users/41/verification
 ```
 
 #### CartApp read
 
 ```http
-GET {{ _.cartBase }}/grocers/api/carts/{{ _.cartId }}
+GET http://localhost:8084/grocers/api/carts/25
 ```
 
 #### ProductsApp atomic decrement
 
 ```http
-POST {{ _.productsBase }}/grocers/api/products/inventory/decrements
+POST http://localhost:8083/grocers/api/products/inventory/decrements
 Content-Type: application/json
 ```
 
@@ -389,7 +387,7 @@ ProductsApp must atomically reject the entire request if any item lacks sufficie
 #### FundsApp debit
 
 ```http
-POST {{ _.fundsBase }}/grocers/api/funds/debits
+POST http://localhost:8088/grocers/api/funds/debits
 Content-Type: application/json
 ```
 
@@ -409,7 +407,7 @@ A successful response must contain the same order number, user ID, and amount, p
 #### CartApp checkout
 
 ```http
-POST {{ _.cartBase }}/grocers/api/carts/{{ _.cartId }}/checkout
+POST http://localhost:8084/grocers/api/carts/25/checkout
 Content-Type: application/json
 ```
 
@@ -432,7 +430,7 @@ If a later checkout step fails, OrderApp explicitly compensates every downstream
 #### CartApp restore
 
 ```http
-POST {{ _.cartBase }}/grocers/api/carts/{{ _.cartId }}/restore
+POST http://localhost:8084/grocers/api/carts/25/restore
 Content-Type: application/json
 ```
 
@@ -447,7 +445,7 @@ Content-Type: application/json
 #### FundsApp refund after failed checkout
 
 ```http
-POST {{ _.fundsBase }}/grocers/api/funds/refunds
+POST http://localhost:8088/grocers/api/funds/refunds
 Content-Type: application/json
 ```
 
@@ -463,7 +461,7 @@ Content-Type: application/json
 #### ProductsApp restore after failed checkout
 
 ```http
-POST {{ _.productsBase }}/grocers/api/products/inventory/restores
+POST http://localhost:8083/grocers/api/products/inventory/restores
 Content-Type: application/json
 ```
 
@@ -481,13 +479,13 @@ If every compensation succeeds, the original checkout error is returned and the 
 #### EmployeeApp verification
 
 ```http
-GET {{ _.employeeBase }}/grocers/api/employees/{{ _.employeeId }}/verification
+GET http://localhost:8082/grocers/api/employees/7/verification
 ```
 
 #### ProductsApp cancellation restore
 
 ```http
-POST {{ _.productsBase }}/grocers/api/products/inventory/restores
+POST http://localhost:8083/grocers/api/products/inventory/restores
 Content-Type: application/json
 ```
 
@@ -501,7 +499,7 @@ Content-Type: application/json
 #### FundsApp cancellation refund
 
 ```http
-POST {{ _.fundsBase }}/grocers/api/funds/refunds
+POST http://localhost:8088/grocers/api/funds/refunds
 Content-Type: application/json
 ```
 
@@ -527,8 +525,8 @@ Expected status: `400 Bad Request`, code `MISSING_HEADER`.
 ### Empty or invalid cart ID
 
 ```http
-POST {{ _.orderBase }}/grocers/api/orders/checkout
-X-User-Id: {{ _.userId }}
+POST http://localhost:8085/grocers/api/orders/checkout
+X-User-Id: 41
 Idempotency-Key: checkout-invalid-cart
 Content-Type: application/json
 ```
