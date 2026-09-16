@@ -8,5 +8,5 @@ public interface OrderQueryService {
     List<OrderResponse> getUserHistory(Integer actorUserId, Integer requestedUserId);
     List<OrderResponse> getEmployeeOrders(Integer employeeId, OrderStatus status);
     OrderReportSummary report(Integer employeeId, LocalDateTime from, LocalDateTime to,
-                              Integer customerId, Integer productId);
+                              Integer userId, Integer productId);
 }

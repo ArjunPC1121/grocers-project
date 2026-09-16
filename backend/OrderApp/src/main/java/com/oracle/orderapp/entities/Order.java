@@ -45,8 +45,8 @@ public class Order {
     private String orderNumber;
 
     @NotNull
-    @Column(name = "customer_id", nullable = false)
-    private Integer customerId;
+    @Column(name = "user_id", nullable = false)
+    private Integer userId;
 
     @NotNull
     @Column(name = "cart_id", nullable = false)

@@ -79,9 +79,9 @@ public class OrderManagementServiceImpl implements OrderManagementService {
             }
             if (attempt.getStep().ordinal() < CancellationStep.FUNDS_REFUNDED.ordinal()) {
                 FundMutationResponse refunded = fundsClient.refund(new FundMutationRequest(
-                        orderNumber + ":cancel-refund", orderNumber, order.getCustomerId(), order.getTotalAmount()));
+                        orderNumber + ":cancel-refund", orderNumber, order.getUserId(), order.getTotalAmount()));
                 if (refunded == null || !orderNumber.equals(refunded.orderNumber())
-                        || !order.getCustomerId().equals(refunded.userId()) || refunded.amount() == null
+                        || !order.getUserId().equals(refunded.userId()) || refunded.amount() == null
                         || !Double.isFinite(refunded.amount()) || refunded.remainingBalance() == null
                         || !Double.isFinite(refunded.remainingBalance())
                         || Math.abs(order.getTotalAmount() - refunded.amount()) > 0.001d

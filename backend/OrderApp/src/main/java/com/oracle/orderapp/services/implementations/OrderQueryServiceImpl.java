@@ -21,12 +21,12 @@ public class OrderQueryServiceImpl implements OrderQueryService {
     }
     public OrderResponse getUserOrder(Integer userId, String number) {
         verifyUser(userId); Order order = find(number);
-        if (!userId.equals(order.getCustomerId())) throw new AccessDeniedException("USER_ACCESS_DENIED", "Order belongs to another user");
+        if (!userId.equals(order.getUserId())) throw new AccessDeniedException("USER_ACCESS_DENIED", "Order belongs to another user");
         return mapper.toResponse(order);
     }
     public List<OrderResponse> getUserHistory(Integer actor, Integer requested) {
         if (!actor.equals(requested)) throw new AccessDeniedException("USER_ACCESS_DENIED", "Cannot view another user's orders");
-        verifyUser(actor); return orders.findByCustomerIdOrderByOrderedAtDesc(requested).stream().map(mapper::toResponse).toList();
+        verifyUser(actor); return orders.findByUserIdOrderByOrderedAtDesc(requested).stream().map(mapper::toResponse).toList();
     }
     public List<OrderResponse> getEmployeeOrders(Integer employeeId, OrderStatus status) {
         EmployeeVerificationResponse v=employees.verify(employeeId);
@@ -34,15 +34,15 @@ public class OrderQueryServiceImpl implements OrderQueryService {
         List<Order> found=status==null?orders.findAllByOrderByOrderedAtDesc():orders.findByStatusOrderByOrderedAtDesc(status);
         return found.stream().map(mapper::toResponse).toList();
     }
-    public OrderReportSummary report(Integer employeeId, LocalDateTime from, LocalDateTime to, Integer customerId, Integer productId) {
+    public OrderReportSummary report(Integer employeeId, LocalDateTime from, LocalDateTime to, Integer userId, Integer productId) {
         verifyEmployee(employeeId);
         if (from == null || to == null || !from.isBefore(to))
             throw new OrderAppException("INVALID_REPORT_RANGE", "from must be before to", org.springframework.http.HttpStatus.BAD_REQUEST);
         Specification<Order> spec=(root,q,cb)->cb.and(cb.greaterThanOrEqualTo(root.get("orderedAt"),from),cb.lessThan(root.get("orderedAt"),to));
-        if(customerId!=null) spec=spec.and((r,q,cb)->cb.equal(r.get("customerId"),customerId));
+        if(userId!=null) spec=spec.and((r,q,cb)->cb.equal(r.get("userId"),userId));
         if(productId!=null) spec=spec.and((r,q,cb)->{q.distinct(true);return cb.equal(r.join("items").get("productId"),productId);});
         List<Order> found=orders.findAll(spec);
-        List<OrderReportRow> rows=found.stream().map(o->new OrderReportRow(o.getOrderNumber(),o.getCustomerId(),o.getStatus(),o.getTotalAmount(),o.getOrderedAt())).toList();
+        List<OrderReportRow> rows=found.stream().map(o->new OrderReportRow(o.getOrderNumber(),o.getUserId(),o.getStatus(),o.getTotalAmount(),o.getOrderedAt())).toList();
         return new OrderReportSummary(rows.size(),OrderMapper.round2(rows.stream().mapToDouble(OrderReportRow::totalAmount).sum()),rows);
     }
     private void verifyUser(Integer id){UserVerificationResponse v=users.verify(id);if(v==null||!v.valid()||!id.equals(v.userId()))throw new AccessDeniedException("INVALID_USER","User verification failed");}

@@ -210,7 +210,7 @@ public class CheckoutServiceImplTest {
                 List.of(new CartItemResponse(10, 2))));
         Order saved = new Order();
         saved.setOrderNumber("ORD-1");
-        saved.setCustomerId(41);
+        saved.setUserId(41);
         saved.setCartId(25);
         saved.setDeliveryAddress("12 Market Road");
         saved.setStatus(OrderStatus.PLACED);
@@ -290,7 +290,7 @@ public class CheckoutServiceImplTest {
         when(cartClient.get(25)).thenReturn(new CartResponse(25, 41, "CHECKED_OUT", "ORD-1", List.of()));
         Order saved = new Order();
         saved.setOrderNumber("ORD-1");
-        saved.setCustomerId(41);
+        saved.setUserId(41);
         saved.setCartId(25);
         saved.setDeliveryAddress("12 Market Road");
         saved.setStatus(OrderStatus.PLACED);

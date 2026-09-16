@@ -55,7 +55,7 @@ public class OrderManagementServiceImplTest {
                 orderRepository, cancellationRepository, new OrderMapper());
         order = new Order();
         order.setOrderNumber("ORD-1");
-        order.setCustomerId(41);
+        order.setUserId(41);
         order.setCartId(25);
         order.setDeliveryAddress("12 Market Road");
         order.setTotalAmount(160.0d);

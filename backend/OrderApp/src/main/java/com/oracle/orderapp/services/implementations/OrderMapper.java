@@ -11,7 +11,7 @@ public class OrderMapper {
     public Order fromCheckout(String orderNumber, UserVerificationResponse user, CartResponse cart,
                               InventoryResponse inventory, double total) {
         Order order = new Order();
-        order.setOrderNumber(orderNumber); order.setCustomerId(user.userId()); order.setCartId(cart.id());
+        order.setOrderNumber(orderNumber); order.setUserId(user.userId()); order.setCartId(cart.id());
         order.setStatus(OrderStatus.PLACED); order.setTotalAmount(round2(total));
         order.setDeliveryAddress(user.deliveryAddress());
         for (InventoryItemResponse snapshot : inventory.items()) {
@@ -26,7 +26,7 @@ public class OrderMapper {
     public OrderResponse toResponse(Order order) {
         List<OrderItemResponse> items = order.getItems().stream().map(item -> new OrderItemResponse(
                 item.getProductId(), item.getProductName(), item.getQuantity(), item.getUnitPrice(), item.getSubtotal())).toList();
-        return new OrderResponse(order.getOrderNumber(), order.getCustomerId(), order.getCartId(), order.getStatus(),
+        return new OrderResponse(order.getOrderNumber(), order.getUserId(), order.getCartId(), order.getStatus(),
                 order.getTotalAmount(), order.getDeliveryAddress(), order.getUpdatedByEmployeeId(),
                 order.getCancellationReason(), order.getOrderedAt(), order.getUpdatedAt(), items);
     }

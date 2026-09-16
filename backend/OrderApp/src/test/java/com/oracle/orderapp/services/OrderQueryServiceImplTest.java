@@ -63,7 +63,7 @@ public class OrderQueryServiceImplTest {
     private Order order(String number, double total) {
         Order order = new Order();
         order.setOrderNumber(number);
-        order.setCustomerId(41);
+        order.setUserId(41);
         order.setCartId(25);
         order.setStatus(OrderStatus.PLACED);
         order.setTotalAmount(total);

@@ -11,7 +11,7 @@ import java.util.Optional;
 
 public interface OrderRepository extends JpaRepository<Order, Integer>, JpaSpecificationExecutor<Order> {
     @EntityGraph(attributePaths = "items") Optional<Order> findByOrderNumber(String orderNumber);
-    @EntityGraph(attributePaths = "items") List<Order> findByCustomerIdOrderByOrderedAtDesc(Integer customerId);
+    @EntityGraph(attributePaths = "items") List<Order> findByUserIdOrderByOrderedAtDesc(Integer userId);
     @EntityGraph(attributePaths = "items") List<Order> findByStatusOrderByOrderedAtDesc(OrderStatus status);
     @EntityGraph(attributePaths = "items") List<Order> findAllByOrderByOrderedAtDesc();
 }

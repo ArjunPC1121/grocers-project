@@ -102,7 +102,7 @@ public class OrderAppHttpOrchestrationTest extends AbstractTestNGSpringContextTe
     void cancellationRestoresAndRefundsOnceAcrossDuplicateRequests() throws Exception {
         Order order = new Order();
         order.setOrderNumber("ORD-CANCEL-1");
-        order.setCustomerId(41);
+        order.setUserId(41);
         order.setCartId(25);
         order.setStatus(OrderStatus.PLACED);
         order.setTotalAmount(160.0d);

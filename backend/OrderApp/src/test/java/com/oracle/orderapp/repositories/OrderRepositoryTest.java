@@ -23,7 +23,7 @@ public class OrderRepositoryTest extends AbstractTestNGSpringContextTests {
         repository.save(order("ORD-1", LocalDateTime.of(2026, 9, 15, 10, 0)));
         repository.save(order("ORD-2", LocalDateTime.of(2026, 9, 16, 10, 0)));
 
-        List<String> numbers = repository.findByCustomerIdOrderByOrderedAtDesc(41)
+        List<String> numbers = repository.findByUserIdOrderByOrderedAtDesc(41)
                 .stream().map(Order::getOrderNumber).toList();
 
         assertEquals(List.of("ORD-2", "ORD-1"), numbers);
@@ -32,7 +32,7 @@ public class OrderRepositoryTest extends AbstractTestNGSpringContextTests {
     private Order order(String number, LocalDateTime at) {
         Order order = new Order();
         order.setOrderNumber(number);
-        order.setCustomerId(41);
+        order.setUserId(41);
         order.setCartId(25);
         order.setStatus(OrderStatus.PLACED);
         order.setTotalAmount(10.0d);
