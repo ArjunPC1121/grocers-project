@@ -1,5 +1,6 @@
 package com.oracle.userapp.services.implementations;
 
+import com.oracle.userapp.dto.UpdateUserRequest;
 import com.oracle.userapp.dto.UserRequest;
 import com.oracle.userapp.dto.UserResponse;
 import com.oracle.userapp.entities.LockedReason;
@@ -12,7 +13,7 @@ import org.springframework.stereotype.Service;
 import java.util.Collection;
 
 @Service
-public class UserService implements UserServiceManager<UserRequest,UserResponse,Integer> {
+public class UserService implements UserServiceManager<UserRequest,UserResponse,UpdateUserRequest,Integer> {
 
     private final UserRepository repository;
     private final PasswordEncoder passwordEncoder;
@@ -45,10 +46,9 @@ public class UserService implements UserServiceManager<UserRequest,UserResponse,
     }
 
     @Override
-    public UserResponse update(Integer id, UserRequest data)throws RuntimeException {
+    public UserResponse update(Integer id, UpdateUserRequest data)throws RuntimeException {
         User user = repository.findById(id).orElseThrow(()-> new RuntimeException("User not found"));
-        mapRequestToEntity(user, data);
-        user.setPassword(passwordEncoder.encode(data.getPassword()));
+        mapUpdateRequestToEntity(user, data);
         user = repository.save(user);
         return mapEntityToResponse(user);
     }
@@ -99,5 +99,30 @@ public class UserService implements UserServiceManager<UserRequest,UserResponse,
         response.setEmail(user.getEmail());
 
         return response;
+    }
+
+    private static void mapUpdateRequestToEntity(User user, UpdateUserRequest data)
+    {
+        if (data.getFirstName() != null) {
+            user.setFirstName(data.getFirstName());
+        }
+        if (data.getLastName() != null) {
+            user.setLastName(data.getLastName());
+        }
+        if (data.getEmail() != null) {
+            user.setEmail(data.getEmail());
+        }
+        if (data.getDob() != null) {
+            user.setDob(data.getDob());
+        }
+        if (data.getPhoneNumber() != null) {
+            user.setPhoneNumber(data.getPhoneNumber());
+        }
+        if (data.getAddress() != null) {
+            user.setAddress(data.getAddress());
+        }
+        if (data.getAccountNumber() != null) {
+            user.setAccountNumber(data.getAccountNumber());
+        }
     }
 }
