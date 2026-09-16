@@ -27,18 +27,16 @@ import com.oracle.orderapp.services.abstractions.ProductClient;
 import com.oracle.orderapp.services.abstractions.UserClient;
 import com.oracle.orderapp.services.implementations.CheckoutServiceImpl;
 import com.oracle.orderapp.services.implementations.OrderMapper;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.Mock;
-import org.mockito.junit.jupiter.MockitoExtension;
+import org.testng.annotations.BeforeMethod;
+import org.testng.annotations.Test;
 
 import java.util.List;
 import java.util.Optional;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.testng.Assert.assertEquals;
+import static org.testng.Assert.expectThrows;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -46,18 +44,23 @@ import static org.mockito.Mockito.atLeastOnce;
 import org.springframework.http.HttpStatus;
 import org.mockito.ArgumentCaptor;
 
-@ExtendWith(MockitoExtension.class)
-class CheckoutServiceImplTest {
-    @Mock UserClient userClient;
-    @Mock CartClient cartClient;
-    @Mock ProductClient productClient;
-    @Mock FundsClient fundsClient;
-    @Mock OrderRepository orderRepository;
-    @Mock CheckoutAttemptRepository attemptRepository;
+public class CheckoutServiceImplTest {
+    UserClient userClient;
+    CartClient cartClient;
+    ProductClient productClient;
+    FundsClient fundsClient;
+    OrderRepository orderRepository;
+    CheckoutAttemptRepository attemptRepository;
     CheckoutServiceImpl service;
 
-    @BeforeEach
+    @BeforeMethod
     void setUp() {
+        userClient = mock(UserClient.class);
+        cartClient = mock(CartClient.class);
+        productClient = mock(ProductClient.class);
+        fundsClient = mock(FundsClient.class);
+        orderRepository = mock(OrderRepository.class);
+        attemptRepository = mock(CheckoutAttemptRepository.class);
         service = new CheckoutServiceImpl(userClient, cartClient, productClient, fundsClient,
                 orderRepository, attemptRepository, new OrderMapper());
         when(attemptRepository.findByIdempotencyKey("checkout-1")).thenReturn(Optional.empty());
@@ -110,7 +113,7 @@ class CheckoutServiceImplTest {
         arrangeProductSnapshot();
         when(fundsClient.debit(any())).thenThrow(new DownstreamConflictException("INSUFFICIENT_FUNDS", "Insufficient funds"));
 
-        assertThrows(DownstreamConflictException.class,
+        expectThrows(DownstreamConflictException.class,
                 () -> service.checkout(41, "checkout-1", new CheckoutRequest(25)));
 
         verify(productClient).restore(any());
@@ -124,7 +127,7 @@ class CheckoutServiceImplTest {
         arrangeSuccessfulDebit();
         when(orderRepository.save(any())).thenThrow(new IllegalStateException("database unavailable"));
 
-        assertThrows(IllegalStateException.class,
+        expectThrows(IllegalStateException.class,
                 () -> service.checkout(41, "checkout-1", new CheckoutRequest(25)));
 
         ArgumentCaptor<FundMutationRequest> refund = ArgumentCaptor.forClass(FundMutationRequest.class);
@@ -147,7 +150,7 @@ class CheckoutServiceImplTest {
         org.mockito.Mockito.doThrow(new DownstreamUnavailableException("cart", new RuntimeException("offline")))
                 .when(cartClient).restore(any(), any());
 
-        OrderAppException failure = assertThrows(OrderAppException.class,
+        OrderAppException failure = expectThrows(OrderAppException.class,
                 () -> service.checkout(41, "checkout-1", new CheckoutRequest(25)));
 
         assertEquals("COMPENSATION_INCOMPLETE", failure.getCode());
@@ -168,7 +171,7 @@ class CheckoutServiceImplTest {
                     request.amount(), Double.NaN, "REFUND");
         }).when(fundsClient).refund(any());
 
-        OrderAppException failure = assertThrows(OrderAppException.class,
+        OrderAppException failure = expectThrows(OrderAppException.class,
                 () -> service.checkout(41, "checkout-1", new CheckoutRequest(25)));
 
         assertEquals("COMPENSATION_INCOMPLETE", failure.getCode());
@@ -187,7 +190,7 @@ class CheckoutServiceImplTest {
                     List.of(new InventoryItemResponse(10, "   ", 2, 80.0d, 160.0d)));
         });
 
-        assertThrows(DownstreamContractException.class,
+        expectThrows(DownstreamContractException.class,
                 () -> service.checkout(41, "checkout-1", new CheckoutRequest(25)));
 
         verify(productClient).restore(any());
@@ -241,7 +244,7 @@ class CheckoutServiceImplTest {
             return attempt;
         });
 
-        assertThrows(IllegalStateException.class,
+        expectThrows(IllegalStateException.class,
                 () -> service.checkout(41, "checkout-1", new CheckoutRequest(25)));
 
         verify(cartClient, never()).checkout(any(), any());
@@ -256,7 +259,7 @@ class CheckoutServiceImplTest {
         when(fundsClient.debit(any())).thenThrow(
                 new DownstreamUnavailableException("funds", new RuntimeException("read timed out")));
 
-        OrderAppException initial = assertThrows(OrderAppException.class,
+        OrderAppException initial = expectThrows(OrderAppException.class,
                 () -> service.checkout(41, "checkout-1", new CheckoutRequest(25)));
 
         assertEquals(HttpStatus.SERVICE_UNAVAILABLE, initial.getStatus());
@@ -267,7 +270,7 @@ class CheckoutServiceImplTest {
         CheckoutAttempt terminal = attempts.getAllValues().get(attempts.getAllValues().size() - 1);
         when(attemptRepository.findByIdempotencyKey("checkout-1")).thenReturn(Optional.of(terminal));
 
-        OrderAppException replay = assertThrows(OrderAppException.class,
+        OrderAppException replay = expectThrows(OrderAppException.class,
                 () -> service.checkout(41, "checkout-1", new CheckoutRequest(25)));
 
         assertEquals("DOWNSTREAM_UNAVAILABLE", replay.getCode());

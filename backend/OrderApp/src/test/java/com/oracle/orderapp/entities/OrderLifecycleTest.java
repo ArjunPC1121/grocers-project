@@ -1,10 +1,10 @@
 package com.oracle.orderapp.entities;
 
-import org.junit.jupiter.api.Test;
+import org.testng.annotations.Test;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.testng.Assert.assertEquals;
 
-class OrderLifecycleTest {
+public class OrderLifecycleTest {
     @Test
     void newOrderDefaultsToPlaced() {
         assertEquals(OrderStatus.PLACED, new Order().getStatus());

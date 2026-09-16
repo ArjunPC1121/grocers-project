@@ -1,11 +1,11 @@
 package com.oracle.orderapp.entities;
 
-import org.junit.jupiter.api.Test;
+import org.testng.annotations.Test;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.testng.Assert.assertEquals;
+import static org.testng.Assert.expectThrows;
 
-class AttemptLifecycleTest {
+public class AttemptLifecycleTest {
     @Test
     void checkoutAttemptTracksOrderedSteps() {
         CheckoutAttempt attempt = CheckoutAttempt.start("key-1", "ORD-1", 41, 25);
@@ -19,7 +19,7 @@ class AttemptLifecycleTest {
         CheckoutAttempt attempt = CheckoutAttempt.start("key-1", "ORD-1", 41, 25);
         attempt.advanceTo(CheckoutStep.INVENTORY_DECREMENTED);
         attempt.advanceTo(CheckoutStep.FUNDS_DEBITED);
-        assertThrows(IllegalStateException.class,
+        expectThrows(IllegalStateException.class,
                 () -> attempt.advanceTo(CheckoutStep.INVENTORY_DECREMENTED));
     }
 }

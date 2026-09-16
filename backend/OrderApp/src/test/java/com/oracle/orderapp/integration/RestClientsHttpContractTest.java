@@ -4,7 +4,7 @@ import com.oracle.orderapp.dtos.clients.*;
 import com.oracle.orderapp.services.implementations.*;
 import com.sun.net.httpserver.HttpExchange;
 import com.sun.net.httpserver.HttpServer;
-import org.junit.jupiter.api.Test;
+import org.testng.annotations.Test;
 import org.springframework.web.client.RestClient;
 
 import java.io.IOException;
@@ -13,10 +13,10 @@ import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.testng.Assert.assertEquals;
+import static org.testng.Assert.assertTrue;
 
-class RestClientsHttpContractTest {
+public class RestClientsHttpContractTest {
     @Test
     void everyAdapterUsesTheDocumentedServicePathAndJsonContract() throws Exception {
         try (StubServer server = new StubServer()) {

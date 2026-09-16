@@ -2,19 +2,20 @@ package com.oracle.orderapp.repositories;
 
 import com.oracle.orderapp.entities.Order;
 import com.oracle.orderapp.entities.OrderStatus;
-import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.data.jpa.test.autoconfigure.DataJpaTest;
 import org.springframework.test.context.ActiveProfiles;
+import org.springframework.test.context.testng.AbstractTestNGSpringContextTests;
+import org.testng.annotations.Test;
 
 import java.time.LocalDateTime;
 import java.util.List;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.testng.Assert.assertEquals;
 
 @DataJpaTest
 @ActiveProfiles("test")
-class OrderRepositoryTest {
+public class OrderRepositoryTest extends AbstractTestNGSpringContextTests {
     @Autowired OrderRepository repository;
 
     @Test

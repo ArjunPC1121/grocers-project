@@ -21,34 +21,36 @@ import com.oracle.orderapp.services.abstractions.FundsClient;
 import com.oracle.orderapp.services.abstractions.ProductClient;
 import com.oracle.orderapp.services.implementations.OrderManagementServiceImpl;
 import com.oracle.orderapp.services.implementations.OrderMapper;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.Mock;
-import org.mockito.junit.jupiter.MockitoExtension;
+import org.testng.annotations.BeforeMethod;
+import org.testng.annotations.Test;
 
 import java.util.Optional;
 import java.util.List;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.testng.Assert.assertEquals;
+import static org.testng.Assert.expectThrows;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.when;
 
-@ExtendWith(MockitoExtension.class)
-class OrderManagementServiceImplTest {
-    @Mock EmployeeClient employeeClient;
-    @Mock ProductClient productClient;
-    @Mock FundsClient fundsClient;
-    @Mock OrderRepository orderRepository;
-    @Mock CancellationAttemptRepository cancellationRepository;
+public class OrderManagementServiceImplTest {
+    EmployeeClient employeeClient;
+    ProductClient productClient;
+    FundsClient fundsClient;
+    OrderRepository orderRepository;
+    CancellationAttemptRepository cancellationRepository;
     OrderManagementServiceImpl service;
     Order order;
 
-    @BeforeEach
+    @BeforeMethod
     void setUp() {
+        employeeClient = mock(EmployeeClient.class);
+        productClient = mock(ProductClient.class);
+        fundsClient = mock(FundsClient.class);
+        orderRepository = mock(OrderRepository.class);
+        cancellationRepository = mock(CancellationAttemptRepository.class);
         service = new OrderManagementServiceImpl(employeeClient, productClient, fundsClient,
                 orderRepository, cancellationRepository, new OrderMapper());
         order = new Order();
@@ -119,7 +121,7 @@ class OrderManagementServiceImplTest {
                     Double.NaN, 500.0d, "REFUND");
         }).when(fundsClient).refund(any());
 
-        assertThrows(DownstreamContractException.class, () -> service.cancel(7, "cancel-1", "ORD-1",
+        expectThrows(DownstreamContractException.class, () -> service.cancel(7, "cancel-1", "ORD-1",
                 new OrderCancellationRequest("Damaged package")));
 
         assertEquals(OrderStatus.PLACED, order.getStatus());
@@ -132,7 +134,7 @@ class OrderManagementServiceImplTest {
         when(cancellationRepository.findByOperationKey("cancel-other")).thenReturn(Optional.empty());
         when(cancellationRepository.findByOrderNumber("ORD-1")).thenReturn(Optional.of(existing));
 
-        InvalidStateException failure = assertThrows(InvalidStateException.class,
+        InvalidStateException failure = expectThrows(InvalidStateException.class,
                 () -> service.cancel(7, "cancel-other", "ORD-1",
                         new OrderCancellationRequest("Customer request")));
 

@@ -8,15 +8,16 @@ import com.oracle.orderapp.repositories.CheckoutAttemptRepository;
 import com.oracle.orderapp.repositories.OrderRepository;
 import com.sun.net.httpserver.HttpExchange;
 import com.sun.net.httpserver.HttpServer;
-import org.junit.jupiter.api.AfterAll;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.web.server.LocalServerPort;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.DynamicPropertyRegistry;
 import org.springframework.test.context.DynamicPropertySource;
+import org.springframework.test.context.testng.AbstractTestNGSpringContextTests;
+import org.testng.annotations.AfterClass;
+import org.testng.annotations.BeforeMethod;
+import org.testng.annotations.Test;
 
 import java.io.IOException;
 import java.net.InetSocketAddress;
@@ -30,12 +31,12 @@ import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.testng.Assert.assertEquals;
+import static org.testng.Assert.assertTrue;
 
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 @ActiveProfiles("test")
-class OrderAppHttpOrchestrationTest {
+public class OrderAppHttpOrchestrationTest extends AbstractTestNGSpringContextTests {
     private static final DownstreamStub DOWNSTREAM = new DownstreamStub();
     private static final HttpClient HTTP = HttpClient.newHttpClient();
 
@@ -53,7 +54,7 @@ class OrderAppHttpOrchestrationTest {
     @Autowired CheckoutAttemptRepository checkouts;
     @Autowired CancellationAttemptRepository cancellations;
 
-    @BeforeEach
+    @BeforeMethod
     void reset() {
         cancellations.deleteAll();
         checkouts.deleteAll();
@@ -61,7 +62,7 @@ class OrderAppHttpOrchestrationTest {
         DOWNSTREAM.reset();
     }
 
-    @AfterAll
+    @AfterClass(alwaysRun = true)
     static void stopStub() { DOWNSTREAM.close(); }
 
     @Test

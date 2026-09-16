@@ -10,25 +10,25 @@ import com.oracle.orderapp.services.abstractions.EmployeeClient;
 import com.oracle.orderapp.services.abstractions.UserClient;
 import com.oracle.orderapp.services.implementations.OrderMapper;
 import com.oracle.orderapp.services.implementations.OrderQueryServiceImpl;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
+import org.testng.annotations.BeforeMethod;
+import org.testng.annotations.Test;
 import org.springframework.data.jpa.domain.Specification;
 
 import java.time.LocalDateTime;
 import java.util.List;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.testng.Assert.assertEquals;
+import static org.testng.Assert.expectThrows;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
-class OrderQueryServiceImplTest {
+public class OrderQueryServiceImplTest {
     private OrderRepository orders;
     private EmployeeClient employees;
     private OrderQueryServiceImpl service;
 
-    @BeforeEach
+    @BeforeMethod
     void setUp() {
         orders = mock(OrderRepository.class);
         employees = mock(EmployeeClient.class);
@@ -54,7 +54,7 @@ class OrderQueryServiceImplTest {
         when(employees.verify(7)).thenReturn(new EmployeeVerificationResponse(7, true));
         LocalDateTime instant = LocalDateTime.parse("2026-09-01T00:00:00");
 
-        OrderAppException failure = assertThrows(OrderAppException.class,
+        OrderAppException failure = expectThrows(OrderAppException.class,
                 () -> service.report(7, instant, instant, null, null));
 
         assertEquals("INVALID_REPORT_RANGE", failure.getCode());
