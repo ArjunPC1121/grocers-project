@@ -21,8 +21,6 @@ public class UserResponse {
 
     private String email;
 
-    private String password;
-
     private Date dob;
 
     private String phoneNumber;

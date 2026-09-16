@@ -6,8 +6,8 @@ public  interface UserServiceManager<TRequest,TResponse,Id> {
 
     TResponse add(TRequest data);
     Collection<TResponse> getAll();
-    TResponse get(Id id);
-    TResponse update(Id id, TRequest data);
-    TResponse delete(Id id);
-    TResponse lock(Id id);
+    TResponse get(Id id) throws RuntimeException;
+    TResponse update(Id id, TRequest data)throws RuntimeException;
+    TResponse delete(Id id)throws RuntimeException;
+    int incFailedAttempts(Id id) throws RuntimeException;
 }
