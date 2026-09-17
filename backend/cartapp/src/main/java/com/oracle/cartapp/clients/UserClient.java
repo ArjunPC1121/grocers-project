@@ -9,7 +9,7 @@ public class UserClient {
     private final RestClient restClient;
 
     public UserClient() {
-        this.restClient = RestClient.create("http://localhost:8080/api/users");
+        this.restClient = RestClient.create("http://localhost:8080/grocers/api/users");
     }
 
     public void checkUserExists(Integer userId) {

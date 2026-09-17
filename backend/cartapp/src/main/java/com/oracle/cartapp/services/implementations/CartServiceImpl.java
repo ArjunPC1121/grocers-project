@@ -3,6 +3,7 @@ package com.oracle.cartapp.services.implementations;
 import java.util.ArrayList;
 import java.util.List;
 
+import com.oracle.cartapp.clients.UserClient;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -29,6 +30,9 @@ public class CartServiceImpl implements CartService {
     private final CartRepository cartRepository;
     private final CartItemRepository cartItemRepository;
     private final ProductClient productClient;
+    private final UserClient userClient;
+
+
 
     @Override
     @Transactional(readOnly = true)
@@ -36,20 +40,22 @@ public class CartServiceImpl implements CartService {
         return toResponse(findCart(cartId));
     }
 
+
+
     @Override
-    @Transactional(readOnly = true)
     public CartResponse getActiveCartByUser(Integer userId) {
+        userClient.checkUserExists(userId);
+
         Cart cart = cartRepository
                 .findByUserIdAndStatus(userId, CartStatus.ACTIVE)
-                .orElseThrow(() -> new ResourceNotFoundException(
-                        "Active cart not found for user: " + userId));
+                .orElseThrow(() -> new ResourceNotFoundException("Active cart not found"));
 
         return toResponse(cart);
     }
 
     @Override
     public CartResponse addItem(Integer userId, CartItemRequest request) {
-
+        userClient.checkUserExists(userId);
         Cart cart = cartRepository
                 .findByUserIdAndStatus(userId, CartStatus.ACTIVE)
                 .orElseGet(() -> {
