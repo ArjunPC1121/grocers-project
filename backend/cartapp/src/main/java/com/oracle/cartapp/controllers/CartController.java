@@ -20,7 +20,7 @@ import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 
 @RestController
-@RequestMapping("/api/carts")
+@RequestMapping("grocers/api/carts")
 @RequiredArgsConstructor
 public class CartController {
 
@@ -68,12 +68,12 @@ public class CartController {
         return ResponseEntity.noContent().build();
     }
 
-    // @PostMapping("/{cartId}/checkout")
-    // public ResponseEntity<CartResponse> checkout(
-    //         @PathVariable Integer cartId) {
+     @PostMapping("/{cartId}/checkout")
+     public ResponseEntity<CartResponse> checkout(
+             @PathVariable Integer cartId) {
 
-    //     return ResponseEntity.ok(cartService.checkout(cartId));
-    // }
+         return ResponseEntity.ok(cartService.checkout(cartId));
+     }
 
     @PostMapping("/{cartId}/cancel")
     public ResponseEntity<CartResponse> cancel(

@@ -120,23 +120,23 @@ cartItemRepository.save(item);
         cartItemRepository.delete(item);
     }
 
-    // @Override
-    // public CartResponse checkout(Integer cartId) {
-    //     Cart cart = findActiveCart(cartId);
+     @Override
+     public CartResponse checkout(Integer cartId) {
+         Cart cart = findActiveCart(cartId);
 
-    //     if (cart.getItems().isEmpty()) {
-    //         throw new IllegalArgumentException("Cannot checkout an empty cart");
-    //     }
+         if (cart.getItems().isEmpty()) {
+             throw new IllegalArgumentException("Cannot checkout an empty cart");
+         }
 
-    //     for (CartItem item : cart.getItems()) {
-    //         // ProductApp removes it from reservedQuantity permanently.
-    //         productClient.confirm(item.getProductId(), item.getQuantity());
-    //     }
+//         for (CartItem item : cart.getItems()) {
+//             // ProductApp removes it from reservedQuantity permanently.
+//             productClient.confirm(item.getProductId(), item.getQuantity());
+//         }
 
-    //     cart.setStatus(CartStatus.CHECKED_OUT);
+         cart.setStatus(CartStatus.CHECKED_OUT);
 
-    //     return toResponse(cartRepository.save(cart));
-    // }
+         return toResponse(cartRepository.save(cart));
+     }
 
     @Override
     public CartResponse cancel(Integer cartId) {

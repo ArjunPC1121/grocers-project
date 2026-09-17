@@ -17,7 +17,7 @@ public interface CartService {
 
     void removeItem(Integer cartId, Integer productId);
 
-    // CartResponse checkout(Integer cartId);
+     CartResponse checkout(Integer cartId);
 
     CartResponse cancel(Integer cartId);
     CartResponse increaseItemQuantity(Integer cartId, Integer productId);

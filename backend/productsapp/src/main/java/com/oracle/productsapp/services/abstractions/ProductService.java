@@ -13,4 +13,7 @@ public interface ProductService {
     void delete(Integer id);
     // Product checkQuantity(Integer id, Integer quantity);
     // Product increaseQuantity(Integer id,Integer quantity);
+    Product reduceQuantity(Integer productId, Integer quantity);
+
+    Product increaseQuantity(Integer productId, Integer quantity);
 }
