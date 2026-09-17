@@ -14,4 +14,6 @@ public  interface UserServiceManager<TRequest,TResponse,TUpdateRequest,Id> {
 
     TResponse delete(Id id)throws RuntimeException;
     int incFailedAttempts(Id id) throws RuntimeException;
+
+    double addFunds(Id id, double amount);
 }

@@ -28,4 +28,6 @@ public class UserResponse {
     private String address;
 
     private String accountNumber;
+
+    private double funds;
 }

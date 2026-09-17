@@ -61,4 +61,7 @@ public class User {
     @Column(length = 32)
     private LockedReason lockedReason;
 
+    @Column(nullable = false)
+    private double funds = 200;
+
 }

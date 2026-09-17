@@ -14,6 +14,7 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import java.util.Collection;
@@ -59,5 +60,12 @@ public class UserAppController {
     @PostMapping("/{id}/failed-attempts")
     public ResponseEntity<Integer> incrementFailedAttempts(@PathVariable Integer id) {
         return ResponseEntity.ok(userService.incFailedAttempts(id));
+    }
+
+    @PostMapping("/{id}/funds")
+    public ResponseEntity<Double> addFunds(
+            @PathVariable Integer id,
+            @RequestParam double amount) {
+        return ResponseEntity.ok(userService.addFunds(id, amount));
     }
 }
