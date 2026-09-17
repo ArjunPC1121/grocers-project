@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="Encoding">
+    <file url="file://$PROJECT_DIR$/backend/EmployeeApp/src/main/java" charset="UTF-8" />
+    <file url="file://$PROJECT_DIR$/backend/OrderApp/src/main/java" charset="UTF-8" />
+    <file url="file://$PROJECT_DIR$/backend/adminapp/src/main/java" charset="UTF-8" />
+    <file url="file://$PROJECT_DIR$/backend/authapp/src/main/java" charset="UTF-8" />
+    <file url="file://$PROJECT_DIR$/backend/bankapp/src/main/java" charset="UTF-8" />
+    <file url="file://$PROJECT_DIR$/backend/cartapp/src/main/java" charset="UTF-8" />
+    <file url="file://$PROJECT_DIR$/backend/fundsapp/src/main/java" charset="UTF-8" />
+    <file url="file://$PROJECT_DIR$/backend/gatewayapp/src/main/java" charset="UTF-8" />
+    <file url="file://$PROJECT_DIR$/backend/productsapp/src/main/java" charset="UTF-8" />
+    <file url="file://$PROJECT_DIR$/backend/requestapp/src/main/java" charset="UTF-8" />
+    <file url="file://$PROJECT_DIR$/backend/ticketapp/src/main/java" charset="UTF-8" />
+    <file url="file://$PROJECT_DIR$/backend/userapp/src/main/java" charset="UTF-8" />
+  </component>
+</project>
