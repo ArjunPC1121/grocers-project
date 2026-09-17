@@ -11,6 +11,8 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import java.util.Map;
+
 @RestController
 @RequestMapping("/grocers/api/banks")
 public class BankAccountController {
@@ -27,8 +29,8 @@ public class BankAccountController {
     }
 
     @PostMapping("/{userId}/deduct")
-    public ResponseEntity<DeductionResponse> deduct(@PathVariable int userId, @RequestBody DeductionRequest request) {
-        Double deductedAmount = bankAccountService.deduct(userId, request.amount());
-        return ResponseEntity.ok(new DeductionResponse(deductedAmount));
+    public ResponseEntity<Double> deduct(@PathVariable int userId, @RequestBody Map<String, Double> request) {
+        Double deductedAmount = bankAccountService.deduct(userId, request.get("amount"));
+        return ResponseEntity.ok(deductedAmount);
     }
 }

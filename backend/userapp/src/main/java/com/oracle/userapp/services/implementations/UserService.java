@@ -7,12 +7,16 @@ import com.oracle.userapp.entities.LockedReason;
 import com.oracle.userapp.entities.User;
 import com.oracle.userapp.repositories.UserRepository;
 import com.oracle.userapp.services.abstractions.UserServiceManager;
+import org.springframework.http.HttpEntity;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.MediaType;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.client.RestTemplate;
 
 import java.util.Collection;
+import java.util.Map;
 
 @Service
 public class UserService implements UserServiceManager<UserRequest,UserResponse,UpdateUserRequest,Integer> {
@@ -40,11 +44,20 @@ public class UserService implements UserServiceManager<UserRequest,UserResponse,
         user.setPassword(passwordEncoder.encode(data.getPassword()));
         user = repository.save(user);
 
+        HttpHeaders headers = new HttpHeaders();
+        headers.setContentType(MediaType.APPLICATION_JSON);
+
+        HttpEntity<Map<String, String>> request = new HttpEntity<>(
+                Map.of("accountNumber", user.getAccountNumber()),
+                headers
+        );
+
         restTemplate.postForEntity(
                 CREATE_BANK_ACCOUNT_URL,
-                user.getAccountNumber(),
+                request,
                 Void.class,
-                user.getId());
+                user.getId()
+        );
 
         return mapEntityToResponse(user);
 
@@ -96,9 +109,18 @@ public class UserService implements UserServiceManager<UserRequest,UserResponse,
     public double addFunds(Integer id, double amount)
     {
         User user = repository.findById(id).orElseThrow(()-> new RuntimeException("User not found"));
+        HttpHeaders headers = new HttpHeaders();
+        headers.setContentType(MediaType.APPLICATION_JSON);
+
+        HttpEntity<Map<String, Double>> request = new HttpEntity<>(
+                Map.of("amount", amount),
+                headers
+        );
+
+
         Double deductedAmount = restTemplate.postForObject(
                 DEDUCT_BANK_FUNDS_URL,
-                amount,
+                request,
                 Double.class,
                 id
         );

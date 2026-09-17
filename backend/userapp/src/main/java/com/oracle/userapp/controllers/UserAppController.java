@@ -1,5 +1,6 @@
 package com.oracle.userapp.controllers;
 
+import com.oracle.userapp.dto.AddFundsRequest;
 import com.oracle.userapp.dto.UserRequest;
 import com.oracle.userapp.dto.UserResponse;
 import com.oracle.userapp.dto.UpdateUserRequest;
@@ -65,7 +66,7 @@ public class UserAppController {
     @PostMapping("/{id}/funds")
     public ResponseEntity<Double> addFunds(
             @PathVariable Integer id,
-            @RequestParam double amount) {
-        return ResponseEntity.ok(userService.addFunds(id, amount));
+            @RequestBody AddFundsRequest request) {
+        return ResponseEntity.ok(userService.addFunds(id, request.amount()));
     }
 }
