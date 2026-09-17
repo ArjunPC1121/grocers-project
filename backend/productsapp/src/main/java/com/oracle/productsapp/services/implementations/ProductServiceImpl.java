@@ -1,8 +1,8 @@
 package com.oracle.productsapp.services.implementations;
 
-
 import java.util.List;
 
+import jakarta.transaction.Transactional;
 import org.springframework.stereotype.Service;
 
 import com.oracle.productsapp.dtos.ProductRequest;
@@ -62,7 +62,31 @@ public Product update(Integer id, ProductRequest request) {
         productRepository.delete(getById(id));
     }
 
-   
+
+
+    @Override
+    @Transactional
+    public Product reduceQuantity(Integer productId, Integer quantity) {
+        Product product = getById(productId);
+
+        if (product.getQuantity() < quantity) {
+            throw new IllegalArgumentException(
+                    "Insufficient quantity for product: " + product.getName()
+            );
+        }
+
+        product.setQuantity(product.getQuantity() - quantity);
+        return productRepository.save(product);
+    }
+
+    @Override
+    @Transactional
+    public Product increaseQuantity(Integer productId, Integer quantity) {
+        Product product = getById(productId);
+
+        product.setQuantity(product.getQuantity() + quantity);
+        return productRepository.save(product);
+    }
        
 
 
