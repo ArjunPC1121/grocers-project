@@ -50,4 +50,14 @@ public class User {
     @Column(nullable = false)
     private String accountNumber;
 
+    @Column(nullable = false)
+    private int failedLoginAttempts = 0;
+
+    @Column(nullable = false)
+    private boolean accountLocked = false;
+
+    @Enumerated(EnumType.STRING)
+    @Column(length = 32)
+    private LockedReason lockedReason;
+
 }

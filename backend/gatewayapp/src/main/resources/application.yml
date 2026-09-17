@@ -1,0 +1,63 @@
+spring:
+  application:
+    name: gatewayapp
+  cloud:
+    gateway:
+      server:
+        webflux:
+          routes:
+            - id: authapp
+              uri: http://localhost:8090
+              predicates:
+                - Path=/grocers/api/auth/**
+            - id: userapp
+              uri: http://localhost:8080
+              predicates:
+                - Path=/grocers/api/users/**
+            - id: adminapp
+              uri: http://localhost:8081
+              predicates:
+                - Path=/grocers/api/admin/**,/grocers/api/admins/**
+            - id: employeeapp
+              uri: http://localhost:8082
+              predicates:
+                - Path=/grocers/api/employee/**,/grocers/api/employees/**
+            - id: productsapp
+              uri: http://localhost:8083
+              predicates:
+                - Path=/grocers/api/products/**
+            - id: cartapp
+              uri: http://localhost:8084
+              predicates:
+                - Path=/grocers/api/carts/**
+            - id: orderapp
+              uri: http://localhost:8085
+              predicates:
+                - Path=/grocers/api/orders/**
+            - id: requestapp
+              uri: http://localhost:8086
+              predicates:
+                - Path=/requests/**
+            - id: ticketapp
+              uri: http://localhost:8087
+              predicates:
+                - Path=/grocers/api/tickets/**
+            - id: fundsapp
+              uri: http://localhost:8088
+              predicates:
+                - Path=/grocers/api/funds/**
+            - id: bankapp
+              uri: http://localhost:8089
+              predicates:
+                - Path=/grocers/api/bank-accounts/**
+
+server:
+  port: 8091
+
+app:
+  gateway:
+    internal-secret: ${GATEWAY_INTERNAL_SECRET:replace-this-shared-secret-in-production}
+  jwt:
+    secret: arjun_akash_abhiram_pragathi_pranav
+  cors:
+    allowed-origin: ${FRONTEND_ORIGIN:http://localhost:3000}
