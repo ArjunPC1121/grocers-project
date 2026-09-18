@@ -69,4 +69,12 @@ public class UserAppController {
         return ResponseEntity.ok(userService.addFunds(id, request.amount()));
     }
 
+    @PostMapping("/{id}/deductFunds")
+    public ResponseEntity<Double> deductFunds(
+            @PathVariable Integer id,
+            @RequestBody AddFundsRequest request) {
+        return ResponseEntity.ok(userService.deductFunds(id, request.amount()));
+    }
+
+
 }
