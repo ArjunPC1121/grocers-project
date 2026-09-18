@@ -8,6 +8,7 @@ import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.Table;
 import jakarta.validation.constraints.Min;
+import jakarta.validation.constraints.Max;
 import jakarta.validation.constraints.NotBlank;
 import lombok.AllArgsConstructor;
 import lombok.Data;
@@ -41,6 +42,11 @@ public class Product {
     @Min(value = 0)
     @Column(nullable = false)
     private Integer quantity;
+
+    @Min(value = 0, message = "Discount cannot be negative")
+    @Max(value = 100, message = "Discount cannot exceed 100 percent")
+    @Column(nullable = false)
+    private Integer discount = 0;
 
 // @Version
 // private Long version;
