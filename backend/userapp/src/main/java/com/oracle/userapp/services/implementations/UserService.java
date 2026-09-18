@@ -106,7 +106,7 @@ public class UserService implements UserServiceManager<UserRequest,UserResponse,
         return failedAttempts;
     }
     @Override
-    public double addFunds(Integer id, double amount)
+    public double addFunds(Integer id, double amount) throws RuntimeException
     {
         User user = repository.findById(id).orElseThrow(()-> new RuntimeException("User not found"));
         HttpHeaders headers = new HttpHeaders();
@@ -131,6 +131,15 @@ public class UserService implements UserServiceManager<UserRequest,UserResponse,
 
         user.setFunds(user.getFunds() + deductedAmount);
         user = repository.save(user);
+        return user.getFunds();
+    }
+
+    @Override
+    public double deductFunds(Integer id, double amount) throws RuntimeException
+    {
+        User user = repository.findById(id).orElseThrow(()-> new RuntimeException("User not found"));
+        user.setFunds(user.getFunds()-amount);
+        repository.save(user);
         return user.getFunds();
     }
 

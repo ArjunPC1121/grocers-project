@@ -1,7 +1,5 @@
 package com.oracle.userapp.services.abstractions;
 
-import com.oracle.userapp.dto.UpdateUserRequest;
-
 import java.util.Collection;
 
 public  interface UserServiceManager<TRequest,TResponse,TUpdateRequest,Id> {
@@ -15,5 +13,6 @@ public  interface UserServiceManager<TRequest,TResponse,TUpdateRequest,Id> {
     TResponse delete(Id id)throws RuntimeException;
     int incFailedAttempts(Id id) throws RuntimeException;
 
-    double addFunds(Id id, double amount);
+    double addFunds(Id id, double amount)throws RuntimeException;
+    double deductFunds(Id id, double amount)throws RuntimeException;
 }
