@@ -1,0 +1,235 @@
+<html>
+<head>
+<title>TestNG:  Surefire test</title>
+<link href="../testng.css" rel="stylesheet" type="text/css" />
+<link href="../my-testng.css" rel="stylesheet" type="text/css" />
+
+<style type="text/css">
+.log { display: none;} 
+.stack-trace { display: none;} 
+</style>
+<script type="text/javascript">
+<!--
+function flip(e) {
+  current = e.style.display;
+  if (current == 'block') {
+    e.style.display = 'none';
+    return 0;
+  }
+  else {
+    e.style.display = 'block';
+    return 1;
+  }
+}
+
+function toggleBox(szDivId, elem, msg1, msg2)
+{
+  var res = -1;  if (document.getElementById) {
+    res = flip(document.getElementById(szDivId));
+  }
+  else if (document.all) {
+    // this is the way old msie versions work
+    res = flip(document.all[szDivId]);
+  }
+  if(elem) {
+    if(res == 0) elem.innerHTML = msg1; else elem.innerHTML = msg2;
+  }
+
+}
+
+function toggleAllBoxes() {
+  if (document.getElementsByTagName) {
+    d = document.getElementsByTagName('div');
+    for (i = 0; i < d.length; i++) {
+      if (d[i].className == 'log') {
+        flip(d[i]);
+      }
+    }
+  }
+}
+
+// -->
+</script>
+
+</head>
+<body>
+<h2 align='center'>Surefire test</h2><table border='1' align="center">
+<tr>
+<td>Tests passed/Failed/Skipped:</td><td>31/0/0</td>
+</tr><tr>
+<td>Started on:</td><td>Wed Sep 16 15:07:54 IST 2026</td>
+</tr>
+<tr><td>Total time:</td><td>7 seconds (7136 ms)</td>
+</tr><tr>
+<td>Included groups:</td><td></td>
+</tr><tr>
+<td>Excluded groups:</td><td></td>
+</tr>
+</table><p/>
+<small><i>(Hover the method name to see the test class name)</i></small><p/>
+<table width='100%' border='1' class='invocation-passed'>
+<tr><td colspan='4' align='center'><b>PASSED TESTS</b></td></tr>
+<tr><td><b>Test method</b></td>
+<td><b>Attribute(s)</b></td>
+<td width="30%"><b>Exception</b></td>
+<td width="10%"><b>Time (seconds)</b></td>
+<td><b>Instance</b></td>
+</tr>
+<tr>
+<td title='com.oracle.orderapp.controllers.OrderControllerTest.reportUsesUserIdQueryParameter()'><b>reportUsesUserIdQueryParameter</b><br>Test class: com.oracle.orderapp.controllers.OrderControllerTest</td>
+<td></td>
+<td>0</td>
+<td>com.oracle.orderapp.controllers.OrderControllerTest@2e005c4b</td></tr>
+<tr>
+<td title='com.oracle.orderapp.services.OrderManagementServiceImplTest.employeeAdvancesOrderToNextStatus()'><b>employeeAdvancesOrderToNextStatus</b><br>Test class: com.oracle.orderapp.services.OrderManagementServiceImplTest</td>
+<td></td>
+<td>0</td>
+<td>com.oracle.orderapp.services.OrderManagementServiceImplTest@76a82f33</td></tr>
+<tr>
+<td title='com.oracle.orderapp.integration.OrderAppHttpOrchestrationTest.fundsConflictRestoresInventoryAndLeavesNoOrder()'><b>fundsConflictRestoresInventoryAndLeavesNoOrder</b><br>Test class: com.oracle.orderapp.integration.OrderAppHttpOrchestrationTest</td>
+<td></td>
+<td>0</td>
+<td>com.oracle.orderapp.integration.OrderAppHttpOrchestrationTest@470a696f</td></tr>
+<tr>
+<td title='com.oracle.orderapp.OrderAppApplicationTests.contextLoadsWithoutDownstreamServices()'><b>contextLoadsWithoutDownstreamServices</b><br>Test class: com.oracle.orderapp.OrderAppApplicationTests</td>
+<td></td>
+<td>0</td>
+<td>com.oracle.orderapp.OrderAppApplicationTests@50eca7c6</td></tr>
+<tr>
+<td title='com.oracle.orderapp.integration.OrderAppHttpOrchestrationTest.cancellationRestoresAndRefundsOnceAcrossDuplicateRequests()'><b>cancellationRestoresAndRefundsOnceAcrossDuplicateRequests</b><br>Test class: com.oracle.orderapp.integration.OrderAppHttpOrchestrationTest</td>
+<td></td>
+<td>0</td>
+<td>com.oracle.orderapp.integration.OrderAppHttpOrchestrationTest@470a696f</td></tr>
+<tr>
+<td title='com.oracle.orderapp.services.CheckoutServiceImplTest.insufficientFundsRestoresInventoryAndDoesNotSaveOrder()'><b>insufficientFundsRestoresInventoryAndDoesNotSaveOrder</b><br>Test class: com.oracle.orderapp.services.CheckoutServiceImplTest</td>
+<td></td>
+<td>0</td>
+<td>com.oracle.orderapp.services.CheckoutServiceImplTest@1922e6d</td></tr>
+<tr>
+<td title='com.oracle.orderapp.entities.AttemptLifecycleTest.checkoutAttemptRejectsBackwardTransition()'><b>checkoutAttemptRejectsBackwardTransition</b><br>Test class: com.oracle.orderapp.entities.AttemptLifecycleTest</td>
+<td></td>
+<td>0</td>
+<td>com.oracle.orderapp.entities.AttemptLifecycleTest@3febb011</td></tr>
+<tr>
+<td title='com.oracle.orderapp.services.OrderQueryServiceImplTest.verifiedEmployeeReceivesRoundedReportAggregation()'><b>verifiedEmployeeReceivesRoundedReportAggregation</b><br>Test class: com.oracle.orderapp.services.OrderQueryServiceImplTest</td>
+<td></td>
+<td>0</td>
+<td>com.oracle.orderapp.services.OrderQueryServiceImplTest@6bab2585</td></tr>
+<tr>
+<td title='com.oracle.orderapp.services.CheckoutServiceImplTest.incompleteCompensationReturnsServiceUnavailableAndStillTriesAllReverseSteps()'><b>incompleteCompensationReturnsServiceUnavailableAndStillTriesAllReverseSteps</b><br>Test class: com.oracle.orderapp.services.CheckoutServiceImplTest</td>
+<td></td>
+<td>0</td>
+<td>com.oracle.orderapp.services.CheckoutServiceImplTest@1922e6d</td></tr>
+<tr>
+<td title='com.oracle.orderapp.integration.OrderAppHttpOrchestrationTest.checkoutPersistsOnceAndDuplicateKeyDoesNotRepeatMutations()'><b>checkoutPersistsOnceAndDuplicateKeyDoesNotRepeatMutations</b><br>Test class: com.oracle.orderapp.integration.OrderAppHttpOrchestrationTest</td>
+<td></td>
+<td>0</td>
+<td>com.oracle.orderapp.integration.OrderAppHttpOrchestrationTest@470a696f</td></tr>
+<tr>
+<td title='com.oracle.orderapp.entities.OrderLifecycleTest.newOrderDefaultsToPlaced()'><b>newOrderDefaultsToPlaced</b><br>Test class: com.oracle.orderapp.entities.OrderLifecycleTest</td>
+<td></td>
+<td>0</td>
+<td>com.oracle.orderapp.entities.OrderLifecycleTest@131774fe</td></tr>
+<tr>
+<td title='com.oracle.orderapp.entities.OrderItemTest.calculatesRoundedDoubleSubtotal()'><b>calculatesRoundedDoubleSubtotal</b><br>Test class: com.oracle.orderapp.entities.OrderItemTest</td>
+<td></td>
+<td>0</td>
+<td>com.oracle.orderapp.entities.OrderItemTest@10e31a9a</td></tr>
+<tr>
+<td title='com.oracle.orderapp.controllers.OrderControllerTest.missingIdentityHeaderReturnsStandardBadRequestWithoutCallingService()'><b>missingIdentityHeaderReturnsStandardBadRequestWithoutCallingService</b><br>Test class: com.oracle.orderapp.controllers.OrderControllerTest</td>
+<td></td>
+<td>0</td>
+<td>com.oracle.orderapp.controllers.OrderControllerTest@2e005c4b</td></tr>
+<tr>
+<td title='com.oracle.orderapp.services.CheckoutServiceImplTest.invalidRefundAcknowledgementLeavesCompensationIncomplete()'><b>invalidRefundAcknowledgementLeavesCompensationIncomplete</b><br>Test class: com.oracle.orderapp.services.CheckoutServiceImplTest</td>
+<td></td>
+<td>0</td>
+<td>com.oracle.orderapp.services.CheckoutServiceImplTest@1922e6d</td></tr>
+<tr>
+<td title='com.oracle.orderapp.services.OrderManagementServiceImplTest.cancellationRestoresInventoryRefundsFundsAndCancelsOrder()'><b>cancellationRestoresInventoryRefundsFundsAndCancelsOrder</b><br>Test class: com.oracle.orderapp.services.OrderManagementServiceImplTest</td>
+<td></td>
+<td>0</td>
+<td>com.oracle.orderapp.services.OrderManagementServiceImplTest@76a82f33</td></tr>
+<tr>
+<td title='com.oracle.orderapp.services.OrderQueryServiceImplTest.rejectsAnInvertedReportRange()'><b>rejectsAnInvertedReportRange</b><br>Test class: com.oracle.orderapp.services.OrderQueryServiceImplTest</td>
+<td></td>
+<td>0</td>
+<td>com.oracle.orderapp.services.OrderQueryServiceImplTest@6bab2585</td></tr>
+<tr>
+<td title='com.oracle.orderapp.entities.AttemptLifecycleTest.checkoutAttemptTracksOrderedSteps()'><b>checkoutAttemptTracksOrderedSteps</b><br>Test class: com.oracle.orderapp.entities.AttemptLifecycleTest</td>
+<td></td>
+<td>0</td>
+<td>com.oracle.orderapp.entities.AttemptLifecycleTest@3febb011</td></tr>
+<tr>
+<td title='com.oracle.orderapp.services.CheckoutServiceImplTest.checkoutPersistsPlacedOrderFromDownstreamSnapshots()'><b>checkoutPersistsPlacedOrderFromDownstreamSnapshots</b><br>Test class: com.oracle.orderapp.services.CheckoutServiceImplTest</td>
+<td></td>
+<td>0</td>
+<td>com.oracle.orderapp.services.CheckoutServiceImplTest@1922e6d</td></tr>
+<tr>
+<td title='com.oracle.orderapp.services.CheckoutServiceImplTest.orderSaveFailureRefundsTheExactDebitedAmountThenRestoresInventory()'><b>orderSaveFailureRefundsTheExactDebitedAmountThenRestoresInventory</b><br>Test class: com.oracle.orderapp.services.CheckoutServiceImplTest</td>
+<td></td>
+<td>0</td>
+<td>com.oracle.orderapp.services.CheckoutServiceImplTest@1922e6d</td></tr>
+<tr>
+<td title='com.oracle.orderapp.services.OrderManagementServiceImplTest.cancellationRejectsNonFiniteRefundAcknowledgement()'><b>cancellationRejectsNonFiniteRefundAcknowledgement</b><br>Test class: com.oracle.orderapp.services.OrderManagementServiceImplTest</td>
+<td></td>
+<td>0</td>
+<td>com.oracle.orderapp.services.OrderManagementServiceImplTest@76a82f33</td></tr>
+<tr>
+<td title='com.oracle.orderapp.integration.OrderAppHttpOrchestrationTest.actuatorHealthEndpointIsAvailable()'><b>actuatorHealthEndpointIsAvailable</b><br>Test class: com.oracle.orderapp.integration.OrderAppHttpOrchestrationTest</td>
+<td></td>
+<td>0</td>
+<td>com.oracle.orderapp.integration.OrderAppHttpOrchestrationTest@470a696f</td></tr>
+<tr>
+<td title='com.oracle.orderapp.controllers.OrderControllerTest.checkoutUsesRequiredHeadersAndReturnsCreated()'><b>checkoutUsesRequiredHeadersAndReturnsCreated</b><br>Test class: com.oracle.orderapp.controllers.OrderControllerTest</td>
+<td></td>
+<td>0</td>
+<td>com.oracle.orderapp.controllers.OrderControllerTest@2e005c4b</td></tr>
+<tr>
+<td title='com.oracle.orderapp.services.OrderManagementServiceImplTest.cancellationRetryAfterInventoryRestoreDoesNotRestoreStockTwice()'><b>cancellationRetryAfterInventoryRestoreDoesNotRestoreStockTwice</b><br>Test class: com.oracle.orderapp.services.OrderManagementServiceImplTest</td>
+<td></td>
+<td>0</td>
+<td>com.oracle.orderapp.services.OrderManagementServiceImplTest@76a82f33</td></tr>
+<tr>
+<td title='com.oracle.orderapp.services.CheckoutServiceImplTest.blankProductNameInInventorySnapshotIsRejectedAndInventoryIsRestored()'><b>blankProductNameInInventorySnapshotIsRejectedAndInventoryIsRestored</b><br>Test class: com.oracle.orderapp.services.CheckoutServiceImplTest</td>
+<td></td>
+<td>0</td>
+<td>com.oracle.orderapp.services.CheckoutServiceImplTest@1922e6d</td></tr>
+<tr>
+<td title='com.oracle.orderapp.services.OrderManagementServiceImplTest.differentKeyCannotStartASecondCancellationForTheSameOrder()'><b>differentKeyCannotStartASecondCancellationForTheSameOrder</b><br>Test class: com.oracle.orderapp.services.OrderManagementServiceImplTest</td>
+<td></td>
+<td>0</td>
+<td>com.oracle.orderapp.services.OrderManagementServiceImplTest@76a82f33</td></tr>
+<tr>
+<td title='com.oracle.orderapp.repositories.OrderRepositoryTest.findsUserHistoryNewestFirst()'><b>findsUserHistoryNewestFirst</b><br>Test class: com.oracle.orderapp.repositories.OrderRepositoryTest</td>
+<td></td>
+<td>0</td>
+<td>com.oracle.orderapp.repositories.OrderRepositoryTest@4a8ab068</td></tr>
+<tr>
+<td title='com.oracle.orderapp.services.CheckoutServiceImplTest.ambiguousDebitTimeoutIsRefundedAndReplayedWithTheOriginalStatus()'><b>ambiguousDebitTimeoutIsRefundedAndReplayedWithTheOriginalStatus</b><br>Test class: com.oracle.orderapp.services.CheckoutServiceImplTest</td>
+<td></td>
+<td>0</td>
+<td>com.oracle.orderapp.services.CheckoutServiceImplTest@1922e6d</td></tr>
+<tr>
+<td title='com.oracle.orderapp.integration.RestClientsHttpContractTest.everyAdapterUsesTheDocumentedServicePathAndJsonContract()'><b>everyAdapterUsesTheDocumentedServicePathAndJsonContract</b><br>Test class: com.oracle.orderapp.integration.RestClientsHttpContractTest</td>
+<td></td>
+<td>0</td>
+<td>com.oracle.orderapp.integration.RestClientsHttpContractTest@3e8f7922</td></tr>
+<tr>
+<td title='com.oracle.orderapp.services.CheckoutServiceImplTest.failureBeforeCartCheckoutDoesNotRestoreAnUnchangedCart()'><b>failureBeforeCartCheckoutDoesNotRestoreAnUnchangedCart</b><br>Test class: com.oracle.orderapp.services.CheckoutServiceImplTest</td>
+<td></td>
+<td>0</td>
+<td>com.oracle.orderapp.services.CheckoutServiceImplTest@1922e6d</td></tr>
+<tr>
+<td title='com.oracle.orderapp.services.CheckoutServiceImplTest.retryReconcilesCartCheckedOutBeforeItsStepWasPersisted()'><b>retryReconcilesCartCheckedOutBeforeItsStepWasPersisted</b><br>Test class: com.oracle.orderapp.services.CheckoutServiceImplTest</td>
+<td></td>
+<td>0</td>
+<td>com.oracle.orderapp.services.CheckoutServiceImplTest@1922e6d</td></tr>
+<tr>
+<td title='com.oracle.orderapp.services.CheckoutServiceImplTest.resumesAnOrderSavedAttemptWithoutRepeatingInventoryOrFunds()'><b>resumesAnOrderSavedAttemptWithoutRepeatingInventoryOrFunds</b><br>Test class: com.oracle.orderapp.services.CheckoutServiceImplTest</td>
+<td></td>
+<td>0</td>
+<td>com.oracle.orderapp.services.CheckoutServiceImplTest@1922e6d</td></tr>
+</table><p>
+</body>
+</html>

@@ -1,1 +1,15 @@
+com\oracle\orderapp\entities\OrderItemTest.class
+com\oracle\orderapp\services\OrderQueryServiceImplTest.class
+com\oracle\orderapp\entities\AttemptLifecycleTest.class
+com\oracle\orderapp\integration\OrderAppHttpOrchestrationTest.class
+com\oracle\orderapp\services\CheckoutServiceImplTest.class
+com\oracle\orderapp\integration\OrderAppHttpOrchestrationTest$DownstreamStub.class
+com\oracle\orderapp\integration\OrderAppHttpOrchestrationTest$Recorded.class
+com\oracle\orderapp\integration\RestClientsHttpContractTest.class
+com\oracle\orderapp\repositories\OrderRepositoryTest.class
+com\oracle\orderapp\controllers\OrderControllerTest.class
 com\oracle\orderapp\OrderAppApplicationTests.class
+com\oracle\orderapp\integration\RestClientsHttpContractTest$StubServer.class
+com\oracle\orderapp\integration\RestClientsHttpContractTest$Request.class
+com\oracle\orderapp\services\OrderManagementServiceImplTest.class
+com\oracle\orderapp\entities\OrderLifecycleTest.class

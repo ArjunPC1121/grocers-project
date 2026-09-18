@@ -1,0 +1,425 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testng-results ignored="0" total="31" passed="31" failed="0" skipped="0">
+  <reporter-output>
+  </reporter-output>
+  <suite started-at="2026-09-16T15:07:54 IST" name="Surefire suite" finished-at="2026-09-16T15:08:01 IST" duration-ms="7136">
+    <groups>
+    </groups>
+    <test started-at="2026-09-16T15:07:54 IST" name="Surefire test" finished-at="2026-09-16T15:08:01 IST" duration-ms="7136">
+      <class name="com.oracle.orderapp.services.OrderManagementServiceImplTest">
+        <test-method is-config="true" signature="setUp()[pri:0, instance:com.oracle.orderapp.services.OrderManagementServiceImplTest@76a82f33]" started-at="2026-09-16T15:08:01 IST" name="setUp" finished-at="2026-09-16T15:08:01 IST" duration-ms="95" status="PASS">
+          <reporter-output>
+          </reporter-output>
+        </test-method> <!-- setUp -->
+        <test-method signature="cancellationRejectsNonFiniteRefundAcknowledgement()[pri:0, instance:com.oracle.orderapp.services.OrderManagementServiceImplTest@76a82f33]" started-at="2026-09-16T15:08:01 IST" name="cancellationRejectsNonFiniteRefundAcknowledgement" finished-at="2026-09-16T15:08:01 IST" duration-ms="2" status="PASS">
+          <reporter-output>
+          </reporter-output>
+        </test-method> <!-- cancellationRejectsNonFiniteRefundAcknowledgement -->
+        <test-method is-config="true" signature="setUp()[pri:0, instance:com.oracle.orderapp.services.OrderManagementServiceImplTest@76a82f33]" started-at="2026-09-16T15:08:01 IST" name="setUp" finished-at="2026-09-16T15:08:01 IST" duration-ms="2" status="PASS">
+          <reporter-output>
+          </reporter-output>
+        </test-method> <!-- setUp -->
+        <test-method signature="cancellationRestoresInventoryRefundsFundsAndCancelsOrder()[pri:0, instance:com.oracle.orderapp.services.OrderManagementServiceImplTest@76a82f33]" started-at="2026-09-16T15:08:01 IST" name="cancellationRestoresInventoryRefundsFundsAndCancelsOrder" finished-at="2026-09-16T15:08:01 IST" duration-ms="1" status="PASS">
+          <reporter-output>
+          </reporter-output>
+        </test-method> <!-- cancellationRestoresInventoryRefundsFundsAndCancelsOrder -->
+        <test-method is-config="true" signature="setUp()[pri:0, instance:com.oracle.orderapp.services.OrderManagementServiceImplTest@76a82f33]" started-at="2026-09-16T15:08:01 IST" name="setUp" finished-at="2026-09-16T15:08:01 IST" duration-ms="1" status="PASS">
+          <reporter-output>
+          </reporter-output>
+        </test-method> <!-- setUp -->
+        <test-method signature="cancellationRetryAfterInventoryRestoreDoesNotRestoreStockTwice()[pri:0, instance:com.oracle.orderapp.services.OrderManagementServiceImplTest@76a82f33]" started-at="2026-09-16T15:08:01 IST" name="cancellationRetryAfterInventoryRestoreDoesNotRestoreStockTwice" finished-at="2026-09-16T15:08:01 IST" duration-ms="3" status="PASS">
+          <reporter-output>
+          </reporter-output>
+        </test-method> <!-- cancellationRetryAfterInventoryRestoreDoesNotRestoreStockTwice -->
+        <test-method is-config="true" signature="setUp()[pri:0, instance:com.oracle.orderapp.services.OrderManagementServiceImplTest@76a82f33]" started-at="2026-09-16T15:08:01 IST" name="setUp" finished-at="2026-09-16T15:08:01 IST" duration-ms="1" status="PASS">
+          <reporter-output>
+          </reporter-output>
+        </test-method> <!-- setUp -->
+        <test-method signature="differentKeyCannotStartASecondCancellationForTheSameOrder()[pri:0, instance:com.oracle.orderapp.services.OrderManagementServiceImplTest@76a82f33]" started-at="2026-09-16T15:08:01 IST" name="differentKeyCannotStartASecondCancellationForTheSameOrder" finished-at="2026-09-16T15:08:01 IST" duration-ms="1" status="PASS">
+          <reporter-output>
+          </reporter-output>
+        </test-method> <!-- differentKeyCannotStartASecondCancellationForTheSameOrder -->
+        <test-method is-config="true" signature="setUp()[pri:0, instance:com.oracle.orderapp.services.OrderManagementServiceImplTest@76a82f33]" started-at="2026-09-16T15:08:01 IST" name="setUp" finished-at="2026-09-16T15:08:01 IST" duration-ms="1" status="PASS">
+          <reporter-output>
+          </reporter-output>
+        </test-method> <!-- setUp -->
+        <test-method signature="employeeAdvancesOrderToNextStatus()[pri:0, instance:com.oracle.orderapp.services.OrderManagementServiceImplTest@76a82f33]" started-at="2026-09-16T15:08:01 IST" name="employeeAdvancesOrderToNextStatus" finished-at="2026-09-16T15:08:01 IST" duration-ms="0" status="PASS">
+          <reporter-output>
+          </reporter-output>
+        </test-method> <!-- employeeAdvancesOrderToNextStatus -->
+      </class> <!-- com.oracle.orderapp.services.OrderManagementServiceImplTest -->
+      <class name="com.oracle.orderapp.controllers.OrderControllerTest">
+        <test-method is-config="true" signature="setUp()[pri:0, instance:com.oracle.orderapp.controllers.OrderControllerTest@2e005c4b]" started-at="2026-09-16T15:07:54 IST" name="setUp" finished-at="2026-09-16T15:07:55 IST" duration-ms="1126" status="PASS">
+          <reporter-output>
+          </reporter-output>
+        </test-method> <!-- setUp -->
+        <test-method signature="checkoutUsesRequiredHeadersAndReturnsCreated()[pri:0, instance:com.oracle.orderapp.controllers.OrderControllerTest@2e005c4b]" started-at="2026-09-16T15:07:55 IST" name="checkoutUsesRequiredHeadersAndReturnsCreated" finished-at="2026-09-16T15:07:55 IST" duration-ms="212" status="PASS">
+          <reporter-output>
+          </reporter-output>
+        </test-method> <!-- checkoutUsesRequiredHeadersAndReturnsCreated -->
+        <test-method is-config="true" signature="setUp()[pri:0, instance:com.oracle.orderapp.controllers.OrderControllerTest@2e005c4b]" started-at="2026-09-16T15:07:55 IST" name="setUp" finished-at="2026-09-16T15:07:55 IST" duration-ms="9" status="PASS">
+          <reporter-output>
+          </reporter-output>
+        </test-method> <!-- setUp -->
+        <test-method signature="missingIdentityHeaderReturnsStandardBadRequestWithoutCallingService()[pri:0, instance:com.oracle.orderapp.controllers.OrderControllerTest@2e005c4b]" started-at="2026-09-16T15:07:55 IST" name="missingIdentityHeaderReturnsStandardBadRequestWithoutCallingService" finished-at="2026-09-16T15:07:55 IST" duration-ms="11" status="PASS">
+          <reporter-output>
+          </reporter-output>
+        </test-method> <!-- missingIdentityHeaderReturnsStandardBadRequestWithoutCallingService -->
+        <test-method is-config="true" signature="setUp()[pri:0, instance:com.oracle.orderapp.controllers.OrderControllerTest@2e005c4b]" started-at="2026-09-16T15:07:55 IST" name="setUp" finished-at="2026-09-16T15:07:55 IST" duration-ms="8" status="PASS">
+          <reporter-output>
+          </reporter-output>
+        </test-method> <!-- setUp -->
+        <test-method signature="reportUsesUserIdQueryParameter()[pri:0, instance:com.oracle.orderapp.controllers.OrderControllerTest@2e005c4b]" started-at="2026-09-16T15:07:55 IST" name="reportUsesUserIdQueryParameter" finished-at="2026-09-16T15:07:55 IST" duration-ms="11" status="PASS">
+          <reporter-output>
+          </reporter-output>
+        </test-method> <!-- reportUsesUserIdQueryParameter -->
+      </class> <!-- com.oracle.orderapp.controllers.OrderControllerTest -->
+      <class name="com.oracle.orderapp.entities.AttemptLifecycleTest">
+        <test-method signature="checkoutAttemptRejectsBackwardTransition()[pri:0, instance:com.oracle.orderapp.entities.AttemptLifecycleTest@3febb011]" started-at="2026-09-16T15:07:55 IST" name="checkoutAttemptRejectsBackwardTransition" finished-at="2026-09-16T15:07:55 IST" duration-ms="1" status="PASS">
+          <reporter-output>
+          </reporter-output>
+        </test-method> <!-- checkoutAttemptRejectsBackwardTransition -->
+        <test-method signature="checkoutAttemptTracksOrderedSteps()[pri:0, instance:com.oracle.orderapp.entities.AttemptLifecycleTest@3febb011]" started-at="2026-09-16T15:07:55 IST" name="checkoutAttemptTracksOrderedSteps" finished-at="2026-09-16T15:07:55 IST" duration-ms="0" status="PASS">
+          <reporter-output>
+          </reporter-output>
+        </test-method> <!-- checkoutAttemptTracksOrderedSteps -->
+      </class> <!-- com.oracle.orderapp.entities.AttemptLifecycleTest -->
+      <class name="com.oracle.orderapp.entities.OrderLifecycleTest">
+        <test-method signature="newOrderDefaultsToPlaced()[pri:0, instance:com.oracle.orderapp.entities.OrderLifecycleTest@131774fe]" started-at="2026-09-16T15:07:55 IST" name="newOrderDefaultsToPlaced" finished-at="2026-09-16T15:07:55 IST" duration-ms="0" status="PASS">
+          <reporter-output>
+          </reporter-output>
+        </test-method> <!-- newOrderDefaultsToPlaced -->
+      </class> <!-- com.oracle.orderapp.entities.OrderLifecycleTest -->
+      <class name="com.oracle.orderapp.integration.OrderAppHttpOrchestrationTest">
+        <test-method is-config="true" signature="springTestContextBeforeTestClass()[pri:0, instance:com.oracle.orderapp.integration.OrderAppHttpOrchestrationTest@470a696f]" started-at="2026-09-16T15:07:55 IST" name="springTestContextBeforeTestClass" finished-at="2026-09-16T15:07:55 IST" duration-ms="2" status="PASS">
+          <reporter-output>
+          </reporter-output>
+        </test-method> <!-- springTestContextBeforeTestClass -->
+        <test-method is-config="true" signature="springTestContextPrepareTestInstance()[pri:0, instance:com.oracle.orderapp.integration.OrderAppHttpOrchestrationTest@470a696f]" started-at="2026-09-16T15:07:55 IST" name="springTestContextPrepareTestInstance" finished-at="2026-09-16T15:07:59 IST" depends-on-methods="org.springframework.test.context.testng.AbstractTestNGSpringContextTests.springTestContextBeforeTestClass" duration-ms="3593" status="PASS">
+          <reporter-output>
+          </reporter-output>
+        </test-method> <!-- springTestContextPrepareTestInstance -->
+        <test-method is-config="true" signature="springTestContextBeforeTestMethod(java.lang.reflect.Method)[pri:0, instance:com.oracle.orderapp.integration.OrderAppHttpOrchestrationTest@470a696f]" started-at="2026-09-16T15:07:59 IST" name="springTestContextBeforeTestMethod" finished-at="2026-09-16T15:07:59 IST" duration-ms="4" status="PASS">
+          <params>
+            <param index="0">
+              <value>
+                <![CDATA[void com.oracle.orderapp.integration.OrderAppHttpOrchestrationTest.actuatorHealthEndpointIsAvailable() throws java.lang.Exception]]>
+              </value>
+            </param>
+          </params>
+          <reporter-output>
+          </reporter-output>
+        </test-method> <!-- springTestContextBeforeTestMethod -->
+        <test-method is-config="true" signature="reset()[pri:0, instance:com.oracle.orderapp.integration.OrderAppHttpOrchestrationTest@470a696f]" started-at="2026-09-16T15:07:59 IST" name="reset" finished-at="2026-09-16T15:07:59 IST" duration-ms="125" status="PASS">
+          <reporter-output>
+          </reporter-output>
+        </test-method> <!-- reset -->
+        <test-method signature="actuatorHealthEndpointIsAvailable()[pri:0, instance:com.oracle.orderapp.integration.OrderAppHttpOrchestrationTest@470a696f]" started-at="2026-09-16T15:07:59 IST" name="actuatorHealthEndpointIsAvailable" finished-at="2026-09-16T15:07:59 IST" duration-ms="94" status="PASS">
+          <reporter-output>
+          </reporter-output>
+        </test-method> <!-- actuatorHealthEndpointIsAvailable -->
+        <test-method is-config="true" signature="springTestContextAfterTestMethod(java.lang.reflect.Method)[pri:0, instance:com.oracle.orderapp.integration.OrderAppHttpOrchestrationTest@470a696f]" started-at="2026-09-16T15:07:59 IST" name="springTestContextAfterTestMethod" finished-at="2026-09-16T15:07:59 IST" duration-ms="2" status="PASS">
+          <params>
+            <param index="0">
+              <value>
+                <![CDATA[void com.oracle.orderapp.integration.OrderAppHttpOrchestrationTest.actuatorHealthEndpointIsAvailable() throws java.lang.Exception]]>
+              </value>
+            </param>
+          </params>
+          <reporter-output>
+          </reporter-output>
+        </test-method> <!-- springTestContextAfterTestMethod -->
+        <test-method is-config="true" signature="springTestContextBeforeTestMethod(java.lang.reflect.Method)[pri:0, instance:com.oracle.orderapp.integration.OrderAppHttpOrchestrationTest@470a696f]" started-at="2026-09-16T15:07:59 IST" name="springTestContextBeforeTestMethod" finished-at="2026-09-16T15:07:59 IST" duration-ms="1" status="PASS">
+          <params>
+            <param index="0">
+              <value>
+                <![CDATA[void com.oracle.orderapp.integration.OrderAppHttpOrchestrationTest.cancellationRestoresAndRefundsOnceAcrossDuplicateRequests() throws java.lang.Exception]]>
+              </value>
+            </param>
+          </params>
+          <reporter-output>
+          </reporter-output>
+        </test-method> <!-- springTestContextBeforeTestMethod -->
+        <test-method is-config="true" signature="reset()[pri:0, instance:com.oracle.orderapp.integration.OrderAppHttpOrchestrationTest@470a696f]" started-at="2026-09-16T15:07:59 IST" name="reset" finished-at="2026-09-16T15:07:59 IST" duration-ms="3" status="PASS">
+          <reporter-output>
+          </reporter-output>
+        </test-method> <!-- reset -->
+        <test-method signature="cancellationRestoresAndRefundsOnceAcrossDuplicateRequests()[pri:0, instance:com.oracle.orderapp.integration.OrderAppHttpOrchestrationTest@470a696f]" started-at="2026-09-16T15:07:59 IST" name="cancellationRestoresAndRefundsOnceAcrossDuplicateRequests" finished-at="2026-09-16T15:07:59 IST" duration-ms="322" status="PASS">
+          <reporter-output>
+          </reporter-output>
+        </test-method> <!-- cancellationRestoresAndRefundsOnceAcrossDuplicateRequests -->
+        <test-method is-config="true" signature="springTestContextAfterTestMethod(java.lang.reflect.Method)[pri:0, instance:com.oracle.orderapp.integration.OrderAppHttpOrchestrationTest@470a696f]" started-at="2026-09-16T15:07:59 IST" name="springTestContextAfterTestMethod" finished-at="2026-09-16T15:07:59 IST" duration-ms="1" status="PASS">
+          <params>
+            <param index="0">
+              <value>
+                <![CDATA[void com.oracle.orderapp.integration.OrderAppHttpOrchestrationTest.cancellationRestoresAndRefundsOnceAcrossDuplicateRequests() throws java.lang.Exception]]>
+              </value>
+            </param>
+          </params>
+          <reporter-output>
+          </reporter-output>
+        </test-method> <!-- springTestContextAfterTestMethod -->
+        <test-method is-config="true" signature="springTestContextBeforeTestMethod(java.lang.reflect.Method)[pri:0, instance:com.oracle.orderapp.integration.OrderAppHttpOrchestrationTest@470a696f]" started-at="2026-09-16T15:07:59 IST" name="springTestContextBeforeTestMethod" finished-at="2026-09-16T15:07:59 IST" duration-ms="1" status="PASS">
+          <params>
+            <param index="0">
+              <value>
+                <![CDATA[void com.oracle.orderapp.integration.OrderAppHttpOrchestrationTest.checkoutPersistsOnceAndDuplicateKeyDoesNotRepeatMutations() throws java.lang.Exception]]>
+              </value>
+            </param>
+          </params>
+          <reporter-output>
+          </reporter-output>
+        </test-method> <!-- springTestContextBeforeTestMethod -->
+        <test-method is-config="true" signature="reset()[pri:0, instance:com.oracle.orderapp.integration.OrderAppHttpOrchestrationTest@470a696f]" started-at="2026-09-16T15:07:59 IST" name="reset" finished-at="2026-09-16T15:07:59 IST" duration-ms="15" status="PASS">
+          <reporter-output>
+          </reporter-output>
+        </test-method> <!-- reset -->
+        <test-method signature="checkoutPersistsOnceAndDuplicateKeyDoesNotRepeatMutations()[pri:0, instance:com.oracle.orderapp.integration.OrderAppHttpOrchestrationTest@470a696f]" started-at="2026-09-16T15:07:59 IST" name="checkoutPersistsOnceAndDuplicateKeyDoesNotRepeatMutations" finished-at="2026-09-16T15:07:59 IST" duration-ms="81" status="PASS">
+          <reporter-output>
+          </reporter-output>
+        </test-method> <!-- checkoutPersistsOnceAndDuplicateKeyDoesNotRepeatMutations -->
+        <test-method is-config="true" signature="springTestContextAfterTestMethod(java.lang.reflect.Method)[pri:0, instance:com.oracle.orderapp.integration.OrderAppHttpOrchestrationTest@470a696f]" started-at="2026-09-16T15:07:59 IST" name="springTestContextAfterTestMethod" finished-at="2026-09-16T15:07:59 IST" duration-ms="1" status="PASS">
+          <params>
+            <param index="0">
+              <value>
+                <![CDATA[void com.oracle.orderapp.integration.OrderAppHttpOrchestrationTest.checkoutPersistsOnceAndDuplicateKeyDoesNotRepeatMutations() throws java.lang.Exception]]>
+              </value>
+            </param>
+          </params>
+          <reporter-output>
+          </reporter-output>
+        </test-method> <!-- springTestContextAfterTestMethod -->
+        <test-method is-config="true" signature="reset()[pri:0, instance:com.oracle.orderapp.integration.OrderAppHttpOrchestrationTest@470a696f]" started-at="2026-09-16T15:07:59 IST" name="reset" finished-at="2026-09-16T15:07:59 IST" duration-ms="8" status="PASS">
+          <reporter-output>
+          </reporter-output>
+        </test-method> <!-- reset -->
+        <test-method is-config="true" signature="springTestContextBeforeTestMethod(java.lang.reflect.Method)[pri:0, instance:com.oracle.orderapp.integration.OrderAppHttpOrchestrationTest@470a696f]" started-at="2026-09-16T15:07:59 IST" name="springTestContextBeforeTestMethod" finished-at="2026-09-16T15:07:59 IST" duration-ms="0" status="PASS">
+          <params>
+            <param index="0">
+              <value>
+                <![CDATA[void com.oracle.orderapp.integration.OrderAppHttpOrchestrationTest.fundsConflictRestoresInventoryAndLeavesNoOrder() throws java.lang.Exception]]>
+              </value>
+            </param>
+          </params>
+          <reporter-output>
+          </reporter-output>
+        </test-method> <!-- springTestContextBeforeTestMethod -->
+        <test-method signature="fundsConflictRestoresInventoryAndLeavesNoOrder()[pri:0, instance:com.oracle.orderapp.integration.OrderAppHttpOrchestrationTest@470a696f]" started-at="2026-09-16T15:07:59 IST" name="fundsConflictRestoresInventoryAndLeavesNoOrder" finished-at="2026-09-16T15:07:59 IST" duration-ms="39" status="PASS">
+          <reporter-output>
+          </reporter-output>
+        </test-method> <!-- fundsConflictRestoresInventoryAndLeavesNoOrder -->
+        <test-method is-config="true" signature="springTestContextAfterTestMethod(java.lang.reflect.Method)[pri:0, instance:com.oracle.orderapp.integration.OrderAppHttpOrchestrationTest@470a696f]" started-at="2026-09-16T15:07:59 IST" name="springTestContextAfterTestMethod" finished-at="2026-09-16T15:07:59 IST" duration-ms="1" status="PASS">
+          <params>
+            <param index="0">
+              <value>
+                <![CDATA[void com.oracle.orderapp.integration.OrderAppHttpOrchestrationTest.fundsConflictRestoresInventoryAndLeavesNoOrder() throws java.lang.Exception]]>
+              </value>
+            </param>
+          </params>
+          <reporter-output>
+          </reporter-output>
+        </test-method> <!-- springTestContextAfterTestMethod -->
+        <test-method is-config="true" signature="stopStub()[pri:0, instance:com.oracle.orderapp.integration.OrderAppHttpOrchestrationTest@470a696f]" started-at="2026-09-16T15:07:59 IST" name="stopStub" finished-at="2026-09-16T15:07:59 IST" duration-ms="2" status="PASS">
+          <reporter-output>
+          </reporter-output>
+        </test-method> <!-- stopStub -->
+        <test-method is-config="true" signature="springTestContextAfterTestClass()[pri:0, instance:com.oracle.orderapp.integration.OrderAppHttpOrchestrationTest@470a696f]" started-at="2026-09-16T15:07:59 IST" name="springTestContextAfterTestClass" finished-at="2026-09-16T15:07:59 IST" duration-ms="2" status="PASS">
+          <reporter-output>
+          </reporter-output>
+        </test-method> <!-- springTestContextAfterTestClass -->
+      </class> <!-- com.oracle.orderapp.integration.OrderAppHttpOrchestrationTest -->
+      <class name="com.oracle.orderapp.services.CheckoutServiceImplTest">
+        <test-method is-config="true" signature="setUp()[pri:0, instance:com.oracle.orderapp.services.CheckoutServiceImplTest@1922e6d]" started-at="2026-09-16T15:08:00 IST" name="setUp" finished-at="2026-09-16T15:08:01 IST" duration-ms="272" status="PASS">
+          <reporter-output>
+          </reporter-output>
+        </test-method> <!-- setUp -->
+        <test-method signature="ambiguousDebitTimeoutIsRefundedAndReplayedWithTheOriginalStatus()[pri:0, instance:com.oracle.orderapp.services.CheckoutServiceImplTest@1922e6d]" started-at="2026-09-16T15:08:01 IST" name="ambiguousDebitTimeoutIsRefundedAndReplayedWithTheOriginalStatus" finished-at="2026-09-16T15:08:01 IST" duration-ms="9" status="PASS">
+          <reporter-output>
+          </reporter-output>
+        </test-method> <!-- ambiguousDebitTimeoutIsRefundedAndReplayedWithTheOriginalStatus -->
+        <test-method is-config="true" signature="setUp()[pri:0, instance:com.oracle.orderapp.services.CheckoutServiceImplTest@1922e6d]" started-at="2026-09-16T15:08:01 IST" name="setUp" finished-at="2026-09-16T15:08:01 IST" duration-ms="2" status="PASS">
+          <reporter-output>
+          </reporter-output>
+        </test-method> <!-- setUp -->
+        <test-method signature="blankProductNameInInventorySnapshotIsRejectedAndInventoryIsRestored()[pri:0, instance:com.oracle.orderapp.services.CheckoutServiceImplTest@1922e6d]" started-at="2026-09-16T15:08:01 IST" name="blankProductNameInInventorySnapshotIsRejectedAndInventoryIsRestored" finished-at="2026-09-16T15:08:01 IST" duration-ms="3" status="PASS">
+          <reporter-output>
+          </reporter-output>
+        </test-method> <!-- blankProductNameInInventorySnapshotIsRejectedAndInventoryIsRestored -->
+        <test-method is-config="true" signature="setUp()[pri:0, instance:com.oracle.orderapp.services.CheckoutServiceImplTest@1922e6d]" started-at="2026-09-16T15:08:01 IST" name="setUp" finished-at="2026-09-16T15:08:01 IST" duration-ms="1" status="PASS">
+          <reporter-output>
+          </reporter-output>
+        </test-method> <!-- setUp -->
+        <test-method signature="checkoutPersistsPlacedOrderFromDownstreamSnapshots()[pri:0, instance:com.oracle.orderapp.services.CheckoutServiceImplTest@1922e6d]" started-at="2026-09-16T15:08:01 IST" name="checkoutPersistsPlacedOrderFromDownstreamSnapshots" finished-at="2026-09-16T15:08:01 IST" duration-ms="4" status="PASS">
+          <reporter-output>
+          </reporter-output>
+        </test-method> <!-- checkoutPersistsPlacedOrderFromDownstreamSnapshots -->
+        <test-method is-config="true" signature="setUp()[pri:0, instance:com.oracle.orderapp.services.CheckoutServiceImplTest@1922e6d]" started-at="2026-09-16T15:08:01 IST" name="setUp" finished-at="2026-09-16T15:08:01 IST" duration-ms="2" status="PASS">
+          <reporter-output>
+          </reporter-output>
+        </test-method> <!-- setUp -->
+        <test-method signature="failureBeforeCartCheckoutDoesNotRestoreAnUnchangedCart()[pri:0, instance:com.oracle.orderapp.services.CheckoutServiceImplTest@1922e6d]" started-at="2026-09-16T15:08:01 IST" name="failureBeforeCartCheckoutDoesNotRestoreAnUnchangedCart" finished-at="2026-09-16T15:08:01 IST" duration-ms="3" status="PASS">
+          <reporter-output>
+          </reporter-output>
+        </test-method> <!-- failureBeforeCartCheckoutDoesNotRestoreAnUnchangedCart -->
+        <test-method is-config="true" signature="setUp()[pri:0, instance:com.oracle.orderapp.services.CheckoutServiceImplTest@1922e6d]" started-at="2026-09-16T15:08:01 IST" name="setUp" finished-at="2026-09-16T15:08:01 IST" duration-ms="1" status="PASS">
+          <reporter-output>
+          </reporter-output>
+        </test-method> <!-- setUp -->
+        <test-method signature="incompleteCompensationReturnsServiceUnavailableAndStillTriesAllReverseSteps()[pri:0, instance:com.oracle.orderapp.services.CheckoutServiceImplTest@1922e6d]" started-at="2026-09-16T15:08:01 IST" name="incompleteCompensationReturnsServiceUnavailableAndStillTriesAllReverseSteps" finished-at="2026-09-16T15:08:01 IST" duration-ms="6" status="PASS">
+          <reporter-output>
+          </reporter-output>
+        </test-method> <!-- incompleteCompensationReturnsServiceUnavailableAndStillTriesAllReverseSteps -->
+        <test-method is-config="true" signature="setUp()[pri:0, instance:com.oracle.orderapp.services.CheckoutServiceImplTest@1922e6d]" started-at="2026-09-16T15:08:01 IST" name="setUp" finished-at="2026-09-16T15:08:01 IST" duration-ms="2" status="PASS">
+          <reporter-output>
+          </reporter-output>
+        </test-method> <!-- setUp -->
+        <test-method signature="insufficientFundsRestoresInventoryAndDoesNotSaveOrder()[pri:0, instance:com.oracle.orderapp.services.CheckoutServiceImplTest@1922e6d]" started-at="2026-09-16T15:08:01 IST" name="insufficientFundsRestoresInventoryAndDoesNotSaveOrder" finished-at="2026-09-16T15:08:01 IST" duration-ms="3" status="PASS">
+          <reporter-output>
+          </reporter-output>
+        </test-method> <!-- insufficientFundsRestoresInventoryAndDoesNotSaveOrder -->
+        <test-method is-config="true" signature="setUp()[pri:0, instance:com.oracle.orderapp.services.CheckoutServiceImplTest@1922e6d]" started-at="2026-09-16T15:08:01 IST" name="setUp" finished-at="2026-09-16T15:08:01 IST" duration-ms="1" status="PASS">
+          <reporter-output>
+          </reporter-output>
+        </test-method> <!-- setUp -->
+        <test-method signature="invalidRefundAcknowledgementLeavesCompensationIncomplete()[pri:0, instance:com.oracle.orderapp.services.CheckoutServiceImplTest@1922e6d]" started-at="2026-09-16T15:08:01 IST" name="invalidRefundAcknowledgementLeavesCompensationIncomplete" finished-at="2026-09-16T15:08:01 IST" duration-ms="2" status="PASS">
+          <reporter-output>
+          </reporter-output>
+        </test-method> <!-- invalidRefundAcknowledgementLeavesCompensationIncomplete -->
+        <test-method is-config="true" signature="setUp()[pri:0, instance:com.oracle.orderapp.services.CheckoutServiceImplTest@1922e6d]" started-at="2026-09-16T15:08:01 IST" name="setUp" finished-at="2026-09-16T15:08:01 IST" duration-ms="1" status="PASS">
+          <reporter-output>
+          </reporter-output>
+        </test-method> <!-- setUp -->
+        <test-method signature="orderSaveFailureRefundsTheExactDebitedAmountThenRestoresInventory()[pri:0, instance:com.oracle.orderapp.services.CheckoutServiceImplTest@1922e6d]" started-at="2026-09-16T15:08:01 IST" name="orderSaveFailureRefundsTheExactDebitedAmountThenRestoresInventory" finished-at="2026-09-16T15:08:01 IST" duration-ms="1" status="PASS">
+          <reporter-output>
+          </reporter-output>
+        </test-method> <!-- orderSaveFailureRefundsTheExactDebitedAmountThenRestoresInventory -->
+        <test-method is-config="true" signature="setUp()[pri:0, instance:com.oracle.orderapp.services.CheckoutServiceImplTest@1922e6d]" started-at="2026-09-16T15:08:01 IST" name="setUp" finished-at="2026-09-16T15:08:01 IST" duration-ms="1" status="PASS">
+          <reporter-output>
+          </reporter-output>
+        </test-method> <!-- setUp -->
+        <test-method signature="resumesAnOrderSavedAttemptWithoutRepeatingInventoryOrFunds()[pri:0, instance:com.oracle.orderapp.services.CheckoutServiceImplTest@1922e6d]" started-at="2026-09-16T15:08:01 IST" name="resumesAnOrderSavedAttemptWithoutRepeatingInventoryOrFunds" finished-at="2026-09-16T15:08:01 IST" duration-ms="2" status="PASS">
+          <reporter-output>
+          </reporter-output>
+        </test-method> <!-- resumesAnOrderSavedAttemptWithoutRepeatingInventoryOrFunds -->
+        <test-method is-config="true" signature="setUp()[pri:0, instance:com.oracle.orderapp.services.CheckoutServiceImplTest@1922e6d]" started-at="2026-09-16T15:08:01 IST" name="setUp" finished-at="2026-09-16T15:08:01 IST" duration-ms="2" status="PASS">
+          <reporter-output>
+          </reporter-output>
+        </test-method> <!-- setUp -->
+        <test-method signature="retryReconcilesCartCheckedOutBeforeItsStepWasPersisted()[pri:0, instance:com.oracle.orderapp.services.CheckoutServiceImplTest@1922e6d]" started-at="2026-09-16T15:08:01 IST" name="retryReconcilesCartCheckedOutBeforeItsStepWasPersisted" finished-at="2026-09-16T15:08:01 IST" duration-ms="2" status="PASS">
+          <reporter-output>
+          </reporter-output>
+        </test-method> <!-- retryReconcilesCartCheckedOutBeforeItsStepWasPersisted -->
+      </class> <!-- com.oracle.orderapp.services.CheckoutServiceImplTest -->
+      <class name="com.oracle.orderapp.services.OrderQueryServiceImplTest">
+        <test-method signature="rejectsAnInvertedReportRange()[pri:0, instance:com.oracle.orderapp.services.OrderQueryServiceImplTest@6bab2585]" started-at="2026-09-16T15:08:01 IST" name="rejectsAnInvertedReportRange" finished-at="2026-09-16T15:08:01 IST" duration-ms="1" status="PASS">
+          <reporter-output>
+          </reporter-output>
+        </test-method> <!-- rejectsAnInvertedReportRange -->
+        <test-method is-config="true" signature="setUp()[pri:0, instance:com.oracle.orderapp.services.OrderQueryServiceImplTest@6bab2585]" started-at="2026-09-16T15:08:01 IST" name="setUp" finished-at="2026-09-16T15:08:01 IST" duration-ms="0" status="PASS">
+          <reporter-output>
+          </reporter-output>
+        </test-method> <!-- setUp -->
+        <test-method signature="verifiedEmployeeReceivesRoundedReportAggregation()[pri:0, instance:com.oracle.orderapp.services.OrderQueryServiceImplTest@6bab2585]" started-at="2026-09-16T15:08:01 IST" name="verifiedEmployeeReceivesRoundedReportAggregation" finished-at="2026-09-16T15:08:01 IST" duration-ms="2" status="PASS">
+          <reporter-output>
+          </reporter-output>
+        </test-method> <!-- verifiedEmployeeReceivesRoundedReportAggregation -->
+        <test-method is-config="true" signature="setUp()[pri:0, instance:com.oracle.orderapp.services.OrderQueryServiceImplTest@6bab2585]" started-at="2026-09-16T15:08:01 IST" name="setUp" finished-at="2026-09-16T15:08:01 IST" duration-ms="0" status="PASS">
+          <reporter-output>
+          </reporter-output>
+        </test-method> <!-- setUp -->
+      </class> <!-- com.oracle.orderapp.services.OrderQueryServiceImplTest -->
+      <class name="com.oracle.orderapp.integration.RestClientsHttpContractTest">
+        <test-method signature="everyAdapterUsesTheDocumentedServicePathAndJsonContract()[pri:0, instance:com.oracle.orderapp.integration.RestClientsHttpContractTest@3e8f7922]" started-at="2026-09-16T15:07:59 IST" name="everyAdapterUsesTheDocumentedServicePathAndJsonContract" finished-at="2026-09-16T15:07:59 IST" duration-ms="46" status="PASS">
+          <reporter-output>
+          </reporter-output>
+        </test-method> <!-- everyAdapterUsesTheDocumentedServicePathAndJsonContract -->
+      </class> <!-- com.oracle.orderapp.integration.RestClientsHttpContractTest -->
+      <class name="com.oracle.orderapp.OrderAppApplicationTests">
+        <test-method is-config="true" signature="springTestContextPrepareTestInstance()[pri:0, instance:com.oracle.orderapp.OrderAppApplicationTests@50eca7c6]" started-at="2026-09-16T15:07:59 IST" name="springTestContextPrepareTestInstance" finished-at="2026-09-16T15:08:00 IST" depends-on-methods="org.springframework.test.context.testng.AbstractTestNGSpringContextTests.springTestContextBeforeTestClass" duration-ms="638" status="PASS">
+          <reporter-output>
+          </reporter-output>
+        </test-method> <!-- springTestContextPrepareTestInstance -->
+        <test-method is-config="true" signature="springTestContextBeforeTestClass()[pri:0, instance:com.oracle.orderapp.OrderAppApplicationTests@50eca7c6]" started-at="2026-09-16T15:07:59 IST" name="springTestContextBeforeTestClass" finished-at="2026-09-16T15:07:59 IST" duration-ms="0" status="PASS">
+          <reporter-output>
+          </reporter-output>
+        </test-method> <!-- springTestContextBeforeTestClass -->
+        <test-method is-config="true" signature="springTestContextBeforeTestMethod(java.lang.reflect.Method)[pri:0, instance:com.oracle.orderapp.OrderAppApplicationTests@50eca7c6]" started-at="2026-09-16T15:08:00 IST" name="springTestContextBeforeTestMethod" finished-at="2026-09-16T15:08:00 IST" duration-ms="1" status="PASS">
+          <params>
+            <param index="0">
+              <value>
+                <![CDATA[void com.oracle.orderapp.OrderAppApplicationTests.contextLoadsWithoutDownstreamServices()]]>
+              </value>
+            </param>
+          </params>
+          <reporter-output>
+          </reporter-output>
+        </test-method> <!-- springTestContextBeforeTestMethod -->
+        <test-method signature="contextLoadsWithoutDownstreamServices()[pri:0, instance:com.oracle.orderapp.OrderAppApplicationTests@50eca7c6]" started-at="2026-09-16T15:08:00 IST" name="contextLoadsWithoutDownstreamServices" finished-at="2026-09-16T15:08:00 IST" duration-ms="0" status="PASS">
+          <reporter-output>
+          </reporter-output>
+        </test-method> <!-- contextLoadsWithoutDownstreamServices -->
+        <test-method is-config="true" signature="springTestContextAfterTestMethod(java.lang.reflect.Method)[pri:0, instance:com.oracle.orderapp.OrderAppApplicationTests@50eca7c6]" started-at="2026-09-16T15:08:00 IST" name="springTestContextAfterTestMethod" finished-at="2026-09-16T15:08:00 IST" duration-ms="2" status="PASS">
+          <params>
+            <param index="0">
+              <value>
+                <![CDATA[void com.oracle.orderapp.OrderAppApplicationTests.contextLoadsWithoutDownstreamServices()]]>
+              </value>
+            </param>
+          </params>
+          <reporter-output>
+          </reporter-output>
+        </test-method> <!-- springTestContextAfterTestMethod -->
+        <test-method is-config="true" signature="springTestContextAfterTestClass()[pri:0, instance:com.oracle.orderapp.OrderAppApplicationTests@50eca7c6]" started-at="2026-09-16T15:08:00 IST" name="springTestContextAfterTestClass" finished-at="2026-09-16T15:08:00 IST" duration-ms="0" status="PASS">
+          <reporter-output>
+          </reporter-output>
+        </test-method> <!-- springTestContextAfterTestClass -->
+      </class> <!-- com.oracle.orderapp.OrderAppApplicationTests -->
+      <class name="com.oracle.orderapp.repositories.OrderRepositoryTest">
+        <test-method is-config="true" signature="springTestContextBeforeTestClass()[pri:0, instance:com.oracle.orderapp.repositories.OrderRepositoryTest@4a8ab068]" started-at="2026-09-16T15:08:00 IST" name="springTestContextBeforeTestClass" finished-at="2026-09-16T15:08:00 IST" duration-ms="1" status="PASS">
+          <reporter-output>
+          </reporter-output>
+        </test-method> <!-- springTestContextBeforeTestClass -->
+        <test-method is-config="true" signature="springTestContextPrepareTestInstance()[pri:0, instance:com.oracle.orderapp.repositories.OrderRepositoryTest@4a8ab068]" started-at="2026-09-16T15:08:00 IST" name="springTestContextPrepareTestInstance" finished-at="2026-09-16T15:08:00 IST" depends-on-methods="org.springframework.test.context.testng.AbstractTestNGSpringContextTests.springTestContextBeforeTestClass" duration-ms="264" status="PASS">
+          <reporter-output>
+          </reporter-output>
+        </test-method> <!-- springTestContextPrepareTestInstance -->
+        <test-method is-config="true" signature="springTestContextBeforeTestMethod(java.lang.reflect.Method)[pri:0, instance:com.oracle.orderapp.repositories.OrderRepositoryTest@4a8ab068]" started-at="2026-09-16T15:08:00 IST" name="springTestContextBeforeTestMethod" finished-at="2026-09-16T15:08:00 IST" duration-ms="4" status="PASS">
+          <params>
+            <param index="0">
+              <value>
+                <![CDATA[void com.oracle.orderapp.repositories.OrderRepositoryTest.findsUserHistoryNewestFirst()]]>
+              </value>
+            </param>
+          </params>
+          <reporter-output>
+          </reporter-output>
+        </test-method> <!-- springTestContextBeforeTestMethod -->
+        <test-method signature="findsUserHistoryNewestFirst()[pri:0, instance:com.oracle.orderapp.repositories.OrderRepositoryTest@4a8ab068]" started-at="2026-09-16T15:08:00 IST" name="findsUserHistoryNewestFirst" finished-at="2026-09-16T15:08:00 IST" duration-ms="20" status="PASS">
+          <reporter-output>
+          </reporter-output>
+        </test-method> <!-- findsUserHistoryNewestFirst -->
+        <test-method is-config="true" signature="springTestContextAfterTestMethod(java.lang.reflect.Method)[pri:0, instance:com.oracle.orderapp.repositories.OrderRepositoryTest@4a8ab068]" started-at="2026-09-16T15:08:00 IST" name="springTestContextAfterTestMethod" finished-at="2026-09-16T15:08:00 IST" duration-ms="6" status="PASS">
+          <params>
+            <param index="0">
+              <value>
+                <![CDATA[void com.oracle.orderapp.repositories.OrderRepositoryTest.findsUserHistoryNewestFirst()]]>
+              </value>
+            </param>
+          </params>
+          <reporter-output>
+          </reporter-output>
+        </test-method> <!-- springTestContextAfterTestMethod -->
+        <test-method is-config="true" signature="springTestContextAfterTestClass()[pri:0, instance:com.oracle.orderapp.repositories.OrderRepositoryTest@4a8ab068]" started-at="2026-09-16T15:08:00 IST" name="springTestContextAfterTestClass" finished-at="2026-09-16T15:08:00 IST" duration-ms="1" status="PASS">
+          <reporter-output>
+          </reporter-output>
+        </test-method> <!-- springTestContextAfterTestClass -->
+      </class> <!-- com.oracle.orderapp.repositories.OrderRepositoryTest -->
+      <class name="com.oracle.orderapp.entities.OrderItemTest">
+        <test-method signature="calculatesRoundedDoubleSubtotal()[pri:0, instance:com.oracle.orderapp.entities.OrderItemTest@10e31a9a]" started-at="2026-09-16T15:07:55 IST" name="calculatesRoundedDoubleSubtotal" finished-at="2026-09-16T15:07:55 IST" duration-ms="0" status="PASS">
+          <reporter-output>
+          </reporter-output>
+        </test-method> <!-- calculatesRoundedDoubleSubtotal -->
+      </class> <!-- com.oracle.orderapp.entities.OrderItemTest -->
+    </test> <!-- Surefire test -->
+  </suite> <!-- Surefire suite -->
+</testng-results>
