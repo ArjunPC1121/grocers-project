@@ -23,4 +23,5 @@ public interface CartService {
     CartResponse increaseItemQuantity(Integer cartId, Integer productId);
 
 CartResponse decreaseItemQuantity(Integer cartId, Integer productId);
+    public void removeProductFromAllActiveCarts(Integer productId);
 }

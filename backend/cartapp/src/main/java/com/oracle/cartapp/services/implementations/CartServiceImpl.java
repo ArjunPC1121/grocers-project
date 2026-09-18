@@ -218,4 +218,13 @@ public CartResponse decreaseItemQuantity(Integer cartId, Integer productId) {
 
     return toResponse(cart);
 }
+
+    @Override
+    @Transactional
+    public void removeProductFromAllActiveCarts(Integer productId) {
+        cartItemRepository.deleteProductFromActiveCarts(
+                productId,
+                CartStatus.ACTIVE
+        );
+    }
 }

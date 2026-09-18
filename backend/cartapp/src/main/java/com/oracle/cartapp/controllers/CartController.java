@@ -97,4 +97,11 @@ public ResponseEntity<CartResponse> decrease(
     return ResponseEntity.ok(
             cartService.decreaseItemQuantity(cartId, productId));
 }
+    @DeleteMapping("/products/{productId}")
+    public ResponseEntity<Void> removeProductFromAllActiveCarts(
+            @PathVariable Integer productId) {
+
+        cartService.removeProductFromAllActiveCarts(productId);
+        return ResponseEntity.noContent().build();
+    }
 }
