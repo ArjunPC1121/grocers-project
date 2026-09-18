@@ -36,5 +36,4 @@ public class RestClientConfiguration {
     @Bean @Qualifier("employeeRestClient") RestClient employee(DownstreamServiceProperties p){return client(p.services().employee().baseUrl(),p);}
     @Bean @Qualifier("productRestClient") RestClient products(DownstreamServiceProperties p){return client(p.services().products().baseUrl(),p);}
     @Bean @Qualifier("cartRestClient") RestClient cart(DownstreamServiceProperties p){return client(p.services().cart().baseUrl(),p);}
-    @Bean @Qualifier("fundsRestClient") RestClient funds(DownstreamServiceProperties p){return client(p.services().funds().baseUrl(),p);}
 }

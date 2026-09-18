@@ -14,9 +14,9 @@ import org.springframework.dao.DataIntegrityViolationException;
 @Service
 public class OrderManagementServiceImpl implements OrderManagementService {
     private final EmployeeClient employeeClient; private final ProductClient productClient;
-    private final FundsClient fundsClient; private final OrderRepository orders;
+    private final UserFundsClient fundsClient; private final OrderRepository orders;
     private final CancellationAttemptRepository cancellations; private final OrderMapper mapper;
-    public OrderManagementServiceImpl(EmployeeClient employeeClient, ProductClient productClient, FundsClient fundsClient,
+    public OrderManagementServiceImpl(EmployeeClient employeeClient, ProductClient productClient, UserFundsClient fundsClient,
             OrderRepository orders, CancellationAttemptRepository cancellations, OrderMapper mapper) {
         this.employeeClient=employeeClient; this.productClient=productClient; this.fundsClient=fundsClient;
         this.orders=orders; this.cancellations=cancellations; this.mapper=mapper;
@@ -78,15 +78,12 @@ public class OrderManagementServiceImpl implements OrderManagementService {
                 attempt.advanceTo(CancellationStep.INVENTORY_RESTORED); attempt = cancellations.save(attempt);
             }
             if (attempt.getStep().ordinal() < CancellationStep.FUNDS_REFUNDED.ordinal()) {
-                FundMutationResponse refunded = fundsClient.refund(new FundMutationRequest(
-                        orderNumber + ":cancel-refund", orderNumber, order.getUserId(), order.getTotalAmount()));
-                if (refunded == null || !orderNumber.equals(refunded.orderNumber())
-                        || !order.getUserId().equals(refunded.userId()) || refunded.amount() == null
-                        || !Double.isFinite(refunded.amount()) || refunded.remainingBalance() == null
-                        || !Double.isFinite(refunded.remainingBalance())
-                        || Math.abs(order.getTotalAmount() - refunded.amount()) > 0.001d
-                        || !"REFUND".equals(refunded.type()))
-                    throw new DownstreamContractException("Funds returned a contradictory refund response");
+                UserFundsMutationResponse refunded = fundsClient.refund(
+                        new UserFundsMutationRequest(order.getUserId(), order.getTotalAmount()));
+                if (refunded == null || !order.getUserId().equals(refunded.userId()) || refunded.amount() == null
+                        || !Double.isFinite(refunded.amount())
+                        || Math.abs(order.getTotalAmount() - refunded.amount()) > 0.001d)
+                    throw new DownstreamContractException("User funds returned a contradictory refund response");
                 attempt.advanceTo(CancellationStep.FUNDS_REFUNDED); attempt = cancellations.save(attempt);
             }
             if (attempt.getStep().ordinal() < CancellationStep.ORDER_CANCELLED.ordinal()) {

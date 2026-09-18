@@ -27,7 +27,7 @@ public class CheckoutServiceImpl implements CheckoutService {
     private final UserClient userClient;
     private final CartClient cartClient;
     private final ProductClient productClient;
-    private final FundsClient fundsClient;
+    private final UserFundsClient fundsClient;
     private final OrderRepository orderRepository;
     private final CheckoutAttemptRepository attemptRepository;
     private final OrderMapper mapper;
@@ -35,13 +35,13 @@ public class CheckoutServiceImpl implements CheckoutService {
 
     @Autowired
     public CheckoutServiceImpl(UserClient userClient, CartClient cartClient, ProductClient productClient,
-            FundsClient fundsClient, OrderRepository orderRepository, CheckoutAttemptRepository attemptRepository,
+            UserFundsClient fundsClient, OrderRepository orderRepository, CheckoutAttemptRepository attemptRepository,
             OrderMapper mapper) {
         this(userClient, cartClient, productClient, fundsClient, orderRepository, attemptRepository, mapper, Clock.systemUTC());
     }
 
     CheckoutServiceImpl(UserClient userClient, CartClient cartClient, ProductClient productClient,
-            FundsClient fundsClient, OrderRepository orderRepository, CheckoutAttemptRepository attemptRepository,
+            UserFundsClient fundsClient, OrderRepository orderRepository, CheckoutAttemptRepository attemptRepository,
             OrderMapper mapper, Clock clock) {
         this.userClient = userClient; this.cartClient = cartClient; this.productClient = productClient;
         this.fundsClient = fundsClient; this.orderRepository = orderRepository;
@@ -108,9 +108,8 @@ public class CheckoutServiceImpl implements CheckoutService {
             try { attempt = attemptRepository.save(attempt); }
             catch (RuntimeException markerFailure) { attempt.rejectFundsMutation(); throw markerFailure; }
             try {
-                FundMutationResponse debit = fundsClient.debit(new FundMutationRequest(
-                        orderNumber + ":funds-debit", orderNumber, userId, total));
-                validateDebit(orderNumber, userId, total, debit);
+                UserFundsMutationResponse debit = fundsClient.debit(new UserFundsMutationRequest(userId, total));
+                validateDebit(userId, total, debit);
             } catch (DownstreamConflictException rejected) {
                 attempt.rejectFundsMutation();
                 throw rejected;
@@ -261,12 +260,10 @@ public class CheckoutServiceImpl implements CheckoutService {
         }
     }
 
-    private void validateDebit(String orderNumber, Integer userId, double total, FundMutationResponse debit) {
-        if (debit == null || !orderNumber.equals(debit.orderNumber()) || !userId.equals(debit.userId())
-                || debit.amount() == null || !Double.isFinite(debit.amount())
-                || debit.remainingBalance() == null || !Double.isFinite(debit.remainingBalance())
-                || Math.abs(total - debit.amount()) > 0.001d || !"DEBIT".equals(debit.type())) {
-            throw new DownstreamContractException("Funds returned a contradictory debit response");
+    private void validateDebit(Integer userId, double total, UserFundsMutationResponse debit) {
+        if (debit == null || !userId.equals(debit.userId()) || debit.amount() == null
+                || !Double.isFinite(debit.amount()) || Math.abs(total - debit.amount()) > 0.001d) {
+            throw new DownstreamContractException("User funds returned a contradictory debit response");
         }
     }
 
@@ -293,14 +290,12 @@ public class CheckoutServiceImpl implements CheckoutService {
         }
         if (attempt.isFundsMutationAttempted()) {
             try {
-                FundMutationResponse refunded = fundsClient.refund(new FundMutationRequest(
-                        attempt.getOrderNumber() + ":funds-refund", attempt.getOrderNumber(), userId, attempt.getDebitedAmount()));
-                if (refunded == null || !attempt.getOrderNumber().equals(refunded.orderNumber())
-                        || !userId.equals(refunded.userId()) || refunded.amount() == null
-                        || !Double.isFinite(refunded.amount()) || refunded.remainingBalance() == null
-                        || !Double.isFinite(refunded.remainingBalance())
-                        || Math.abs(attempt.getDebitedAmount() - refunded.amount()) > 0.001d
-                        || !"REFUND".equals(refunded.type())) throw new DownstreamContractException("Funds refund was not acknowledged");
+                UserFundsMutationResponse refunded = fundsClient.refund(
+                        new UserFundsMutationRequest(userId, attempt.getDebitedAmount()));
+                if (refunded == null || !userId.equals(refunded.userId()) || refunded.amount() == null
+                        || !Double.isFinite(refunded.amount())
+                        || Math.abs(attempt.getDebitedAmount() - refunded.amount()) > 0.001d)
+                    throw new DownstreamContractException("User funds refund was not acknowledged");
             }
             catch (RuntimeException ignored) { complete = false; }
         }
