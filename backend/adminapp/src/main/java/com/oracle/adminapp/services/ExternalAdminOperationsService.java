@@ -58,7 +58,7 @@ public class ExternalAdminOperationsService {
     public List<Map<String, Object>> products() { return list(products); }
     public List<Map<String, Object>> employees() { return list(employees); }
     public List<Map<String, Object>> users() { return list(users); }
-    public List<Map<String, Object>> requests() { return list(requests); }
+    public List<Map<String, Object>> requests() { return listRequests(); }
     public List<Map<String, Object>> orders() { return list(orders); }
 
     public Map<String, Object> createProduct(ProductCommand command) { return post(products, command); }
@@ -97,8 +97,8 @@ public class ExternalAdminOperationsService {
     }
     public void deleteUser(Integer id) { users.delete().uri("/{id}", id).retrieve().toBodilessEntity(); }
 
-    public Map<String, Object> approveRequest(Integer id) {
-        EmployeeProductRequest request = requests.get().uri("/{id}", id).retrieve()
+    public Map<String, Object> approveRequest(Integer id, Integer adminId) {
+        EmployeeProductRequest request = requests.get().uri("/{id}", id).headers(headers -> adminHeaders(headers, adminId)).retrieve()
                 .onStatus(HttpStatusCode::is4xxClientError, (ignored, response) -> {
                     throw new ResourceNotFoundException("Employee request was not found");
                 })
@@ -108,13 +108,14 @@ public class ExternalAdminOperationsService {
         }
 
         executeProductRequest(request);
-        requests.patch().uri("/{id}/status", id).body(Map.of("status", "APPROVED"))
+        requests.patch().uri("/{id}/status", id).headers(headers -> adminHeaders(headers, adminId)).body(Map.of("status", "APPROVED"))
                 .retrieve().toBodilessEntity();
         return Map.of("requestId", id, "status", "APPROVED");
     }
 
-    public Map<String, Object> rejectRequest(Integer id) {
-        requests.patch().uri("/{id}/status", id).body(Map.of("status", "REJECTED"))
+    public Map<String, Object> rejectRequest(Integer id, Integer adminId, String rejectionReason) {
+        requests.patch().uri("/{id}/status", id).headers(headers -> adminHeaders(headers, adminId))
+                .body(Map.of("status", "REJECTED", "rejectionReason", rejectionReason))
                 .retrieve().toBodilessEntity();
         return Map.of("requestId", id, "status", "REJECTED");
     }
@@ -166,6 +167,22 @@ public class ExternalAdminOperationsService {
             case "DELETE" -> deleteProduct(requiredProductId(request));
             default -> throw new IllegalArgumentException("Unsupported request action: " + request.action());
         }
+    }
+
+    @SuppressWarnings("unchecked")
+    private List<Map<String, Object>> listRequests() {
+        List<?> body = requests.get().headers(headers -> adminHeaders(headers, 0)).retrieve().body(List.class);
+        if (body == null) return List.of();
+        List<Map<String, Object>> rows = new ArrayList<>();
+        for (Object item : body) {
+            if (item instanceof Map<?, ?> map) rows.add((Map<String, Object>) map);
+        }
+        return rows;
+    }
+
+    private void adminHeaders(org.springframework.http.HttpHeaders headers, Integer adminId) {
+        headers.set("X-Authenticated-Role", "ADMIN");
+        headers.set("X-Authenticated-User-Id", String.valueOf(adminId));
     }
 
     private Integer requiredProductId(EmployeeProductRequest request) {

@@ -135,10 +135,19 @@ public class AdminController {
     public List<Map<String, Object>> requests() { return operations.requests(); }
 
     @PostMapping("/requests/{id}/approve")
-    public Map<String, Object> approveRequest(@PathVariable Integer id) { return operations.approveRequest(id); }
+    public Map<String, Object> approveRequest(@PathVariable Integer id,
+                                               @RequestHeader("X-Authenticated-User-Id") Integer adminId) {
+        return operations.approveRequest(id, adminId);
+    }
 
     @PostMapping("/requests/{id}/reject")
-    public Map<String, Object> rejectRequest(@PathVariable Integer id) { return operations.rejectRequest(id); }
+    public Map<String, Object> rejectRequest(@PathVariable Integer id,
+                                              @RequestHeader("X-Authenticated-User-Id") Integer adminId,
+                                              @RequestBody Map<String, String> body) {
+        String reason = body.get("rejectionReason");
+        if (reason == null || reason.isBlank()) throw new IllegalArgumentException("A rejection reason is required");
+        return operations.rejectRequest(id, adminId, reason);
+    }
 
     @GetMapping("/reports")
     public ReportResponse report(

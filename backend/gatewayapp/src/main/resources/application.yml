@@ -37,7 +37,7 @@ spring:
             - id: requestapp
               uri: http://localhost:8086
               predicates:
-                - Path=/requests/**
+                - Path=/grocers/api/requests/**
             - id: ticketapp
               uri: http://localhost:8087
               predicates:
