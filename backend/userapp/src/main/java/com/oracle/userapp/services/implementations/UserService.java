@@ -1,8 +1,6 @@
 package com.oracle.userapp.services.implementations;
 
-import com.oracle.userapp.dto.UpdateUserRequest;
-import com.oracle.userapp.dto.UserRequest;
-import com.oracle.userapp.dto.UserResponse;
+import com.oracle.userapp.dto.*;
 import com.oracle.userapp.entities.LockedReason;
 import com.oracle.userapp.entities.User;
 import com.oracle.userapp.repositories.UserRepository;
@@ -19,12 +17,15 @@ import java.util.Collection;
 import java.util.Map;
 
 @Service
-public class UserService implements UserServiceManager<UserRequest,UserResponse,UpdateUserRequest,Integer> {
+public class UserService implements UserServiceManager<UserRequest,UserResponse,UpdateUserRequest, TicketResponse,Integer> {
 
     private static final String CREATE_BANK_ACCOUNT_URL =
             "http://localhost:8089/grocers/api/banks/add/{userId}";
     private static final String DEDUCT_BANK_FUNDS_URL =
             "http://localhost:8089/grocers/api/banks/{userId}/deduct";
+    private static final String RAISE_TICKET_URL =
+            "http://localhost:8087/grocers/api/tickets";
+
 
     private final UserRepository repository;
     private final PasswordEncoder passwordEncoder;
@@ -142,6 +143,40 @@ public class UserService implements UserServiceManager<UserRequest,UserResponse,
         repository.save(user);
         return user.getFunds();
     }
+
+    @Override
+    public TicketResponse raiseTicket(Integer id)
+    {
+        User user = repository.findById(id).orElseThrow(()-> new RuntimeException("User not found"));
+
+        if (!user.isAccountLocked() || user.getLockedReason() == null) {
+            throw new RuntimeException("User account is not locked");
+        }
+
+        TicketRequest ticketRequest = new TicketRequest(user.getId(), user.getLockedReason());
+
+        HttpHeaders headers = new HttpHeaders();
+        headers.setContentType(MediaType.APPLICATION_JSON);
+
+        HttpEntity<TicketRequest> request = new HttpEntity<>(
+                ticketRequest, headers);
+
+        TicketServiceResponse ticketServiceResponse = restTemplate.postForObject(
+                RAISE_TICKET_URL,
+                request,
+                TicketServiceResponse.class
+        );
+
+        if(ticketServiceResponse==null || ticketServiceResponse.ticketId()<=0)
+        {
+            throw new RuntimeException("Ticket couldn't be generated");
+        }
+
+        int ticketId = ticketServiceResponse.ticketId();
+        return new TicketResponse(ticketId,id);
+
+    }
+
 
     private static void mapRequestToEntity(User user, UserRequest data)
     {

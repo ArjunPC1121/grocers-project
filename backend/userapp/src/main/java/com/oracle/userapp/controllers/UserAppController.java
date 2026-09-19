@@ -1,9 +1,6 @@
 package com.oracle.userapp.controllers;
 
-import com.oracle.userapp.dto.AddFundsRequest;
-import com.oracle.userapp.dto.UserRequest;
-import com.oracle.userapp.dto.UserResponse;
-import com.oracle.userapp.dto.UpdateUserRequest;
+import com.oracle.userapp.dto.*;
 import com.oracle.userapp.services.implementations.UserService;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
@@ -74,6 +71,12 @@ public class UserAppController {
             @PathVariable Integer id,
             @RequestBody AddFundsRequest request) {
         return ResponseEntity.ok(userService.deductFunds(id, request.amount()));
+    }
+
+    @PostMapping("/{id}/tickets")
+    public ResponseEntity<TicketResponse> raiseTicket(@PathVariable Integer id) {
+        return ResponseEntity.status(HttpStatus.CREATED)
+                .body(userService.raiseTicket(id));
     }
 
 

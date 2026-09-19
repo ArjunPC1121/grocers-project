@@ -2,7 +2,7 @@ package com.oracle.userapp.services.abstractions;
 
 import java.util.Collection;
 
-public  interface UserServiceManager<TRequest,TResponse,TUpdateRequest,Id> {
+public  interface UserServiceManager<TRequest,TResponse,TUpdateRequest,TTicketResponse, Id> {
 
     TResponse add(TRequest data);
     Collection<TResponse> getAll();
@@ -15,4 +15,6 @@ public  interface UserServiceManager<TRequest,TResponse,TUpdateRequest,Id> {
 
     double addFunds(Id id, double amount)throws RuntimeException;
     double deductFunds(Id id, double amount)throws RuntimeException;
+
+    TTicketResponse raiseTicket(Id id);
 }
