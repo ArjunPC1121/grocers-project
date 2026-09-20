@@ -79,5 +79,12 @@ public class UserAppController {
                 .body(userService.raiseTicket(id));
     }
 
+    /** Called by ticketapp after an employee resolves a lockout ticket. */
+    @PostMapping("/{id}/unlock")
+    public ResponseEntity<Void> unlock(@PathVariable Integer id) {
+        userService.unlockAccount(id);
+        return ResponseEntity.noContent().build();
+    }
+
 
 }

@@ -5,26 +5,32 @@ import java.util.Optional;
 
 import org.springframework.stereotype.Service;
 
-import com.oracle.dto.TicketRequest;
-import com.oracle.entity.Ticket;
+import com.oracle.entity.ticket;
+import com.oracle.entity.ticketstatus;
 import com.oracle.repository.TicketRepository;
 
 @Service
 public class TicketService implements TicketServiceManager {
     private final TicketRepository ticketRepository;
     public TicketService(TicketRepository ticketRepository) { this.ticketRepository = ticketRepository; }
-    @Override public Ticket createTicket(Ticket ticket) {
+    @Override public ticket createTicket(ticket ticket) {
         
         return ticketRepository.save(ticket); 
     }
-    @Override public List<Ticket> getAllTickets() { return ticketRepository.findAll(); }
-    @Override public Optional<Ticket> getTicketById(Integer ticketId) { return ticketRepository.findById(ticketId); }
-    @Override public Optional<Ticket> updateTicket(Integer ticketId, Ticket ticket) {
+    @Override public List<ticket> getAllTickets() { return ticketRepository.findAll(); }
+    @Override public Optional<ticket> getTicketById(Integer ticketId) { return ticketRepository.findById(ticketId); }
+    @Override public List<ticket> getOpenTickets() { return ticketRepository.findByStatus(ticketstatus.OPEN); }
+    @Override public Optional<ticket> resolveTicket(Integer ticketId, Integer employeeId) {
         return ticketRepository.findById(ticketId).map(existing -> {
-            existing.setUserId(ticket.getUserId());
-            existing.setEmployeeId(ticket.getEmployeeId());
-            existing.setStatus(ticket.getStatus());
-           
+            if (existing.getStatus() != ticketstatus.OPEN) throw new IllegalStateException("Only open tickets can be resolved");
+            existing.resolve(employeeId);
+            return ticketRepository.save(existing);
+        });
+    }
+    @Override public Optional<ticket> rejectTicket(Integer ticketId, Integer employeeId) {
+        return ticketRepository.findById(ticketId).map(existing -> {
+            if (existing.getStatus() != ticketstatus.OPEN) throw new IllegalStateException("Only open tickets can be rejected");
+            existing.reject(employeeId);
             return ticketRepository.save(existing);
         });
     }

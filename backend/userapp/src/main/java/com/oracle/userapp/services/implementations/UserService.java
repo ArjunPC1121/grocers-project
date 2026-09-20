@@ -177,6 +177,16 @@ public class UserService implements UserServiceManager<UserRequest,UserResponse,
 
     }
 
+    @Override
+    @Transactional
+    public void unlockAccount(Integer id) {
+        User user = repository.findById(id).orElseThrow(() -> new RuntimeException("User not found"));
+        user.setAccountLocked(false);
+        user.setFailedLoginAttempts(0);
+        user.setLockedReason(null);
+        repository.save(user);
+    }
+
 
     private static void mapRequestToEntity(User user, UserRequest data)
     {
