@@ -177,6 +177,14 @@ public class UserService implements UserServiceManager<UserRequest,UserResponse,
 
     }
 
+    public Double refund(Integer id, double amount)
+    {
+        User user = repository.findById(id).orElseThrow(()-> new RuntimeException("User not found"));
+        user.setFunds(user.getFunds()+amount);
+        repository.save(user);
+        return user.getFunds();
+    }
+
 
     private static void mapRequestToEntity(User user, UserRequest data)
     {

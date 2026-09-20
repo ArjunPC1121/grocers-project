@@ -15,6 +15,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import java.util.Collection;
+import java.util.Map;
 
 @RestController
 @RequestMapping("/grocers/api/users")
@@ -66,7 +67,7 @@ public class UserAppController {
         return ResponseEntity.ok(userService.addFunds(id, request.amount()));
     }
 
-    @PostMapping("/{id}/deductFunds")
+    @PostMapping("/{id}/debit")
     public ResponseEntity<Double> deductFunds(
             @PathVariable Integer id,
             @RequestBody AddFundsRequest request) {
@@ -77,6 +78,12 @@ public class UserAppController {
     public ResponseEntity<TicketResponse> raiseTicket(@PathVariable Integer id) {
         return ResponseEntity.status(HttpStatus.CREATED)
                 .body(userService.raiseTicket(id));
+    }
+
+    @PostMapping("/{id}/refund")
+    public ResponseEntity<String> refund(@PathVariable Integer id, @RequestBody Map<String, Double> request)
+    {
+        return ResponseEntity.ok("New fund balance : "+userService.refund(id, request.get("amount")));
     }
 
 

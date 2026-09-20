@@ -17,4 +17,6 @@ public  interface UserServiceManager<TRequest,TResponse,TUpdateRequest,TTicketRe
     double deductFunds(Id id, double amount)throws RuntimeException;
 
     TTicketResponse raiseTicket(Id id);
+
+    Double refund(Id id, double amount);
 }
