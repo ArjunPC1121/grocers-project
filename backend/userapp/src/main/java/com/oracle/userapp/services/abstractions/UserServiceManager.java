@@ -2,12 +2,19 @@ package com.oracle.userapp.services.abstractions;
 
 import java.util.Collection;
 
-public  interface UserServiceManager<T,Id> {
+public  interface UserServiceManager<TRequest,TResponse,TUpdateRequest,TTicketResponse, Id> {
 
-    T add(T data);
-    Collection<T> getAll();
-    T get(Id id);
-    T update(Id id, T data);
-    T delete(Id id);
-    T lock(Id id);
+    TResponse add(TRequest data);
+    Collection<TResponse> getAll();
+    TResponse get(Id id) throws RuntimeException;
+
+    TResponse update(Integer id, TUpdateRequest data)throws RuntimeException;
+
+    TResponse delete(Id id)throws RuntimeException;
+    int incFailedAttempts(Id id) throws RuntimeException;
+
+    double addFunds(Id id, double amount)throws RuntimeException;
+    double deductFunds(Id id, double amount)throws RuntimeException;
+
+    TTicketResponse raiseTicket(Id id);
 }
