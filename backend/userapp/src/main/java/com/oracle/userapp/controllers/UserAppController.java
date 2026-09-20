@@ -1,6 +1,13 @@
 package com.oracle.userapp.controllers;
 
+<<<<<<< HEAD
 import com.oracle.userapp.dto.*;
+=======
+import com.oracle.userapp.dto.AddFundsRequest;
+import com.oracle.userapp.dto.UserRequest;
+import com.oracle.userapp.dto.UserResponse;
+import com.oracle.userapp.dto.UpdateUserRequest;
+>>>>>>> origin/feat/order-service
 import com.oracle.userapp.services.implementations.UserService;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
