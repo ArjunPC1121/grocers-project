@@ -81,9 +81,9 @@ public class UserAppController {
     }
 
     @PostMapping("/{id}/refund")
-    public ResponseEntity<String> refund(@PathVariable Integer id, @RequestBody Map<String, Double> request)
+    public ResponseEntity<String> refund(@PathVariable Integer id, @RequestBody OrderCancelRequest request)
     {
-        return ResponseEntity.ok("New fund balance : "+userService.refund(id, request.get("amount")));
+        return ResponseEntity.ok("Order "+request.reference()+" cancelled :(\nNew fund balance : "+userService.refund(id, request.amount()));
     }
 
     @PostMapping("/{id}/unlock")
