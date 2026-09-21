@@ -24,5 +24,5 @@ public class BankAccount {
     private Double balance;
 
     @Column(name = "user_id", nullable = false)
-    private int  userId; // FK to the user record
+    private int userId; // FK to the user record
 }
