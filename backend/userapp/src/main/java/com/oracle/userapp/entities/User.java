@@ -8,6 +8,7 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 import java.sql.Date;
+import java.time.LocalDateTime;
 
 @Data
 @NoArgsConstructor
@@ -63,5 +64,16 @@ public class User {
 
     @Column(nullable = false)
     private double funds = 200;
+
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false)
+    private SecretQuestion secretQuestion;
+
+    @Column(nullable = false)
+    private String secretAnswerHash;
+
+    private String passwordResetTokenHash;
+
+    private LocalDateTime passwordResetTokenExpiresAt;
 
 }

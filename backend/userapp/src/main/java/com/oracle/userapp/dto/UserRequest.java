@@ -1,6 +1,7 @@
 package com.oracle.userapp.dto;
 
 
+import com.oracle.userapp.entities.SecretQuestion;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import lombok.AllArgsConstructor;
@@ -30,4 +31,8 @@ public class UserRequest {
     private String address;
     @NotBlank
     private String accountNumber;
+    @NotNull
+    private SecretQuestion secretQuestion;
+    @NotBlank
+    private String secretAnswer;
 }
