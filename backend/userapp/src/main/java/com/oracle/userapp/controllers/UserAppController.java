@@ -92,5 +92,15 @@ public class UserAppController {
         return ResponseEntity.ok("User "+userService.unlock(id)+" unlocked!");
     }
 
+    @PostMapping("/{id}/secret-answer")
+    public ResponseEntity<String> verifySecretAnswer(
+            @PathVariable Integer id,
+            @Valid @RequestBody SecretAnswerRequest request) {
+
+        return ResponseEntity.ok(
+                userService.verifySecretAnswer(id, request)
+        );
+    }
+
 
 }
