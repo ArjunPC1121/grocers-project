@@ -1,6 +1,7 @@
 package com.oracle.userapp.controllers;
 
 import com.oracle.userapp.dto.*;
+import com.oracle.userapp.entities.SecretQuestion;
 import com.oracle.userapp.services.implementations.UserService;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
@@ -109,6 +110,13 @@ public class UserAppController {
 
         userService.resetPassword(id, request);
         return ResponseEntity.noContent().build();
+    }
+
+    @GetMapping("/{id}/secret-question")
+    public ResponseEntity<SecretQuestion> getSecretQuestion(
+            @PathVariable Integer id) {
+
+        return ResponseEntity.ok(userService.getSecretQuestion(id));
     }
 
 

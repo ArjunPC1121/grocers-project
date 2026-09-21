@@ -2,6 +2,7 @@ package com.oracle.userapp.services.implementations;
 
 import com.oracle.userapp.dto.*;
 import com.oracle.userapp.entities.LockedReason;
+import com.oracle.userapp.entities.SecretQuestion;
 import com.oracle.userapp.entities.User;
 import com.oracle.userapp.repositories.UserRepository;
 import com.oracle.userapp.services.abstractions.UserServiceManager;
@@ -261,6 +262,29 @@ public class UserService implements UserServiceManager<UserRequest,UserResponse,
         repository.save(user);
 
     }
+
+    @Override
+    public void clearFailedAttempts(Integer id) {
+        User user = repository.findById(id)
+                .orElseThrow(() -> new RuntimeException("User not found"));
+
+        user.setFailedLoginAttempts(0);
+        repository.save(user);
+    }
+
+    @Override
+    public SecretQuestion getSecretQuestion(Integer id) {
+        User user = repository.findById(id)
+                .orElseThrow(() -> new RuntimeException("User not found"));
+
+        if (!user.isAccountLocked()
+                || user.getLockedReason() != LockedReason.THREE_FAILED_ATTEMPTS) {
+            throw new RuntimeException("Secret-question recovery is unavailable");
+        }
+
+        return user.getSecretQuestion();
+    }
+
     private static void mapRequestToEntity(User user, UserRequest data)
     {
         user.setFirstName(data.getFirstName());
