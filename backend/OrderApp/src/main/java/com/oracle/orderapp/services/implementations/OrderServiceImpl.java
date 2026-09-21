@@ -9,7 +9,6 @@ import java.util.Locale;
 import java.util.UUID;
 
 import com.oracle.orderapp.clients.CartClient;
-import com.oracle.orderapp.clients.EmployeeClient;
 import com.oracle.orderapp.dtos.*;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -33,7 +32,6 @@ public class OrderServiceImpl implements OrderService {
     private final ProductClient productClient;
     private final UserClient userClient;
     private final CartClient cartClient;
-    private final EmployeeClient employeeClient;
     private boolean isValidEmployeeStatusChange(
             OrderStatus currentStatus,
             OrderStatus newStatus) {
@@ -45,7 +43,10 @@ public class OrderServiceImpl implements OrderService {
                 && newStatus == OrderStatus.OUT_FOR_DELIVERY)
 
                 || (currentStatus == OrderStatus.OUT_FOR_DELIVERY
-                && newStatus == OrderStatus.DELIVERED);
+                && newStatus == OrderStatus.DELIVERED)
+
+                || (currentStatus == OrderStatus.PLACED
+                && newStatus == OrderStatus.CANCELLED);
     }
 
     @Override
@@ -182,23 +183,7 @@ public class OrderServiceImpl implements OrderService {
             );
         }
 
-        userClient.refund(
-                order.getCustomerId(),
-                order.getTotalAmount(),
-                order.getOrderNumber()
-        );
-
-        for (OrderItem item : order.getItems()) {
-            productClient.increaseQuantity(
-                    item.getProductId(),
-                    item.getQuantity()
-            );
-        }
-
-        order.setStatus(OrderStatus.CANCELLED);
-        order.setCancellationReason(cancellationReason);
-
-        return orderRepository.save(order);
+        return cancelOrder(order, cancellationReason, null);
     }
 
     @Override
@@ -264,9 +249,8 @@ public class OrderServiceImpl implements OrderService {
     @Transactional
     public Order updateStatus(
             Integer orderId,
-            UpdateOrderStatusRequest request) {
-
-        employeeClient.checkEmployeeExists(request.employeeId());
+            UpdateOrderStatusRequest request,
+            Integer employeeId) {
 
         Order order = getById(orderId);
 
@@ -280,13 +264,37 @@ public class OrderServiceImpl implements OrderService {
             );
         }
 
+        if (request.status() == OrderStatus.CANCELLED) {
+            if (request.cancellationReason() == null || request.cancellationReason().isBlank()) {
+                throw new IllegalArgumentException("A cancellation reason is required");
+            }
+            return cancelOrder(order, request.cancellationReason(), employeeId);
+        }
+
         order.setStatus(request.status());
-        order.setUpdatedByEmployeeId(request.employeeId());
+        order.setUpdatedByEmployeeId(employeeId);
 
         return orderRepository.save(order);
     }
     @Override
     public List<Order> getByStatus(OrderStatus status) {
         return orderRepository.findByStatus(status);
+    }
+
+    private Order cancelOrder(Order order, String cancellationReason, Integer employeeId) {
+        userClient.refund(
+                order.getCustomerId(),
+                order.getTotalAmount(),
+                order.getOrderNumber()
+        );
+
+        for (OrderItem item : order.getItems()) {
+            productClient.increaseQuantity(item.getProductId(), item.getQuantity());
+        }
+
+        order.setStatus(OrderStatus.CANCELLED);
+        order.setCancellationReason(cancellationReason);
+        order.setUpdatedByEmployeeId(employeeId);
+        return orderRepository.save(order);
     }
 }

@@ -1,5 +1,0 @@
-com\oracle\orderapp\entities\OrderStatus.class
-com\oracle\orderapp\entities\OrderItem.class
-com\oracle\orderapp\entities\Order.class
-com\oracle\orderapp\OrderAppApplication.class
-com\oracle\orderapp\ServletInitializer.class

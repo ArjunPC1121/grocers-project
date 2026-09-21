@@ -5,6 +5,9 @@ import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
+import jakarta.persistence.PrePersist;
 import jakarta.persistence.Table;
 import lombok.AllArgsConstructor;
 import lombok.Data;
@@ -33,4 +36,15 @@ public class Admin {
 
     @Column(name = "last_name", nullable = false, length = 80)
     private String lastName;
+
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false, length = 20)
+    private AdminRole role;
+
+    @PrePersist
+    private void applyDefaultRole() {
+        if (role == null) {
+            role = AdminRole.ADMIN;
+        }
+    }
 }

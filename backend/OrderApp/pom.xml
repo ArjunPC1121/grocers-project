@@ -80,6 +80,8 @@
     </dependencies>
 
     <build>
+        <!-- Keep runtime classes out of the tracked target directory, which can be cleared externally. -->
+        <directory>${project.basedir}/build</directory>
         <plugins>
             <plugin>
                 <groupId>org.springframework.boot</groupId>

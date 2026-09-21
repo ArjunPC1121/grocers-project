@@ -29,7 +29,8 @@ public class OrderController {
     }
 
     @GetMapping
-    public List<Order> getAll() {
+    public List<Order> getAll(@RequestHeader("X-Authenticated-Role") String role) {
+        requireEmployeeOrAdmin(role);
         return orderService.getAll();
     }
 
@@ -71,14 +72,25 @@ public class OrderController {
     @PatchMapping("/{orderId}/status")
     public Order updateStatus(
             @PathVariable Integer orderId,
+            @RequestHeader("X-Authenticated-User-Id") Integer employeeId,
+            @RequestHeader("X-Authenticated-Role") String role,
             @Valid @RequestBody UpdateOrderStatusRequest request) {
-
-        return orderService.updateStatus(orderId, request);
+        requireEmployeeOrAdmin(role);
+        return orderService.updateStatus(orderId, request, employeeId);
     }
     @GetMapping("/status/{status}")
     public List<Order> getByStatus(
-            @PathVariable OrderStatus status) {
+            @PathVariable OrderStatus status,
+            @RequestHeader("X-Authenticated-Role") String role) {
 
+        requireEmployeeOrAdmin(role);
         return orderService.getByStatus(status);
+    }
+
+    private void requireEmployeeOrAdmin(String role) {
+        if (!"EMPLOYEE".equals(role) && !"ADMIN".equals(role)) {
+            throw new org.springframework.web.server.ResponseStatusException(
+                    HttpStatus.FORBIDDEN, "Employee or administrator access is required");
+        }
     }
 }

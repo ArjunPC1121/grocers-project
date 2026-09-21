@@ -19,7 +19,8 @@ public interface OrderService {
     List<Order> getByCustomerId(Integer customerId);
     Order updateStatus(
             Integer orderId,
-            UpdateOrderStatusRequest request
+            UpdateOrderStatusRequest request,
+            Integer employeeId
     );
 
     List<Order> getByStatus(OrderStatus status);
