@@ -86,5 +86,11 @@ public class UserAppController {
         return ResponseEntity.ok("New fund balance : "+userService.refund(id, request.get("amount")));
     }
 
+    @PostMapping("/{id}/unlock")
+    public ResponseEntity<String> unlockUser(@PathVariable Integer id)
+    {
+        return ResponseEntity.ok("User "+userService.unlock(id)+" unlocked!");
+    }
+
 
 }

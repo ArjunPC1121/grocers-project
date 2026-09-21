@@ -19,4 +19,6 @@ public  interface UserServiceManager<TRequest,TResponse,TUpdateRequest,TTicketRe
     TTicketResponse raiseTicket(Id id);
 
     Double refund(Id id, double amount);
+
+    Id unlock(Id id);
 }

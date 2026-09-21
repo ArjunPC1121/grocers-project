@@ -185,6 +185,15 @@ public class UserService implements UserServiceManager<UserRequest,UserResponse,
         return user.getFunds();
     }
 
+    public Integer unlock(Integer id)
+    {
+        User user = repository.findById(id).orElseThrow(()-> new RuntimeException("User not found"));
+        user.setAccountLocked(false);
+        user.setLockedReason(null);
+        repository.save(user);
+        return user.getId();
+    }
+
 
     private static void mapRequestToEntity(User user, UserRequest data)
     {
