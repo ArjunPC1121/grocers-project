@@ -13,8 +13,10 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.client.RestTemplate;
 
+import java.time.LocalDateTime;
 import java.util.Collection;
 import java.util.Map;
+import java.util.UUID;
 
 @Service
 public class UserService implements UserServiceManager<UserRequest,UserResponse,UpdateUserRequest, TicketResponse,Integer> {
@@ -43,6 +45,10 @@ public class UserService implements UserServiceManager<UserRequest,UserResponse,
         User user = new User();
         mapRequestToEntity(user, data);
         user.setPassword(passwordEncoder.encode(data.getPassword()));
+        user.setSecretQuestion(data.getSecretQuestion());
+        user.setSecretAnswerHash(
+                passwordEncoder.encode(data.getSecretAnswer())
+        );
         user = repository.save(user);
 
         HttpHeaders headers = new HttpHeaders();
@@ -192,6 +198,42 @@ public class UserService implements UserServiceManager<UserRequest,UserResponse,
         user.setLockedReason(null);
         repository.save(user);
         return user.getId();
+    }
+
+    public String verifySecretAnswer(Integer id, SecretAnswerRequest request)
+    {
+        User user = repository.findById(id).orElseThrow(()-> new RuntimeException("User not found"));
+
+        if(!user.isAccountLocked() ||
+            user.getLockedReason() != LockedReason.THREE_FAILED_ATTEMPTS)
+        {
+            throw new RuntimeException("Secret-question recovery is unavailable");
+        }
+
+        boolean correct = passwordEncoder.matches(
+                request.answer(),
+                user.getSecretAnswerHash()
+        );
+
+        if(!correct)
+        {
+            user.setLockedReason(LockedReason.SECURITY_ESCALATION);
+            repository.save(user);
+            throw new RuntimeException("Answer is incorrect");
+        }
+
+        String rawResetToken = UUID.randomUUID().toString();
+
+        user.setPasswordResetTokenHash(
+                passwordEncoder.encode(rawResetToken)
+        );
+        user.setPasswordResetTokenExpiresAt(
+                LocalDateTime.now().plusMinutes(15)
+        );
+        repository.save(user);
+
+        return rawResetToken;
+
     }
 
 
