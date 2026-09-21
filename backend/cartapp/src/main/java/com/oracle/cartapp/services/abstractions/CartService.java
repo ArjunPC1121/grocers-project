@@ -3,6 +3,9 @@ package com.oracle.cartapp.services.abstractions;
 import com.oracle.cartapp.dtos.CartItemRequest;
 import com.oracle.cartapp.dtos.CartResponse;
 import com.oracle.cartapp.dtos.UpdateCartItemRequest;
+import org.springframework.http.ResponseEntity;
+
+import java.util.List;
 
 public interface CartService {
 
@@ -24,4 +27,5 @@ public interface CartService {
 
 CartResponse decreaseItemQuantity(Integer cartId, Integer productId);
     public void removeProductFromAllActiveCarts(Integer productId);
+    public List<CartResponse> getAllCarts();
 }

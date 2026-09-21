@@ -19,13 +19,18 @@ import com.oracle.cartapp.services.abstractions.CartService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 
+import java.util.List;
+
 @RestController
 @RequestMapping("grocers/api/carts")
 @RequiredArgsConstructor
 public class CartController {
 
     private final CartService cartService;
-
+    @GetMapping
+    public ResponseEntity<List<CartResponse>> getAllCarts() {
+        return ResponseEntity.ok(cartService.getAllCarts());
+    }
     @GetMapping("/{cartId}")
     public ResponseEntity<CartResponse> getCart(
             @PathVariable Integer cartId) {
@@ -104,4 +109,5 @@ public ResponseEntity<CartResponse> decrease(
         cartService.removeProductFromAllActiveCarts(productId);
         return ResponseEntity.noContent().build();
     }
+
 }

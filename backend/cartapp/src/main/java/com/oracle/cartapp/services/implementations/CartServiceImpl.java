@@ -32,7 +32,13 @@ public class CartServiceImpl implements CartService {
     private final ProductClient productClient;
     private final UserClient userClient;
 
-
+    @Override
+    public List<CartResponse> getAllCarts() {
+        return cartRepository.findAll()
+                .stream()
+                .map(this::toResponse)
+                .toList();
+    }
 
     @Override
     @Transactional(readOnly = true)
