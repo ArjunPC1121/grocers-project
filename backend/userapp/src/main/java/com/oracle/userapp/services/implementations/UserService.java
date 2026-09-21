@@ -99,7 +99,7 @@ public class UserService implements UserServiceManager<UserRequest,UserResponse,
         return mapEntityToResponse(user);
     }
 
-
+    @Override
     public int incFailedAttempts(Integer id) throws RuntimeException{
         User user = repository.findById(id).orElseThrow(()->new RuntimeException("User not found"));
 
@@ -189,6 +189,7 @@ public class UserService implements UserServiceManager<UserRequest,UserResponse,
 
     }
 
+    @Override
     public Double refund(Integer id, double amount)
     {
         User user = repository.findById(id).orElseThrow(()-> new RuntimeException("User not found"));
@@ -197,6 +198,7 @@ public class UserService implements UserServiceManager<UserRequest,UserResponse,
         return user.getFunds();
     }
 
+    @Override
     public Integer unlock(Integer id)
     {
         User user = repository.findById(id).orElseThrow(()-> new RuntimeException("User not found"));
@@ -209,6 +211,7 @@ public class UserService implements UserServiceManager<UserRequest,UserResponse,
         return user.getId();
     }
 
+    @Override
     public String verifySecretAnswer(Integer id, SecretAnswerRequest request)
     {
         User user = repository.findById(id).orElseThrow(()-> new RuntimeException("User not found"));
@@ -245,6 +248,7 @@ public class UserService implements UserServiceManager<UserRequest,UserResponse,
 
     }
 
+    @Override
     public void resetPassword(Integer id, ResetPasswordRequest request)
     {
         User user = repository.findById(id).orElseThrow(()-> new RuntimeException("User not found"));
