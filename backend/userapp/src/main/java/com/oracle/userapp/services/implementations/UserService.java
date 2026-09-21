@@ -236,7 +236,31 @@ public class UserService implements UserServiceManager<UserRequest,UserResponse,
 
     }
 
+    public void resetPassword(Integer id, ResetPasswordRequest request)
+    {
+        User user = repository.findById(id).orElseThrow(()-> new RuntimeException("User not found"));
 
+        boolean validToken =
+                user.getPasswordResetTokenHash() != null
+                && user.getPasswordResetTokenExpiresAt() != null
+                && LocalDateTime.now().isBefore(user.getPasswordResetTokenExpiresAt())
+                && passwordEncoder.matches(request.resetToken(), user.getPasswordResetTokenHash());
+
+        if(!validToken)
+        {
+            throw new RuntimeException("Invalid or expired reset token");
+        }
+
+        user.setPassword(passwordEncoder.encode(request.newPassword()));
+        user.setAccountLocked(false);
+        user.setLockedReason(null);
+        user.setFailedLoginAttempts(0);
+        user.setPasswordResetTokenHash(null);
+        user.setPasswordResetTokenExpiresAt(null);
+
+        repository.save(user);
+
+    }
     private static void mapRequestToEntity(User user, UserRequest data)
     {
         user.setFirstName(data.getFirstName());

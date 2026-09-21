@@ -102,5 +102,14 @@ public class UserAppController {
         );
     }
 
+    @PostMapping("/{id}/password-reset")
+    public ResponseEntity<Void> resetPassword(
+            @PathVariable Integer id,
+            @Valid @RequestBody ResetPasswordRequest request) {
+
+        userService.resetPassword(id, request);
+        return ResponseEntity.noContent().build();
+    }
+
 
 }
