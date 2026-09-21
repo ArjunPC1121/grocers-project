@@ -32,7 +32,7 @@ public class Product {
     private String name;
 
 
-
+@Column(nullable = false)
 private Double price;
 
 @Min(0)
@@ -40,50 +40,11 @@ private Double price;
 @Column(nullable = false)
 private Integer discount = 0;
 
-@Min(0)
-private Integer quantity;
+@Min(value = 0)
+    @Column(nullable = false)
+    private Integer quantity;
 
 
-
-    // public Product() {
-    // }
-
-    // public Product(Integer id, String name, Double price, Integer quantity) {
-    //     this.id = id;
-    //     this.name = name;
-    //     this.price = price;
-    //     this.quantity = quantity;
-    // }
-
-    // public Integer getId() {
-    //     return id;
-    // }
-
-    // public void setId(Integer id) {
-    //     this.id = id;
-    // }
-
-    // public String getName() {
-    //     return name;
-    // }
-
-    // public void setName(String name) {
-    //     this.name = name;
-    // }
-
-    // public Double getPrice() {
-    //     return price;
-    // }
-
-    // public void setPrice(Double price) {
-    //     this.price = price;
-    // }
-
-    // public Integer getQuantity() {
-    //     return quantity;
-    // }
-
-    // public void setQuantity(Integer quantity) {
-    //     this.quantity = quantity;
-    // }
+// @Version
+// private Long version;
 }
