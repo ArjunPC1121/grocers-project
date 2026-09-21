@@ -102,6 +102,11 @@ public class UserService implements UserServiceManager<UserRequest,UserResponse,
 
     public int incFailedAttempts(Integer id) throws RuntimeException{
         User user = repository.findById(id).orElseThrow(()->new RuntimeException("User not found"));
+
+        if (user.isAccountLocked()) {
+            throw new RuntimeException("Account is already locked");
+        }
+
         int failedAttempts = user.getFailedLoginAttempts()+1;
         user.setFailedLoginAttempts(failedAttempts);
 
@@ -197,6 +202,9 @@ public class UserService implements UserServiceManager<UserRequest,UserResponse,
         User user = repository.findById(id).orElseThrow(()-> new RuntimeException("User not found"));
         user.setAccountLocked(false);
         user.setLockedReason(null);
+        user.setFailedLoginAttempts(0);
+        user.setPasswordResetTokenHash(null);
+        user.setPasswordResetTokenExpiresAt(null);
         repository.save(user);
         return user.getId();
     }
