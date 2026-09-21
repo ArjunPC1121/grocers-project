@@ -124,13 +124,14 @@ public class OrderServiceImpl implements OrderService {
 
 
 
+    
     @Override
     @Transactional
     public Order checkout(Integer orderId) {
         Order order = getById(orderId);
+
         if (order.getStatus() != OrderStatus.CREATED
                 && order.getStatus() != OrderStatus.PAYMENT_FAILED) {
-
             throw new IllegalStateException(
                     "Only CREATED or PAYMENT_FAILED orders can be checked out"
             );
@@ -148,6 +149,9 @@ public class OrderServiceImpl implements OrderService {
                 reducedItems.add(item);
             }
         } catch (Exception exception) {
+            // Temporary: check Order-app console for the real Product-service error.
+            exception.printStackTrace();
+
             releaseReducedStock(reducedItems);
 
             order.setStatus(OrderStatus.STOCK_REJECTED);
@@ -161,11 +165,17 @@ public class OrderServiceImpl implements OrderService {
                     order.getOrderNumber()
             );
         } catch (Exception exception) {
+            exception.printStackTrace();
+
             releaseReducedStock(order.getItems());
 
             order.setStatus(OrderStatus.PAYMENT_FAILED);
             return orderRepository.save(order);
         }
+
+        // Requires cartClient.checkoutCart(Integer cartId).
+        // Cart status should change from ACTIVE to CHECKED_OUT.
+        cartClient.checkoutCart(order.getCartId());
 
         order.setStatus(OrderStatus.PLACED);
         return orderRepository.save(order);

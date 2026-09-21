@@ -23,4 +23,10 @@ public class CartClient {
                 .retrieve()
                 .body(CartResponse.class);
     }
+    public void checkoutCart(Integer cartId) {
+        restClient.patch()
+                .uri("/{cartId}/checkout", cartId)
+                .retrieve()
+                .toBodilessEntity();
+    }
 }
