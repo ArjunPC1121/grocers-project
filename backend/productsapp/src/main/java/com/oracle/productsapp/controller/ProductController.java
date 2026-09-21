@@ -2,7 +2,6 @@ package com.oracle.productsapp.controller;
 
 import java.util.List;
 
-import com.oracle.productsapp.dtos.QuantityRequest;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.DeleteMapping;
@@ -22,7 +21,7 @@ import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 
 @RestController
-@RequestMapping("/api/products")
+@RequestMapping("grocers/api/products")
 @RequiredArgsConstructor
 public class ProductController {
 
@@ -53,25 +52,6 @@ public class ProductController {
         return ResponseEntity.noContent().build();
     }
 
-    @PostMapping("/{productId}/reduce-quantity")
-    public ResponseEntity<Product> reduceQuantity(
-            @PathVariable Integer productId,
-            @Valid @RequestBody QuantityRequest request) {
-
-        return ResponseEntity.ok(
-                productService.reduceQuantity(productId, request.quantity())
-        );
-    }
-
-    @PostMapping("/{productId}/increase-quantity")
-    public ResponseEntity<Product> increaseQuantity(
-            @PathVariable Integer productId,
-            @Valid @RequestBody QuantityRequest request) {
-
-        return ResponseEntity.ok(
-                productService.increaseQuantity(productId, request.quantity())
-        );
-    }
     
 
 

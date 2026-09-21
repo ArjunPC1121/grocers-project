@@ -1,5 +1,6 @@
 package com.oracle.productsapp.services.implementations;
 
+
 import java.util.List;
 
 import jakarta.transaction.Transactional;
@@ -61,9 +62,6 @@ public Product update(Integer id, ProductRequest request) {
     public void delete(Integer id) {
         productRepository.delete(getById(id));
     }
-
-
-
     @Override
     @Transactional
     public Product reduceQuantity(Integer productId, Integer quantity) {
@@ -87,7 +85,11 @@ public Product update(Integer id, ProductRequest request) {
         product.setQuantity(product.getQuantity() + quantity);
         return productRepository.save(product);
     }
-       
 
 
-    }
+
+
+
+
+
+}
