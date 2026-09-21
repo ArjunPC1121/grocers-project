@@ -49,7 +49,7 @@ spring:
             - id: bankapp
               uri: http://localhost:8089
               predicates:
-                - Path=/grocers/api/bank-accounts/**
+                - Path=/grocers/api/banks/**
 
 server:
   port: 8091

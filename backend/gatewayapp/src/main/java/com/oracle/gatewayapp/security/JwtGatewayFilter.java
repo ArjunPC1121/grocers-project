@@ -37,6 +37,9 @@ public class JwtGatewayFilter implements GlobalFilter {
     private final SecretKey signingKey;
     private final String internalRequestSecret;
 
+    private static final String INTERNAL_SERVICE_HEADER = "X-Internal-Service";
+    private static final String INTERNAL_SECRET_HEADER = "X-Internal-Secret";
+
     public JwtGatewayFilter(@Value("${app.jwt.secret}") String secret,
                             @Value("${app.gateway.internal-secret}") String internalRequestSecret) {
         if (secret == null || secret.getBytes(StandardCharsets.UTF_8).length < 32) {
@@ -49,6 +52,9 @@ public class JwtGatewayFilter implements GlobalFilter {
     @Override
     public Mono<Void> filter(ServerWebExchange exchange, GatewayFilterChain chain) {
         String path = exchange.getRequest().getPath().value();
+        if (isAuthAppFailedAttemptRequest(exchange)) {
+            return chain.filter(exchange);
+        }
         if (exchange.getRequest().getMethod() == HttpMethod.OPTIONS || isPublic(path)) {
             return chain.filter(exchange);
         }
@@ -93,7 +99,9 @@ public class JwtGatewayFilter implements GlobalFilter {
     }
 
     private boolean isPublic(String path) {
-        return path.startsWith("/grocers/api/auth/login/");
+
+        return path.startsWith("/grocers/api/auth/login/")
+                || path.equals("/grocers/api/users");
     }
 
     private boolean isAuthorized(String path, String role) {
@@ -121,5 +129,18 @@ public class JwtGatewayFilter implements GlobalFilter {
     private Mono<Void> reject(ServerWebExchange exchange, HttpStatus status) {
         exchange.getResponse().setStatusCode(status);
         return exchange.getResponse().setComplete();
+    }
+
+    private boolean isAuthAppFailedAttemptRequest(ServerWebExchange exchange) {
+        String path = exchange.getRequest().getPath().value();
+
+        return exchange.getRequest().getMethod() == HttpMethod.POST
+                && path.matches("/grocers/api/users/\\d+/failed-attempts")
+                && "authapp".equals(
+                exchange.getRequest().getHeaders()
+                        .getFirst(INTERNAL_SERVICE_HEADER))
+                && internalRequestSecret.equals(
+                exchange.getRequest().getHeaders()
+                        .getFirst(INTERNAL_SECRET_HEADER));
     }
 }

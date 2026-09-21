@@ -9,6 +9,7 @@ import jakarta.persistence.Enumerated;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
+import jakarta.persistence.PreUpdate;
 import jakarta.persistence.Table;
 
 
@@ -18,20 +19,21 @@ public class ticket {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "ticket_id")
-    private int ticketId;
+    private Integer ticketId;
 
     @Column(name = "user_id", nullable = false)
-    private int userId;
+    private Integer userId;
 
     @Column(name = "employee_id")
-    private Long employeeId;
+    private Integer employeeId;
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false, length = 30)
-    private static ticket status = ticket.status;
+    private ticketstatus status = ticketstatus.OPEN;
 
-    @Column(nullable = false, length = 2000)
-    private String description;
+    @Enumerated(EnumType.STRING)
+    @Column(name = "locked_reason", nullable = false, length = 50)
+    private LockedReason lockedReason;
 
     @Column(name = "created_at", nullable = false, updatable = false)
     private Instant createdAt = Instant.now();
@@ -49,19 +51,23 @@ public class ticket {
 
     protected ticket() { }
 
-    public ticket(int userId, String description) {
+    public ticket(Integer userId, LockedReason lockedReason) {
         this.userId = userId;
-        this.description = description;
+        this.lockedReason = lockedReason;
     }
 
-    public int  getTicketId() { return ticketId; }
-    public int getUserId() { return userId; }
-    public Long getEmployeeId() { return employeeId; }
-    public ticket getStatus() { return status; }
-    public String getDescription() { return description; }
+    public Integer getTicketId() { return ticketId; }
+    public Integer getUserId() { return userId; }
+    public Integer getEmployeeId() { return employeeId; }
+    public ticketstatus getStatus() { return status; }
+    public LockedReason getLockedReason() { return lockedReason; }
 
-    public void assignTo(Long employeeId) { this.employeeId = employeeId; this.updatedAt = Instant.now(); }
-    public void setStatus(ticket status) { ticket.status = status; this.updatedAt = Instant.now(); }
+    public void assignTo(Integer employeeId) { this.employeeId = employeeId; }
+    public void resolve(Integer employeeId) { this.employeeId = employeeId; this.status = ticketstatus.RESOLVED; }
+    public void reject(Integer employeeId) { this.employeeId = employeeId; this.status = ticketstatus.REJECTED; }
+
+    @PreUpdate
+    void markUpdated() { this.updatedAt = Instant.now(); }
 
     public Instant getCreatedAt() {
         return createdAt;
