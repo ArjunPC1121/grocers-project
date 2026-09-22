@@ -1,0 +1,2 @@
+export function EmptyState({ title, detail }: { title: string; detail: string }) { return <div className="rounded-2xl border border-dashed border-app-border bg-white p-10 text-center"><h2 className="font-semibold text-lg">{title}</h2><p className="mt-2 text-sm text-app-text-light">{detail}</p></div>; }
+export function PageError({ message }: { message: string }) { return <div role="alert" className="rounded-xl bg-red-50 border border-red-200 p-4 text-sm text-red-700">{message}</div>; }
