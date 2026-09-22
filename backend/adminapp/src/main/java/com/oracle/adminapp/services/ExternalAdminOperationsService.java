@@ -30,6 +30,8 @@ import java.util.Objects;
  */
 @Service
 public class ExternalAdminOperationsService {
+    private static final String DEFAULT_EMPLOYEE_PASSWORD = "welcome123";
+
     private final RestClient products;
     private final RestClient employees;
     private final RestClient users;
@@ -37,7 +39,11 @@ public class ExternalAdminOperationsService {
     private final RestClient orders;
     private final RestClient carts;
     private final boolean cartProductCleanupEnabled;
+<<<<<<< Updated upstream
     private final String gatewayInternalSecret;
+=======
+    private final String internalRequestSecret;
+>>>>>>> Stashed changes
 
     public ExternalAdminOperationsService(
             @Value("${services.products-url}") String productsUrl,
@@ -47,7 +53,11 @@ public class ExternalAdminOperationsService {
             @Value("${services.orders-url}") String ordersUrl,
             @Value("${services.carts-url}") String cartsUrl,
             @Value("${services.cart-product-cleanup-enabled:false}") boolean cartProductCleanupEnabled,
+<<<<<<< Updated upstream
             @Value("${services.gateway-internal-secret}") String gatewayInternalSecret) {
+=======
+            @Value("${app.gateway.internal-secret}") String internalRequestSecret) {
+>>>>>>> Stashed changes
         this.products = RestClient.create(productsUrl);
         this.employees = RestClient.create(employeesUrl);
         this.users = RestClient.create(usersUrl);
@@ -55,7 +65,11 @@ public class ExternalAdminOperationsService {
         this.orders = RestClient.create(ordersUrl);
         this.carts = RestClient.create(cartsUrl);
         this.cartProductCleanupEnabled = cartProductCleanupEnabled;
+<<<<<<< Updated upstream
         this.gatewayInternalSecret = gatewayInternalSecret;
+=======
+        this.internalRequestSecret = internalRequestSecret;
+>>>>>>> Stashed changes
     }
 
     public List<Map<String, Object>> products() { return list(products); }
@@ -76,7 +90,9 @@ public class ExternalAdminOperationsService {
         products.delete().uri("/{id}", id).retrieve().toBodilessEntity();
     }
 
+    @SuppressWarnings("unchecked")
     public Map<String, Object> createEmployee(EmployeeCreateRequest request) {
+<<<<<<< Updated upstream
         Map<?, ?> response = employees.post().headers(this::employeeHeaders).body(Map.of(
                 "firstName", request.firstName(),
                 "lastName", request.lastName(),
@@ -86,6 +102,21 @@ public class ExternalAdminOperationsService {
         @SuppressWarnings("unchecked")
         Map<String, Object> result = response == null ? Map.of() : (Map<String, Object>) response;
         return result;
+=======
+        Map<?, ?> response = employees.post()
+                .headers(headers -> {
+                    headers.set("X-Gateway-Request", internalRequestSecret);
+                    headers.set("X-Authenticated-Role", "ADMIN");
+                })
+                .body(Map.of(
+                        "firstName", request.firstName(),
+                        "lastName", request.lastName(),
+                        "email", request.email(),
+                        "defaultPassword", DEFAULT_EMPLOYEE_PASSWORD))
+                .retrieve()
+                .body(Map.class);
+        return response == null ? Map.of() : (Map<String, Object>) response;
+>>>>>>> Stashed changes
     }
 
     public void deactivateEmployee(Integer id) {

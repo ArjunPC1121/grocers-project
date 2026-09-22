@@ -17,6 +17,7 @@ import org.springframework.web.bind.annotation.RestController;
 import com.oracle.productsapp.dtos.ProductRequest;
 import com.oracle.productsapp.entities.Product;
 import com.oracle.productsapp.services.abstractions.ProductService;
+import com.oracle.productsapp.dtos.QuantityRequest;
 
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -57,6 +58,7 @@ public class ProductController {
             @PathVariable Integer productId,
             @Valid @RequestBody QuantityRequest request) {
 
+<<<<<<< Updated upstream
         return ResponseEntity.ok(
                 productService.reduceQuantity(productId, request.quantity())
         );
@@ -70,6 +72,22 @@ public class ProductController {
         return ResponseEntity.ok(
                 productService.increaseQuantity(productId, request.quantity())
         );
+=======
+    @PostMapping("/{id}/increase-quantity")
+    public Product increaseQuantity(
+            @PathVariable Integer id,
+            @Valid @RequestBody QuantityRequest request
+    ) {
+        return productService.increaseQuantity(id, request.quantity());
+    }
+
+    @PostMapping("/{id}/reduce-quantity")
+    public Product reduceQuantity(
+            @PathVariable Integer id,
+            @Valid @RequestBody QuantityRequest request
+    ) {
+        return productService.reduceQuantity(id, request.quantity());
+>>>>>>> Stashed changes
     }
     
 
