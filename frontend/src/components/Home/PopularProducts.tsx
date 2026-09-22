@@ -6,7 +6,7 @@ import toast from "react-hot-toast";
 import type { Product } from "../../types";
 import ProductCard from "../ProductCard";
 
-import api from "../../config/api";
+import productApi from "../../config/productApi";
 
 const PopularProducts = () => {
   const [products, setProducts] = useState<Product[]>([]);

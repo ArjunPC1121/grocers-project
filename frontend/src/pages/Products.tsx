@@ -8,7 +8,7 @@ import { categoriesData } from "../assets/assets";
 import ProductCard from "../components/ProductCard";
 import Loading from "../components/Loading";
 import FilterPanel from "../components/FilterPanel";
-import api from "../config/api";
+import productApi from "../config/productApi";
 
 const Products = () => {
   const [searchParams, setSearchParams] = useSearchParams();
@@ -26,21 +26,38 @@ const Products = () => {
 
   const fetchProducts = async () => {
     setLoading(true);
-    try {
-      const params = new URLSearchParams();
-      if (category) params.set("category", category);
-      if (organic) params.set("organic", organic);
-      if (sort) params.set("sort", sort);
-      if (sort) params.set("sort", sort);
-      if (maxPrice) params.set("maxPrice", maxPrice);
-      params.set("page", String(page));
-      params.set("limit", "12");
 
-      const { data } = await api.get(`/products?${params.toString()}`);
-      setProducts(data.products);
-      setTotalPages(data.pages);
-    } catch (error: any) {
-      toast.error(error?.response?.data?.message || error?.message);
+    try {
+      const { data } = await productApi.get("/products");
+
+      const mappedProducts = data
+          .filter((product: any) => product.active !== false)
+          .map((product: any) => {
+            const discount = product.discount || 0;
+            const originalPrice = product.price;
+            const finalPrice = originalPrice * (1 - discount / 100);
+
+            return {
+              id: String(product.id),
+              name: product.name,
+              description: product.description || "",
+              price: finalPrice,
+              originalPrice: discount > 0 ? originalPrice : undefined,
+              image: product.imageUrl || undefined,
+              category: product.category || "Groceries",
+              unit: `${product.unitValue || 1} ${product.unitType || "unit"}`,
+              stock: product.quantity,
+              discount: discount,
+              rating: 0,
+              reviewCount: 0,
+            };
+          });
+
+      setProducts(mappedProducts);
+      setTotalPages(1);
+    } catch (error) {
+      console.error("Could not fetch products:", error);
+      setProducts([]);
     } finally {
       setLoading(false);
     }
