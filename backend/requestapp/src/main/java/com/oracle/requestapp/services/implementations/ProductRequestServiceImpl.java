@@ -62,11 +62,13 @@ public class ProductRequestServiceImpl implements ProductRequestService {
     @Override
     public ProductRequestResponse updateStatus(Integer requestId, Integer adminId, UpdateRequestStatus update) {
         ProductRequest request = requiredRequest(requestId);
-        if (request.getStatus() != RequestStatus.PENDING) {
-            throw new InvalidRequestStateException("Only pending requests can be approved or rejected");
-        }
-        if (update.status() == RequestStatus.PENDING) {
-            throw new InvalidRequestStateException("A request decision must be APPROVED or REJECTED");
+        boolean pendingToDecision = request.getStatus() == RequestStatus.PENDING
+                && (update.status() == RequestStatus.PROCESSING || update.status() == RequestStatus.APPROVED
+                || update.status() == RequestStatus.REJECTED);
+        boolean processingCompletion = request.getStatus() == RequestStatus.PROCESSING
+                && (update.status() == RequestStatus.APPROVED || update.status() == RequestStatus.PENDING);
+        if (!pendingToDecision && !processingCompletion) {
+            throw new InvalidRequestStateException("Invalid request status transition");
         }
         if (update.status() == RequestStatus.REJECTED && (update.rejectionReason() == null || update.rejectionReason().isBlank())) {
             throw new InvalidRequestStateException("A rejection reason is required");
@@ -83,7 +85,13 @@ public class ProductRequestServiceImpl implements ProductRequestService {
     private void validateCreateRequest(CreateProductRequest request) {
         switch (request.action()) {
             case CREATE -> requireProductDetails(request, false);
-            case UPDATE -> requireProductDetails(request, true);
+            case UPDATE -> {
+                requireProductId(request);
+                if ((request.name() == null || request.name().isBlank()) && request.price() == null
+                        && request.quantity() == null && request.discount() == null) {
+                    throw new IllegalArgumentException("UPDATE requires at least one product field to change");
+                }
+            }
             case RESTOCK -> {
                 requireProductId(request);
                 if (request.quantity() == null || request.quantity() < 1) throw new IllegalArgumentException("RESTOCK requires a positive quantity");

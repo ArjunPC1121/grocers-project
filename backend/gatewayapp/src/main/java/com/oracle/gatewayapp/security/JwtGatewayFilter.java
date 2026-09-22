@@ -105,6 +105,9 @@ public class JwtGatewayFilter implements GlobalFilter {
     }
 
     private boolean isAuthorized(String path, String role) {
+        if (path.equals("/grocers/api/users/admin")) {
+            return "ADMIN".equals(role);
+        }
         if (path.matches("/grocers/api/users/\\d+/(failed-attempts|unlock)")) {
             return Set.of("EMPLOYEE", "ADMIN").contains(role);
         }

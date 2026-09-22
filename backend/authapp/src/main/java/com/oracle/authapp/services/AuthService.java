@@ -7,6 +7,7 @@ import com.oracle.authapp.entities.EmployeeLoginAccount;
 import com.oracle.authapp.entities.LoginRole;
 import com.oracle.authapp.entities.UserLoginAccount;
 import com.oracle.authapp.exceptions.AccountLockedException;
+import com.oracle.authapp.exceptions.EmployeeInactiveException;
 import com.oracle.authapp.exceptions.InvalidCredentialsException;
 import com.oracle.authapp.repositories.AdminLoginAccountRepository;
 import com.oracle.authapp.repositories.EmployeeLoginAccountRepository;
@@ -80,6 +81,9 @@ public class AuthService {
     public AuthResponse loginEmployee(LoginRequest request) {
         EmployeeLoginAccount account = employeeAccounts.findByEmailIgnoreCase(request.email())
                 .orElseThrow(InvalidCredentialsException::new);
+        if (!"ACTIVE".equalsIgnoreCase(account.getStatus())) {
+            throw new EmployeeInactiveException();
+        }
         verifyPassword(request.password(), account.getPassword());
         return response(account.getId(), account.getEmail(), LoginRole.EMPLOYEE, account.isMustChangePassword());
     }

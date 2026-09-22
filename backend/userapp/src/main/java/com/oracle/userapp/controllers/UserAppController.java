@@ -34,6 +34,12 @@ public class UserAppController {
         return ResponseEntity.status(HttpStatus.CREATED).body(response);
     }
 
+    /** Admin creation does not accept a caller-supplied password; it returns a generated one once. */
+    @PostMapping("/admin")
+    public ResponseEntity<AdminCreatedUserResponse> addByAdmin(@Valid @RequestBody AdminUserRequest request) {
+        return ResponseEntity.status(HttpStatus.CREATED).body(userService.addByAdmin(request));
+    }
+
     @GetMapping
     public ResponseEntity<Collection<UserResponse>> getAll() {
         return ResponseEntity.ok(userService.getAll());

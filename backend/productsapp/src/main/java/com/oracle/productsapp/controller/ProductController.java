@@ -38,6 +38,17 @@ public class ProductController {
         return productService.getAll();
     }
 
+    /*
+     * Literal /search endpoint is declared separately from /{id}.
+     */
+    @GetMapping("/search")
+    public List<ProductSearchResult> search(
+            @RequestParam("q") String query,
+            @RequestParam(defaultValue = "20") int limit
+    ) {
+        return productService.search(query, limit);
+    }
+
     @GetMapping("/{id}")
     public Product getById(@PathVariable Integer id) {
         return productService.getById(id);
@@ -71,8 +82,6 @@ public class ProductController {
                 productService.increaseQuantity(productId, request.quantity())
         );
     }
-
-
 
     
 

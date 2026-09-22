@@ -1,6 +1,7 @@
 package com.oracle.employeeapp.api;
 
 import java.util.Arrays;
+import java.math.BigDecimal;
 import java.util.List;
 
 import org.springframework.beans.factory.annotation.Value;
@@ -27,6 +28,7 @@ import org.springframework.web.client.RestTemplate;
 import org.springframework.web.server.ResponseStatusException;
 
 import com.oracle.employeeapp.entities.Employee;
+import com.oracle.employeeapp.entities.EmployeeStatus;
 import com.oracle.employeeapp.repositories.EmployeeRepository;
 
 import jakarta.validation.Valid;
@@ -73,6 +75,22 @@ public class EmployeeController {
         return summary(employees.save(employee));
     }
 
+    @GetMapping
+    public List<EmployeeSummary> allEmployees(@RequestHeader("X-Authenticated-Role") String role) {
+        requireAdmin(role);
+        return employees.findAll().stream().map(this::summary).toList();
+    }
+
+    @PatchMapping("/{employeeId}/status")
+    public EmployeeSummary updateStatus(@RequestHeader("X-Authenticated-Role") String role,
+                                        @PathVariable Integer employeeId,
+                                        @Valid @RequestBody EmployeeStatusRequest request) {
+        requireAdmin(role);
+        Employee employee = employee(employeeId);
+        employee.setStatus(request.status());
+        return summary(employees.save(employee));
+    }
+
     @PutMapping("/{employeeId}/password")
     public EmployeeSummary changePassword(@RequestHeader("X-Authenticated-User-Id") Integer authenticatedEmployeeId,
                                           @RequestHeader("X-Authenticated-Role") String role,
@@ -112,11 +130,7 @@ public class EmployeeController {
         return ticketAction(ticketId, "reject", employeeId);
     }
 
-    /**
-     * Creates a pending inventory request for an administrator to review.
-     * ADD increases the selected product's stock; REMOVE requests deletion of
-     * the selected product, which is the removal operation RequestApp supports.
-     */
+    /** Creates a pending CREATE, UPDATE, RESTOCK, or DELETE request for an administrator to review. */
     @PostMapping("/requests")
     @ResponseStatus(HttpStatus.CREATED)
     public ProductRequestSummary createProductRequest(
@@ -125,11 +139,8 @@ public class EmployeeController {
             @Valid @RequestBody InventoryRequest request) {
         requireEmployee(role);
 
-        RequestAppPayload payload = new RequestAppPayload(
-                request.productId(),
-                request.operation() == InventoryOperation.ADD ? "RESTOCK" : "DELETE",
-                request.operation() == InventoryOperation.ADD ? request.quantity() : null,
-                request.description());
+        RequestAppPayload payload = new RequestAppPayload(request.action().name(), request.productId(),
+                request.name(), request.price(), request.quantity(), request.discount(), request.description());
         return requestApp(HttpMethod.POST, "", employeeId, payload, ProductRequestSummary.class);
     }
 
@@ -252,7 +263,7 @@ public List<Object> getAllOrders(
 
     private EmployeeSummary summary(Employee employee) {
         return new EmployeeSummary(employee.getId(), employee.getFirstName(), employee.getLastName(),
-                employee.getEmail(), employee.getMustChangePassword());
+                employee.getEmail(), employee.getMustChangePassword(), employee.getStatus());
     }
 
     public record CreateEmployeeRequest(@NotBlank String firstName,
@@ -263,18 +274,24 @@ public List<Object> getAllOrders(
                                         @NotBlank String newPassword,
                                         @NotBlank String confirmPassword) { }
     public record EmployeeSummary(Integer id, String firstName, String lastName,
-                                  String email, Boolean mustChangePassword) { }
+                                  String email, Boolean mustChangePassword, EmployeeStatus status) { }
+    public record EmployeeStatusRequest(@NotNull EmployeeStatus status) { }
     public record TicketActionRequest(Integer employeeId) { }
     public record TicketSummary(Integer ticketId, Integer userId, Integer employeeId, String status,
                                 String lockedReason, java.time.Instant createdAt, java.time.Instant updatedAt) { }
-    public enum InventoryOperation { ADD, REMOVE }
-    public record InventoryRequest(@NotNull Integer productId,
-                                   @NotNull InventoryOperation operation,
-                                   @NotNull @Positive Integer quantity,
+    public enum InventoryAction { CREATE, UPDATE, RESTOCK, DELETE }
+    public record InventoryRequest(@NotNull InventoryAction action,
+                                   Integer productId,
+                                   String name,
+                                   BigDecimal price,
+                                   Integer quantity,
+                                   Integer discount,
                                    String description) { }
-    private record RequestAppPayload(Integer productId, String action, Integer quantity, String description) { }
+    private record RequestAppPayload(String action, Integer productId, String name, BigDecimal price,
+                                     Integer quantity, Integer discount, String description) { }
     public record ProductRequestSummary(Integer requestId, Integer employeeId, Integer productId,
-                                        String action, String status, String description, Integer quantity,
+                                        String action, String status, String description, String name, BigDecimal price,
+                                        Integer quantity, Integer discount,
                                         String rejectionReason, Integer reviewedByAdminId) { }
     public record UpdateOrderStatusRequest(@NotBlank String status, String cancellationReason) { }
 }
