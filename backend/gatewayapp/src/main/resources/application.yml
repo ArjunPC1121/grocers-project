@@ -64,4 +64,4 @@ app:
   jwt:
     secret: arjun_akash_abhiram_pragathi_pranav
   cors:
-    allowed-origin: ${FRONTEND_ORIGIN:http://localhost:3000}
+    allowed-origin: ${FRONTEND_ORIGIN:http://localhost:5173}
