@@ -1,9 +1,14 @@
 package com.oracle.productsapp.entities;
 
+import java.time.LocalDateTime;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 
-
+import com.oracle.productsapp.converters.FloatEmbeddingConverter;
+import org.hibernate.annotations.JdbcTypeCode;
+import org.hibernate.type.SqlTypes;
 import jakarta.persistence.Column;
+import jakarta.persistence.Convert;
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
@@ -16,74 +21,82 @@ import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
-
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
 @Entity
 @Table(name = "product")
 public class Product {
+
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-
     private Integer id;
+
     @NotBlank(message = "Product name cannot be blank")
     @Column(nullable = false, length = 100)
     private String name;
 
+    @Column(length = 100)
+    private String brand;
 
+    @Column(length = 100)
+    private String category;
 
-private Double price;
+    @Column(name = "sub_category", length = 100)
+    private String subCategory;
 
-@Min(0)
-@Max(100)
-@Column(nullable = false)
-private Integer discount = 0;
+    @Column(length = 1000)
+    private String description;
 
-@Min(0)
-private Integer quantity;
+    @Column(length = 1000)
+    private String tags;
 
+    @Column(name = "search_aliases", length = 1000)
+    private String searchAliases;
 
+    @Column(name = "unit_value")
+    private Double unitValue;
 
-    // public Product() {
-    // }
+    @Column(name = "unit_type", length = 20)
+    private String unitType;
 
-    // public Product(Integer id, String name, Double price, Integer quantity) {
-    //     this.id = id;
-    //     this.name = name;
-    //     this.price = price;
-    //     this.quantity = quantity;
-    // }
+    @Column(name = "image_url", length = 1000)
+    private String imageUrl;
 
-    // public Integer getId() {
-    //     return id;
-    // }
+    @Column(nullable = false)
+    private Double price;
 
-    // public void setId(Integer id) {
-    //     this.id = id;
-    // }
+    @Min(0)
+    @Max(100)
+    @Column(nullable = false)
+    private Integer discount = 0;
 
-    // public String getName() {
-    //     return name;
-    // }
+    @Min(0)
+    @Column(nullable = false)
+    private Integer quantity;
 
-    // public void setName(String name) {
-    //     this.name = name;
-    // }
+    @Column(nullable = false)
+    private Boolean active = true;
 
-    // public Double getPrice() {
-    //     return price;
-    // }
+    // Kept below Oracle's 4,000-byte VARCHAR2 limit so it can remain in the
+    // SYSTEM tablespace without creating a LOB segment.
+    @JsonIgnore
+    @Column(name = "search_text", length = 4000)
+    private String searchText;
 
-    // public void setPrice(Double price) {
-    //     this.price = price;
-    // }
+    // 384 FLOAT32 values consume 1,536 bytes. RAW avoids both VECTOR and LOB
+    // storage restrictions in the SYSTEM tablespace.
+    @JsonIgnore
+    @Convert(converter = FloatEmbeddingConverter.class)
+    @JdbcTypeCode(SqlTypes.VARBINARY)
+    @Column(name = "text_embedding", length = 1536)
+    private float[] textEmbedding;
 
-    // public Integer getQuantity() {
-    //     return quantity;
-    // }
+    @JsonIgnore
+    @Column(name = "embedding_model", length = 100)
+    private String embeddingModel;
 
-    // public void setQuantity(Integer quantity) {
-    //     this.quantity = quantity;
-    // }
+    @JsonIgnore
+    @Column(name = "embedding_updated_at")
+    private LocalDateTime embeddingUpdatedAt;
 }
