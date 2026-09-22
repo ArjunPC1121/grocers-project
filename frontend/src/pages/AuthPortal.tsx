@@ -26,13 +26,10 @@ export default function AuthPortal() {
         ["secretAnswer", "Security answer"],
       ]
       : [
-        [
-          role === "EMPLOYEE" ? "employeeId" : "email",
-          role === "EMPLOYEE" ? "Employee ID" : "Email",
-        ],
+        ["email", "Email"],
         ["password", "Password"],
       ];
-  return <main className="min-h-screen bg-app-cream p-6 flex-center"><form onSubmit={(event) => { event.preventDefault(); if (customerRegistration) void register(form); else void login(role, form.employeeId || form.email || "", form.password || ""); }} className="w-full max-w-md rounded-2xl bg-white p-8 shadow-sm border"><button type="button" className="text-sm text-app-orange" onClick={() => setRole(null)}>← Change role</button><p className="mt-6 text-app-orange font-semibold">{role}</p><h1 className="mt-1 text-3xl font-serif">{customerRegistration ? "Create your account" : "Sign in to Grocers"}</h1>{fields.map(([key,label]) => <label key={key} className="block mt-4 text-sm font-medium">{label}<input required type={
+  return <main className="min-h-screen bg-app-cream p-6 flex-center"><form onSubmit={(event) => { event.preventDefault(); if (customerRegistration) void register(form); else void login(role, form.email || "", form.password || ""); }} className="w-full max-w-md rounded-2xl bg-white p-8 shadow-sm border"><button type="button" className="text-sm text-app-orange" onClick={() => setRole(null)}>← Change role</button><p className="mt-6 text-app-orange font-semibold">{role}</p><h1 className="mt-1 text-3xl font-serif">{customerRegistration ? "Create your account" : "Sign in to Grocers"}</h1>{fields.map(([key,label]) => <label key={key} className="block mt-4 text-sm font-medium">{label}<input required type={
     key === "password" || key === "secretAnswer"
         ? "password"
         : key === "dob"
