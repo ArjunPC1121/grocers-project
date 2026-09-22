@@ -11,7 +11,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   useEffect(() => { try { const saved = localStorage.getItem("grocers_session"); if (saved) setUser(JSON.parse(saved)); } catch { localStorage.removeItem("grocers_session"); } finally { setLoading(false); } }, []);
   const save = (next: SessionUser, token?: string) => { setUser(next); localStorage.setItem("grocers_session", JSON.stringify(next)); if (token) localStorage.setItem("grocers_access_token", token); };
   const login = async (role: Role, identifier: string, password: string) => { try { const { data } = await api.post("/auth/login", { role, identifier, password }); const next = data.user as SessionUser; if (next.locked) { navigate("/support"); toast.error("This account is locked. Please raise a support ticket."); return; } save(next, data.accessToken); toast.success("Signed in successfully"); navigate(destination(next)); } catch (error) { toast.error(errorMessage(error, "Unable to sign in.")); } };
-  const register = async (payload: Record<string, string>) => { try { const { data } = await api.post("/auth/register", payload); save(data.user, data.accessToken); toast.success("Your Grocers account is ready"); navigate("/"); } catch (error) { toast.error(errorMessage(error, "Unable to create your account.")); } };
+  const register = async (payload: Record<string, string>) => {
+    try {
+      await api.post("/users", payload);
+      toast.success("Account created. Please sign in.");
+      navigate("/auth");
+    } catch (error) {
+      toast.error(errorMessage(error, "Unable to create your account."));
+    }
+  };
   const logout = () => { setUser(null); localStorage.removeItem("grocers_session"); localStorage.removeItem("grocers_access_token"); navigate("/auth"); };
   const updateUser = (value: Partial<SessionUser>) => { if (!user) return; save({ ...user, ...value }); };
   return <AuthContext.Provider value={{ user, loading, login, register, logout, updateUser }}>{children}</AuthContext.Provider>;
