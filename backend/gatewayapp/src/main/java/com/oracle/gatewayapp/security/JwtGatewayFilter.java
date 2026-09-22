@@ -55,7 +55,8 @@ public class JwtGatewayFilter implements GlobalFilter {
         if (isAuthAppFailedAttemptRequest(exchange)) {
             return chain.filter(exchange);
         }
-        if (exchange.getRequest().getMethod() == HttpMethod.OPTIONS || isPublic(path)) {
+        if (exchange.getRequest().getMethod() == HttpMethod.OPTIONS
+                || isPublic(path, exchange.getRequest().getMethod())) {
             return chain.filter(exchange);
         }
 
@@ -98,10 +99,15 @@ public class JwtGatewayFilter implements GlobalFilter {
         }
     }
 
-    private boolean isPublic(String path) {
 
+
+
+
+    private boolean isPublic(String path, HttpMethod method) {
         return path.startsWith("/grocers/api/auth/login/")
-                || path.equals("/grocers/api/users");
+                || path.equals("/grocers/api/users")
+                || (method == HttpMethod.GET
+                && path.startsWith("/grocers/api/products"));
     }
 
     private boolean isAuthorized(String path, String role) {
