@@ -1,6 +1,6 @@
 export type Role = "CUSTOMER" | "EMPLOYEE" | "ADMIN";
 export interface Address { id: string; label: string; address: string; city: string; state: string; zip: string; isDefault: boolean; lat?: number; lng?: number; }
-export interface SessionUser { id: string; firstName: string; lastName: string; name: string; email: string; employeeId?: string; phone?: string; role: Role; locked?: boolean; mustChangePassword?: boolean; addresses?: Address[]; }
+export interface SessionUser { id: string; firstName: string; lastName: string; name: string; email: string;address?: string; employeeId?: string; phone?: string; role: Role; locked?: boolean; mustChangePassword?: boolean; addresses?: Address[]; }
 export type User = SessionUser;
 export interface Product { id: string; name: string; description: string; price: number; originalPrice?: number; image?: string; category: string; unit: string; stock: number; discount?: number; rating?: number; reviewCount?: number; demandCount?: number; createdAt?: string; }
 export interface CartItem { product: Product; quantity: number; }

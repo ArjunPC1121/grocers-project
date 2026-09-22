@@ -1,4 +1,4 @@
-import { useState } from "react";
+
 import { useNavigate } from "react-router-dom";
 import {
   ArrowLeft,
@@ -16,12 +16,14 @@ import CheckoutPayment from "../components/Checkout/CheckoutPayment";
 import CheckoutReview from "../components/Checkout/CheckoutReview";
 import api from "../config/api";
 import { useAuth } from "../context/AuthContext";
+import { useEffect, useState } from "react";
 
 const Checkout = () => {
   const navigate = useNavigate();
   const currency = import.meta.env.VITE_CURRENCY_SYMBOL || "₹";
 
-  const { items, cartTotal, clearCart } = useCart();
+  // const { items, cartId, cartTotal, checkoutCart } = useCart();
+  const { items, cartId, cartTotal, clearCart } = useCart();
   const { user } = useAuth();
 
   const [step, setStep] = useState("address");
@@ -50,31 +52,66 @@ const Checkout = () => {
     { key: "payment", label: "Payment", icon: CreditCardIcon },
     { key: "review", label: "Review", icon: CheckIcon },
   ];
+  useEffect(() => {
+    if (user?.address) {
+      setAddress((previous) => ({
+        ...previous,
+        address: user.address,
+      }));
+    }
+  }, [user?.address]);
 
   const handlePlaceOrder = async () => {
+    if (!user) {
+      toast.error("Please sign in before placing an order.");
+      return;
+    }
+
+    if (!cartId) {
+      toast.error("No active cart found.");
+      return;
+    }
+
     setLoading(true);
+
     try {
       const orderData = {
+        customerId: Number(user.id),
+        cartId: cartId,
+        deliveryAddress:
+            `${address.address}, ${address.city}, ` +
+            `${address.state} - ${address.zip}`,
         items: items.map((item) => ({
-          product: item.product.id,
+          productId: Number(item.product.id),
           quantity: item.quantity,
         })),
-        shippingAddress: address,
-        paymentMethod,
       };
 
-      const { data } = await api.post("/orders", orderData);
-      console.log(data);
+      // Creates an Order with CREATED status.
+      const { data: createdOrder } = await api.post("/orders", orderData);
 
-      if (data.url) {
-        window.location.href = data.url;
+      // Reduces product stock and deducts user funds.
+      const { data: checkedOutOrder } = await api.post(
+          `/orders/${createdOrder.id}/checkout`,
+      );
+
+      if (checkedOutOrder.status !== "PLACED") {
+        toast.error(`Order could not be placed: ${checkedOutOrder.status}`);
         return;
       }
+
+      // Marks Cart as CHECKED_OUT and clears frontend cart state.
+      // await checkoutCart();
       clearCart();
+
       toast.success("Order placed successfully!");
-      navigate(`/orders/${data.order.id}`);
+      navigate(`/orders/${checkedOutOrder.id}`);
     } catch (error: any) {
-      toast.error(error.response?.data?.message || error.message);
+      toast.error(
+          error.response?.data?.message ||
+          error.message ||
+          "Could not place order.",
+      );
     } finally {
       setLoading(false);
       scrollTo(0, 0);

@@ -6,22 +6,48 @@ import toast from "react-hot-toast";
 import type { Product } from "../../types";
 import ProductCard from "../ProductCard";
 
+
 import productApi from "../../config/productApi";
 
 const PopularProducts = () => {
   const [products, setProducts] = useState<Product[]>([]);
 
   useEffect(() => {
-    api
-      .get("/products?sort=rating")
-      .then(({ data }) => {
-        setProducts(Array.isArray(data?.products) ? data.products : []);
-      })
-      .catch((error: any) => {
-        toast.error(error?.response?.data?.message || error?.message || "Unable to load products");
-      });
-  }, []);
+    productApi
+        .get("/products")
+        .then(({ data }) => {
+          const mappedProducts = data
+              .filter((product: any) => product.active !== false)
+              .map((product: any) => {
+                const discount = product.discount || 0;
+                const originalPrice = product.price;
 
+                return {
+                  id: String(product.id),
+                  name: product.name,
+                  description: product.description || "",
+                  price: originalPrice * (1 - discount / 100),
+                  originalPrice: discount > 0 ? originalPrice : undefined,
+                  image: product.imageUrl || undefined,
+                  category: product.category || "Groceries",
+                  unit: `${product.unitValue || 1} ${product.unitType || "unit"}`,
+                  stock: product.quantity,
+                  discount,
+                  rating: 0,
+                  reviewCount: 0,
+                };
+              });
+
+          setProducts(mappedProducts);
+        })
+        .catch((error: any) => {
+          toast.error(
+              error?.response?.data?.message ||
+              error?.message ||
+              "Unable to load products"
+          );
+        });
+  }, []);
   return (
     <section className="pb-16">
       <div className="max-w-7xl mx-auto ">

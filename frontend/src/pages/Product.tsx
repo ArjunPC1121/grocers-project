@@ -17,6 +17,7 @@ import Loading from "../components/Loading";
 import DummyReviewsSection from "../assets/DummyReviewsSection";
 import ProductCard from "../components/ProductCard";
 import api from "../config/api";
+import productApi from "../config/productApi";
 
 const ProductPage = () => {
   const currency = import.meta.env.VITE_CURRENCY_SYMBOL || "$";
