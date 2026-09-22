@@ -14,7 +14,7 @@ import org.springframework.web.bind.annotation.*;
 import java.util.List;
 
 @RestController
-@RequestMapping("/api/products")
+@RequestMapping("grocers/api/products")
 @RequiredArgsConstructor
 public class ProductController {
 
@@ -65,7 +65,6 @@ public class ProductController {
         productService.delete(id);
         return ResponseEntity.noContent().build();
     }
-
     @PostMapping("/{productId}/reduce-quantity")
     public ResponseEntity<Product> reduceQuantity(
             @PathVariable Integer productId,

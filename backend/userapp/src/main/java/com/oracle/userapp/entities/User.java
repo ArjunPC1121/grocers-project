@@ -2,11 +2,13 @@ package com.oracle.userapp.entities;
 
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
 import java.sql.Date;
+import java.time.LocalDateTime;
 
 @Data
 @NoArgsConstructor
@@ -34,7 +36,7 @@ public class User {
     @Column(nullable = false)
     private String password;
 
-    @NotBlank(message="Can't be blank")
+    @NotNull(message="Can't be blank")
     @Column(nullable = false)
     private Date dob;
 
@@ -49,5 +51,29 @@ public class User {
     @NotBlank(message="Can't be blank")
     @Column(nullable = false)
     private String accountNumber;
+
+    @Column(nullable = false)
+    private int failedLoginAttempts = 0;
+
+    @Column(nullable = false)
+    private boolean accountLocked = false;
+
+    @Enumerated(EnumType.STRING)
+    @Column(length = 32)
+    private LockedReason lockedReason;
+
+    @Column(nullable = false)
+    private double funds = 200;
+
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false)
+    private SecretQuestion secretQuestion;
+
+    @Column(nullable = false)
+    private String secretAnswerHash;
+
+    private String passwordResetTokenHash;
+
+    private LocalDateTime passwordResetTokenExpiresAt;
 
 }

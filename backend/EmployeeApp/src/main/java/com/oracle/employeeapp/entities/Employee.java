@@ -2,6 +2,8 @@ package com.oracle.employeeapp.entities;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
@@ -42,4 +44,8 @@ public class Employee {
 
     @Column(name = "must_change_password", nullable = false)
     private Boolean mustChangePassword = true;
+
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false, length = 20)
+    private EmployeeStatus status = EmployeeStatus.ACTIVE;
 }
