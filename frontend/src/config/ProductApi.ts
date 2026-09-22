@@ -100,3 +100,5 @@ export async function searchProducts(
   });
   return data.map(mapProduct);
 }
+// Compatibility export for existing code that uses the client directly.
+export default api;

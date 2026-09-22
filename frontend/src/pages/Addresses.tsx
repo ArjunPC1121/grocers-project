@@ -1,188 +1,133 @@
-import React, { useEffect, useState } from "react";
-import { MapPinIcon, PlusIcon } from "lucide-react";
+import { useEffect, useState } from "react";
 import toast from "react-hot-toast";
+import { MapPinIcon, PencilIcon } from "lucide-react";
 
 import Loading from "../components/Loading";
-import AddressCard from "../components/AddressCard";
-import AddressForm from "../components/AddressForm";
 import { useAuth } from "../context/AuthContext";
-import type { Address } from "../types";
 import api from "../config/api";
 
 const Addresses = () => {
-  const { updateUser } = useAuth();
+  const { user, updateUser } = useAuth();
 
-  const [addresses, setAddresses] = useState<Address[]>([]);
+  const [address, setAddress] = useState("");
   const [loading, setLoading] = useState(true);
-  const [showForm, setShowForm] = useState(false);
-  const [editingId, setEditingId] = useState<string | null>(null);
-  const [form, setForm] = useState({
-    label: "",
-    address: "",
-    city: "",
-    state: "",
-    zip: "",
-    isDefault: false,
-  });
+  const [saving, setSaving] = useState(false);
+  const [editing, setEditing] = useState(false);
 
-  const resetForm = () => {
-    setForm({
-      label: "",
-      address: "",
-      city: "",
-      state: "",
-      zip: "",
-      isDefault: false,
-    });
-    setShowForm(false);
-    setEditingId(null);
-  };
+  useEffect(() => {
+    if (!user) {
+      setLoading(false);
+      return;
+    }
 
-  const getLocation = (retries = 3): Promise<{ lat: number; lng: number }> => {
-    return new Promise((resolve, reject) => {
-      if (!navigator.geolocation) {
-        reject(new Error("Geolocation not supported"));
-        return;
-      }
+    api
+        .get(`/users/${user.id}`)
+        .then(({ data }) => {
+          setAddress(data.address || "");
+          updateUser({ address: data.address || "" });
+        })
+        .catch((error) => {
+          toast.error(
+              error.response?.data?.message || "Could not load address",
+          );
+        })
+        .finally(() => setLoading(false));
+  }, [user?.id]);
 
-      const attempt = () => {
-        navigator.geolocation.getCurrentPosition(
-          (position) => {
-            resolve({
-              lat: position.coords.latitude,
-              lng: position.coords.longitude,
-            });
-          },
-          (error: any) => {
-            if (retries > 0) {
-              retries--;
-              setTimeout(attempt, 1000);
-            } else {
-              reject(
-                new Error(
-                  error.message || "Failed to get location after retries",
-                ),
-              );
-            }
-          },
-          {
-            enableHighAccuracy: false,
-            timeout: 15000,
-            maximumAge: 60000,
-          },
-        );
-      };
-      attempt();
-    });
-  };
+  const saveAddress = async () => {
+    if (!user) return;
 
-  const handleSubmit = async (e: React.SubmitEvent) => {
-    e.preventDefault();
+    if (!address.trim()) {
+      toast.error("Please enter a delivery address.");
+      return;
+    }
+
+    setSaving(true);
+
     try {
-      const coords = await getLocation();
-      const payload = { ...form, ...coords };
+      const { data } = await api.patch(`/users/${user.id}`, {
+        address: address.trim(),
+      });
 
-      if (editingId) {
-        const { data } = await api.put(`/addresses/${editingId}`, payload);
-        setAddresses(data.addresses);
-        updateUser({ addresses: data.addresses });
-        toast.success("Address updated!");
-      } else {
-        const { data } = await api.post(`/addresses`, payload);
-        setAddresses(data.addresses);
-        updateUser({ addresses: data.addresses });
-        toast.success("Address added!");
-      }
-      resetForm();
+      setAddress(data.address);
+      updateUser({ address: data.address });
+      setEditing(false);
+
+      toast.success("Delivery address updated.");
     } catch (error: any) {
-      toast.error(error.response?.data?.message || error.message || "Failed");
+      toast.error(
+          error.response?.data?.message || "Could not update address.",
+      );
+    } finally {
+      setSaving(false);
     }
   };
 
-  const onEditHandler = (add: Address) => {
-    setForm({
-      label: add.label,
-      address: add.address,
-      city: add.city,
-      state: add.state,
-      zip: add.zip,
-      isDefault: add.isDefault,
-    });
-    setEditingId(add.id);
-    setShowForm(true);
-  };
-
-  useEffect(() => {
-    api
-      .get("/addresses")
-      .then(({ data }) => {
-        setAddresses(data.addresses);
-      })
-      .catch((error: any) => {
-        toast.error(error.response?.data?.message || error?.message);
-      })
-      .finally(() => {
-        setLoading(false);
-      });
-  }, []);
+  if (loading) return <Loading />;
 
   return (
-    <div className="min-h-screen bg-app-cream">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        {/* page header  */}
-        <div className="flex items-center justify-between mb-8">
-          <h1 className="text-2xl font-semibold text-app-green">
-            My Addresses
+      <div className="min-h-screen bg-app-cream">
+        <div className="max-w-3xl mx-auto px-4 py-8">
+          <h1 className="text-2xl font-semibold text-app-green mb-6">
+            Delivery Address
           </h1>
-          <button
-            onClick={() => {
-              resetForm();
-              setShowForm(true);
-            }}
-            className="px-4 py-2 bg-app-green text-white text-sm font-semibold rounded-xl hover:bg-app-green-light transition-colors flex items-center gap-2"
-          >
-            <PlusIcon className="size-4" /> Add Address
-          </button>
+
+          <div className="bg-white border border-app-border rounded-2xl p-6">
+            <div className="flex items-start gap-3">
+              <MapPinIcon className="size-5 text-app-green mt-1" />
+
+              <div className="flex-1">
+                <h2 className="font-semibold text-app-green">
+                  Your saved address
+                </h2>
+
+                {editing ? (
+                    <>
+                  <textarea
+                      value={address}
+                      onChange={(event) => setAddress(event.target.value)}
+                      rows={4}
+                      placeholder="Enter your complete delivery address"
+                      className="w-full mt-4 p-3 text-sm border border-app-border rounded-xl outline-none focus:border-app-green"
+                  />
+
+                      <div className="flex gap-3 mt-4">
+                        <button
+                            onClick={saveAddress}
+                            disabled={saving}
+                            className="px-5 py-2.5 bg-app-green text-white rounded-xl disabled:opacity-60"
+                        >
+                          {saving ? "Saving..." : "Save Address"}
+                        </button>
+
+                        <button
+                            onClick={() => setEditing(false)}
+                            className="px-5 py-2.5 border border-app-border rounded-xl"
+                        >
+                          Cancel
+                        </button>
+                      </div>
+                    </>
+                ) : (
+                    <>
+                      <p className="text-sm text-app-text-light mt-2 whitespace-pre-line">
+                        {address || "No delivery address saved yet."}
+                      </p>
+
+                      <button
+                          onClick={() => setEditing(true)}
+                          className="mt-4 flex items-center gap-2 px-4 py-2 text-sm bg-app-cream text-app-green rounded-xl"
+                      >
+                        <PencilIcon className="size-4" />
+                        {address ? "Update Address" : "Add Address"}
+                      </button>
+                    </>
+                )}
+              </div>
+            </div>
+          </div>
         </div>
-
-        {/* Form Modal */}
-        {showForm && (
-          <AddressForm
-            resetForm={resetForm}
-            handleSubmit={handleSubmit}
-            form={form}
-            setForm={setForm}
-            editingId={editingId}
-          />
-        )}
-
-        {/* Addresses List */}
-        {loading ? (
-          <Loading />
-        ) : addresses.length === 0 ? (
-          <div className="text-center py-16">
-            <MapPinIcon className="size-16 text-app-border mx-auto mb-4" />
-            <h2 className="text-lg font-semibold text-app-green mb-2">
-              No addresses saved
-            </h2>
-            <p className="text-sm text-app-text-light">
-              Add an address for faster checkout
-            </p>
-          </div>
-        ) : (
-          <div className="space-y-4">
-            {addresses.map((addr) => (
-              <AddressCard
-                key={addr.id}
-                addr={addr}
-                onEditHandler={onEditHandler}
-                setAddresses={setAddresses}
-              />
-            ))}
-          </div>
-        )}
       </div>
-    </div>
   );
 };
 

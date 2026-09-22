@@ -29,7 +29,6 @@ const PopularProducts = () => {
         toast.error(errorMessage(error, "Unable to load products."));
       });
   }, []);
-
   return (
     <section className="pb-16">
       <div className="max-w-7xl mx-auto ">

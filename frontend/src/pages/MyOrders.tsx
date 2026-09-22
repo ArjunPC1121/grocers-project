@@ -8,6 +8,7 @@ import { statusColors } from "../assets/assets";
 import Loading from "../components/Loading";
 import api from "../config/api";
 import type { Order } from "../types";
+import { useAuth } from "../context/AuthContext";
 
 const MyOrders = () => {
   const currency = import.meta.env.VITE_CURRENCY_SYMBOL || "$";
@@ -18,14 +19,14 @@ const MyOrders = () => {
   const [searchParams, setSearchParams] = useSearchParams();
 
   const tabs = ["all", "Placed", "Out for Delivery", "Delivered"];
-
+  const { user } = useAuth();
   const { clearCart } = useCart();
 
   const fetchOrders = async () => {
     setLoading(true);
     try {
       const params = activeTab !== "all" ? `?status=${activeTab}` : "";
-      const { data } = await api.get(`/orders${params}`);
+      const { data } = await api.get(`/orders/users/${user?.id}`);
       setOrders(data.orders);
     } catch (error: any) {
       toast.error(error.response?.data?.message || error?.message);

@@ -107,6 +107,7 @@ export function AuthProvider({children}: { children: ReactNode }) {
                 lastName: profile.lastName,
                 name: `${profile.firstName} ${profile.lastName}`,
                 email: profile.email,
+                address: profile.address,
                 phone: profile.phoneNumber,
                 role: "CUSTOMER",
             };
