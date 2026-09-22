@@ -71,6 +71,15 @@ public class UserService implements UserServiceManager<UserRequest,UserResponse,
 
     }
 
+    /** Creates a user for an administrator and exposes the generated password only in this response. */
+    @Transactional
+    public AdminCreatedUserResponse addByAdmin(AdminUserRequest data) {
+        String temporaryPassword = UUID.randomUUID().toString().replace("-", "").substring(0, 12);
+        UserRequest request = new UserRequest(data.firstName(), data.lastName(), data.email(), temporaryPassword,
+                data.dob(), data.phoneNumber(), data.address(), data.accountNumber(), data.secretQuestion(), data.secretAnswer());
+        return new AdminCreatedUserResponse(add(request), temporaryPassword);
+    }
+
     @Override
     public Collection<UserResponse> getAll() {
         Collection<User> allUsers = repository.findAll();

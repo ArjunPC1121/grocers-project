@@ -10,9 +10,10 @@ public record UserCreateRequest(
         @NotBlank String firstName,
         @NotBlank String lastName,
         @NotBlank @Email String email,
-        @NotBlank @Size(min = 8, max = 100) String password,
         LocalDate dob,
         @NotBlank String phoneNumber,
         @NotBlank String address,
-        @NotBlank String accountNumber) {
+        @NotBlank String accountNumber,
+        @NotBlank String secretQuestion,
+        @NotBlank String secretAnswer) {
 }

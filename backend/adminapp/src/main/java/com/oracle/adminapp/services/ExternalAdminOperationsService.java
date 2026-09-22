@@ -37,6 +37,7 @@ public class ExternalAdminOperationsService {
     private final RestClient orders;
     private final RestClient carts;
     private final boolean cartProductCleanupEnabled;
+    private final String gatewayInternalSecret;
 
     public ExternalAdminOperationsService(
             @Value("${services.products-url}") String productsUrl,
@@ -45,7 +46,8 @@ public class ExternalAdminOperationsService {
             @Value("${services.requests-url}") String requestsUrl,
             @Value("${services.orders-url}") String ordersUrl,
             @Value("${services.carts-url}") String cartsUrl,
-            @Value("${services.cart-product-cleanup-enabled:false}") boolean cartProductCleanupEnabled) {
+            @Value("${services.cart-product-cleanup-enabled:false}") boolean cartProductCleanupEnabled,
+            @Value("${services.gateway-internal-secret}") String gatewayInternalSecret) {
         this.products = RestClient.create(productsUrl);
         this.employees = RestClient.create(employeesUrl);
         this.users = RestClient.create(usersUrl);
@@ -53,10 +55,11 @@ public class ExternalAdminOperationsService {
         this.orders = RestClient.create(ordersUrl);
         this.carts = RestClient.create(cartsUrl);
         this.cartProductCleanupEnabled = cartProductCleanupEnabled;
+        this.gatewayInternalSecret = gatewayInternalSecret;
     }
 
     public List<Map<String, Object>> products() { return list(products); }
-    public List<Map<String, Object>> employees() { return list(employees); }
+    public List<Map<String, Object>> employees() { return listEmployees(); }
     public List<Map<String, Object>> users() { return list(users); }
     public List<Map<String, Object>> requests() { return listRequests(); }
     public List<Map<String, Object>> orders() { return list(orders); }
@@ -74,21 +77,27 @@ public class ExternalAdminOperationsService {
     }
 
     public Map<String, Object> createEmployee(EmployeeCreateRequest request) {
-        return post(employees, Map.of(
+        Map<?, ?> response = employees.post().headers(this::employeeHeaders).body(Map.of(
                 "firstName", request.firstName(),
                 "lastName", request.lastName(),
                 "email", request.email(),
-                "password", "welcome123",
-                "mustChangePassword", true,
-                "status", "ACTIVE"));
+                "defaultPassword", "welcome123"))
+                .retrieve().body(Map.class);
+        @SuppressWarnings("unchecked")
+        Map<String, Object> result = response == null ? Map.of() : (Map<String, Object>) response;
+        return result;
     }
 
     public void deactivateEmployee(Integer id) {
-        employees.patch().uri("/{id}/status", id).body(Map.of("status", "INACTIVE"))
+        employees.patch().uri("/{id}/status", id).headers(this::employeeHeaders).body(Map.of("status", "INACTIVE"))
                 .retrieve().toBodilessEntity();
     }
 
-    public Map<String, Object> createUser(UserCreateRequest request) { return post(users, request); }
+    @SuppressWarnings("unchecked")
+    public Map<String, Object> createUser(UserCreateRequest request) {
+        Map<?, ?> response = users.post().uri("/admin").body(request).retrieve().body(Map.class);
+        return response == null ? Map.of() : (Map<String, Object>) response;
+    }
     public Map<String, Object> updateUser(Integer id, UserUpdateRequest request) {
         Map<?, ?> response = users.patch().uri("/{id}", id).body(request).retrieve().body(Map.class);
         @SuppressWarnings("unchecked")
@@ -107,17 +116,38 @@ public class ExternalAdminOperationsService {
             throw new ResourceNotFoundException("Employee request was not found");
         }
 
-        executeProductRequest(request);
-        requests.patch().uri("/{id}/status", id).headers(headers -> adminHeaders(headers, adminId)).body(Map.of("status", "APPROVED"))
-                .retrieve().toBodilessEntity();
+        updateRequestStatus(id, adminId, "PROCESSING", null);
+        boolean productOperationCompleted = false;
+        try {
+            executeProductRequest(request);
+            productOperationCompleted = true;
+            updateRequestStatus(id, adminId, "APPROVED", null);
+        } catch (RuntimeException exception) {
+            // Only return to PENDING when no ProductApp mutation completed. If final approval
+            // persistence fails after the mutation, PROCESSING prevents an unsafe duplicate retry.
+            if (!productOperationCompleted) {
+                try {
+                    updateRequestStatus(id, adminId, "PENDING", null);
+                } catch (RuntimeException ignored) {
+                    // Preserve the original ProductApp failure for the caller.
+                }
+            }
+            throw exception;
+        }
         return Map.of("requestId", id, "status", "APPROVED");
     }
 
     public Map<String, Object> rejectRequest(Integer id, Integer adminId, String rejectionReason) {
-        requests.patch().uri("/{id}/status", id).headers(headers -> adminHeaders(headers, adminId))
-                .body(Map.of("status", "REJECTED", "rejectionReason", rejectionReason))
-                .retrieve().toBodilessEntity();
+        updateRequestStatus(id, adminId, "REJECTED", rejectionReason);
         return Map.of("requestId", id, "status", "REJECTED");
+    }
+
+    private void updateRequestStatus(Integer id, Integer adminId, String status, String rejectionReason) {
+        Map<String, String> body = rejectionReason == null
+                ? Map.of("status", status)
+                : Map.of("status", status, "rejectionReason", rejectionReason);
+        requests.patch().uri("/{id}/status", id).headers(headers -> adminHeaders(headers, adminId))
+                .body(body).retrieve().toBodilessEntity();
     }
 
     public DashboardResponse dashboard() {
@@ -157,16 +187,54 @@ public class ExternalAdminOperationsService {
 
     private void executeProductRequest(EmployeeProductRequest request) {
         String action = text(request.action()).toUpperCase();
-        ProductCommand product = new ProductCommand(request.name(), request.price(), request.quantity(), request.discount());
         switch (action) {
-            case "CREATE" -> createProduct(product);
-            case "UPDATE" -> updateProduct(requiredProductId(request), product);
-            case "RESTOCK" -> products.post().uri("/{id}/increase-quantity", requiredProductId(request))
-                    .body(Map.of("quantity", Objects.requireNonNull(request.quantity(), "quantity is required")))
-                    .retrieve().toBodilessEntity();
+            case "CREATE" -> createProduct(commandFromRequest(request, null));
+            case "UPDATE" -> {
+                Integer productId = requiredProductId(request);
+                updateProduct(productId, commandFromRequest(request, productId));
+            }
+            case "RESTOCK" -> {
+                Integer productId = requiredProductId(request);
+                ProductCommand current = product(productId);
+                Integer amount = Objects.requireNonNull(request.quantity(), "quantity is required");
+                updateProduct(productId, new ProductCommand(current.name(), current.price(), current.quantity() + amount, current.discount()));
+            }
             case "DELETE" -> deleteProduct(requiredProductId(request));
             default -> throw new IllegalArgumentException("Unsupported request action: " + request.action());
         }
+    }
+
+    private ProductCommand commandFromRequest(EmployeeProductRequest request, Integer existingProductId) {
+        ProductCommand current = existingProductId == null ? null : product(existingProductId);
+        String name = request.name() != null ? request.name() : current == null ? null : current.name();
+        BigDecimal price = request.price() != null ? request.price() : current == null ? null : current.price();
+        Integer quantity = request.quantity() != null ? request.quantity() : current == null ? null : current.quantity();
+        Integer discount = request.discount() != null ? request.discount() : current == null ? null : current.discount();
+        if (name == null || price == null || quantity == null || discount == null) {
+            throw new IllegalArgumentException("name, price, quantity, and discount are required for this request action");
+        }
+        return new ProductCommand(name, price, quantity, discount);
+    }
+
+    private ProductCommand product(Integer id) {
+        Map<?, ?> response = products.get().uri("/{id}", id).retrieve().body(Map.class);
+        if (response == null) throw new ResourceNotFoundException("Product was not found");
+        return new ProductCommand(text(response.get("name")), decimal(response.get("price")),
+                number(response.get("quantity")).intValue(), number(response.get("discount")).intValue());
+    }
+
+    @SuppressWarnings("unchecked")
+    private List<Map<String, Object>> listEmployees() {
+        List<?> body = employees.get().headers(this::employeeHeaders).retrieve().body(List.class);
+        if (body == null) return List.of();
+        List<Map<String, Object>> rows = new ArrayList<>();
+        for (Object item : body) if (item instanceof Map<?, ?> map) rows.add((Map<String, Object>) map);
+        return rows;
+    }
+
+    private void employeeHeaders(org.springframework.http.HttpHeaders headers) {
+        headers.set("X-Gateway-Request", gatewayInternalSecret);
+        headers.set("X-Authenticated-Role", "ADMIN");
     }
 
     @SuppressWarnings("unchecked")
