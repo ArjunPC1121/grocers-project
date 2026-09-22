@@ -5,6 +5,7 @@ import java.util.List;
 import com.oracle.productsapp.dtos.ProductRequest;
 import com.oracle.productsapp.dtos.ProductSearchResult;
 import com.oracle.productsapp.entities.Product;
+import org.springframework.web.multipart.MultipartFile;
 
 public interface ProductService {
 
@@ -32,4 +33,5 @@ public interface ProductService {
             String query,
             int limit
     );
+    Product uploadImage(Integer productId, MultipartFile image);
 }
