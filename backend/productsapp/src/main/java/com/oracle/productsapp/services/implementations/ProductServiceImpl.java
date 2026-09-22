@@ -1,11 +1,6 @@
 package com.oracle.productsapp.services.implementations;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Comparator;
-import java.util.List;
-import java.util.Locale;
-import java.util.Set;
+import java.util.*;
 import java.time.LocalDateTime;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -26,12 +21,13 @@ import com.oracle.productsapp.services.abstractions.ProductService;
 
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
+import org.springframework.web.multipart.MultipartFile;
 
 
 @Service
 @RequiredArgsConstructor
 public class ProductServiceImpl implements ProductService {
-
+    private final CloudinaryImageService cloudinaryImageService;
     private final ProductRepository productRepository;
     private final ProductEmbeddingService productEmbeddingService;
     private final ProductSearchRepository searchRepository;
@@ -365,5 +361,17 @@ public class ProductServiceImpl implements ProductService {
         return StringUtils.hasText(value)
                 ? value.trim()
                 : null;
+    }
+    @Override
+    @Transactional
+    public Product uploadImage(Integer productId, MultipartFile image) {
+        Product product = getById(productId);
+
+        Map uploadResult = cloudinaryImageService.upload(image);
+
+        product.setImageUrl((String) uploadResult.get("secure_url"));
+        product.setImagePublicId((String) uploadResult.get("public_id"));
+
+        return productRepository.save(product);
     }
 }
