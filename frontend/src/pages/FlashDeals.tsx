@@ -5,18 +5,20 @@ import toast from "react-hot-toast";
 import type { Product } from "../types";
 import Loading from "../components/Loading";
 import ProductCard from "../components/ProductCard";
-import api from "../config/api";
+import { errorMessage } from "../config/api";
+import { getProducts } from "../config/ProductApi";
 
 const FlashDeals = () => {
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    api
-      .get("/products/flash-deals")
-      .then((res) => setProducts(res.data.products))
-      .catch((error: any) =>
-        toast.error(error.response.data.message || error?.message),
+    getProducts()
+      .then((items) =>
+        setProducts(items.filter((product) => product.discount > 0)),
+      )
+      .catch((error) =>
+        toast.error(errorMessage(error, "Unable to load deals.")),
       )
       .finally(() => setLoading(false));
   }, []);

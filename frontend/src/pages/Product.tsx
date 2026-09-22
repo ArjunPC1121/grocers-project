@@ -16,13 +16,19 @@ import type { Product } from "../types";
 import Loading from "../components/Loading";
 import DummyReviewsSection from "../assets/DummyReviewsSection";
 import ProductCard from "../components/ProductCard";
-import api from "../config/api";
+import {
+  getProduct,
+  getProducts,
+  normalizedCategorySlug,
+} from "../config/ProductApi";
+import { useAuthenticatedCart } from "../hooks/useAuthenticatedCart";
 
 const ProductPage = () => {
   const currency = import.meta.env.VITE_CURRENCY_SYMBOL || "$";
   const { id } = useParams();
   const navigate = useNavigate();
-  const { items, addToCart, updateQuantity, removeFromCart } = useCart();
+  const { items, updateQuantity, removeFromCart } = useCart();
+  const addToAuthenticatedCart = useAuthenticatedCart();
 
   const [product, setProduct] = useState<Product | null>(null);
   const [relatedProducts, setRelatedProducts] = useState<Product[]>([]);
@@ -30,21 +36,40 @@ const ProductPage = () => {
   const [localQuantity, setLocalQuantity] = useState(1);
 
   useEffect(() => {
-    setLoading(true);
-    setLocalQuantity(1);
-    window.scrollTo(0, 0);
+    let cancelled = false;
 
-    api
-      .get(`/products/${id}`)
-      .then(({ data }) => {
-        setProduct(data.product);
-        return api.get(`/products?category=${data.product.category}`);
-      })
-      .then(({ data }) => {
-        setRelatedProducts(data.products.filter((p: Product) => p.id !== id));
-      })
-      .catch(() => navigate("/products"))
-      .finally(() => setLoading(false));
+    const loadProduct = async () => {
+      if (!id) return;
+
+      setLoading(true);
+      setLocalQuantity(1);
+      window.scrollTo(0, 0);
+
+      try {
+        const selected = await getProduct(id);
+        const allProducts = await getProducts();
+
+        if (cancelled) return;
+        setProduct(selected);
+        setRelatedProducts(
+          allProducts.filter(
+            (candidate) =>
+              candidate.id !== selected.id &&
+              normalizedCategorySlug(candidate.category) ===
+                normalizedCategorySlug(selected.category),
+          ),
+        );
+      } catch {
+        if (!cancelled) navigate("/products", { replace: true });
+      } finally {
+        if (!cancelled) setLoading(false);
+      }
+    };
+
+    void loadProduct();
+    return () => {
+      cancelled = true;
+    };
   }, [id, navigate]);
 
   if (loading) return <Loading />;
@@ -222,7 +247,9 @@ const ProductPage = () => {
                 {/* Add to Cart */}
                 <button
                   onClick={() => {
-                    if (!inCart) addToCart(product, localQuantity);
+                    if (!inCart) {
+                      addToAuthenticatedCart(product, localQuantity);
+                    }
                   }}
                   disabled={product.stock === 0}
                   className={`flex-1 py-3 font-semibold rounded-xl transition-colors flex-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed active:scale-[0.98] ${inCart ? "bg-app-cream text-app-green border border-app-green" : "bg-app-orange text-white hover:bg-app-orange-dark"}`}

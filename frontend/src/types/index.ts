@@ -2,7 +2,7 @@ export type Role = "CUSTOMER" | "EMPLOYEE" | "ADMIN";
 export interface Address { id: string; label: string; address: string; city: string; state: string; zip: string; isDefault: boolean; lat?: number; lng?: number; }
 export interface SessionUser { id: string; firstName: string; lastName: string; name: string; email: string; employeeId?: string; phone?: string; role: Role; locked?: boolean; mustChangePassword?: boolean; addresses?: Address[]; }
 export type User = SessionUser;
-export interface Product { id: string; name: string; description: string; price: number; originalPrice?: number; image?: string; category: string; unit: string; stock: number; discount?: number; rating?: number; reviewCount?: number; demandCount?: number; createdAt?: string; }
+export interface Product { id: string; name: string; brand: string; description: string; price: number; originalPrice: number; image: string; category: string; subCategory: string; unit: string; stock: number; discount: number; rating: number; reviewCount: number; demandCount?: number; createdAt?: string; lexicalScore?: number; semanticScore?: number; finalScore?: number; isOrganic?: boolean; }
 export interface CartItem { product: Product; quantity: number; }
 export interface Cart { items: CartItem[]; subtotal: number; }
 export interface WishlistItem { id: string; product: Product; }

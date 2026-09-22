@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Link, useSearchParams } from "react-router-dom";
 import toast from "react-hot-toast";
 import { ChevronDown, Home, SlidersHorizontal, XIcon } from "lucide-react";
@@ -8,12 +8,12 @@ import { categoriesData } from "../assets/assets";
 import ProductCard from "../components/ProductCard";
 import Loading from "../components/Loading";
 import FilterPanel from "../components/FilterPanel";
-import api from "../config/api";
+import { errorMessage } from "../config/api";
+import { getProducts, normalizedCategorySlug } from "../config/ProductApi";
 
 const Products = () => {
   const [searchParams, setSearchParams] = useSearchParams();
   const [products, setProducts] = useState<Product[]>([]);
-  const [totalPages, setTotalPages] = useState(1);
   const [loading, setLoading] = useState(true);
   const [mobileFiltersOpen, setMobileFiltersOpen] = useState(false);
 
@@ -27,20 +27,10 @@ const Products = () => {
   const fetchProducts = async () => {
     setLoading(true);
     try {
-      const params = new URLSearchParams();
-      if (category) params.set("category", category);
-      if (organic) params.set("organic", organic);
-      if (sort) params.set("sort", sort);
-      if (sort) params.set("sort", sort);
-      if (maxPrice) params.set("maxPrice", maxPrice);
-      params.set("page", String(page));
-      params.set("limit", "12");
-
-      const { data } = await api.get(`/products?${params.toString()}`);
-      setProducts(data.products);
-      setTotalPages(data.pages);
-    } catch (error: any) {
-      toast.error(error?.response?.data?.message || error?.message);
+      setProducts(await getProducts());
+    } catch (error) {
+      setProducts([]);
+      toast.error(errorMessage(error, "Unable to load products."));
     } finally {
       setLoading(false);
     }
@@ -63,10 +53,48 @@ const Products = () => {
 
   const activeCategory = categoriesData.find((c) => c.slug === category);
   const hasFilters = category || organic || minPrice || maxPrice;
+  const pageSize = 12;
+
+  const filteredProducts = useMemo(() => {
+    const minimum = minPrice ? Number(minPrice) : undefined;
+    const maximum = maxPrice ? Number(maxPrice) : undefined;
+
+    return products
+      .filter(
+        (product) =>
+          !category || normalizedCategorySlug(product.category) === category,
+      )
+      .filter(
+        (product) => minimum === undefined || product.price >= minimum,
+      )
+      .filter(
+        (product) => maximum === undefined || product.price <= maximum,
+      )
+      .sort((left, right) => {
+        switch (sort) {
+          case "price_asc":
+            return left.price - right.price;
+          case "price_desc":
+            return right.price - left.price;
+          case "rating":
+            return right.rating - left.rating;
+          case "name":
+            return left.name.localeCompare(right.name);
+          default:
+            return Number(right.id) - Number(left.id);
+        }
+      });
+  }, [products, category, minPrice, maxPrice, sort]);
+
+  const totalPages = Math.max(1, Math.ceil(filteredProducts.length / pageSize));
+  const visibleProducts = filteredProducts.slice(
+    (page - 1) * pageSize,
+    page * pageSize,
+  );
 
   useEffect(() => {
-    fetchProducts();
-  }, [category, organic, sort, page, minPrice, maxPrice]);
+    void fetchProducts();
+  }, []);
 
   return (
     <div className="min-h-screen bg-app-cream">
@@ -108,7 +136,7 @@ const Products = () => {
                   {activeCategory ? activeCategory.name : "All Products"}
                 </h1>
                 <p className="text-sm text-app-text-light mt-0.5">
-                  {products.length} products found
+                  {filteredProducts.length} products found
                 </p>
               </div>
 
@@ -142,7 +170,7 @@ const Products = () => {
             {/* Product Grid */}
             {loading ? (
               <Loading />
-            ) : products.length === 0 ? (
+            ) : filteredProducts.length === 0 ? (
               <div className="text-center py-16">
                 <p className="text-lg font-semibold text-app-green mb-2">
                   No products found
@@ -159,7 +187,7 @@ const Products = () => {
               </div>
             ) : (
               <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4 xl:gap-8">
-                {products.map(
+                {visibleProducts.map(
                   (product) =>
                     product.stock > 0 && (
                       <ProductCard key={product.id} product={product} />

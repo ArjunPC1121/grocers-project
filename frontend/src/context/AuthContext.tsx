@@ -7,8 +7,8 @@ import type {Role, SessionUser} from "../types";
 type AuthContextType = {
     user: SessionUser | null;
     loading: boolean;
-    login: (role: Role, identifier: string, password: string) => Promise<void>;
-    register: (payload: Record<string, string>) => Promise<void>;
+    login: (role: Role, identifier: string, password: string, returnTo?: string) => Promise<void>;
+    register: (payload: Record<string, string>) => Promise<boolean>;
     logout: () => void;
     updateUser: (value: Partial<SessionUser>) => void;
 };
@@ -79,6 +79,7 @@ export function AuthProvider({children}: { children: ReactNode }) {
         role: Role,
         identifier: string,
         password: string,
+        returnTo?: string,
     ) => {
         try {
             if (role !== "CUSTOMER") {
@@ -112,7 +113,10 @@ export function AuthProvider({children}: { children: ReactNode }) {
 
             save(next, data.accessToken);
             toast.success("Signed in successfully");
-            navigate(destination(next));
+            const safeReturnTo = returnTo?.startsWith("/") && !returnTo.startsWith("//")
+                ? returnTo
+                : undefined;
+            navigate(safeReturnTo || destination(next), {replace: true});
         } catch (error) {
             localStorage.removeItem("grocers_access_token");
             toast.error(errorMessage(error, "Unable to sign in."));
@@ -122,9 +126,10 @@ export function AuthProvider({children}: { children: ReactNode }) {
         try {
             await api.post("/users", payload);
             toast.success("Account created. Please sign in.");
-            navigate("/auth");
+            return true;
         } catch (error) {
             toast.error(errorMessage(error, "Unable to create your account."));
+            return false;
         }
     };
     const logout = () => {

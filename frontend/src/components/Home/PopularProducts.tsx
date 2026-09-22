@@ -6,19 +6,27 @@ import toast from "react-hot-toast";
 import type { Product } from "../../types";
 import ProductCard from "../ProductCard";
 
-import api from "../../config/api";
+import { errorMessage } from "../../config/api";
+import { getProducts } from "../../config/ProductApi";
 
 const PopularProducts = () => {
   const [products, setProducts] = useState<Product[]>([]);
 
   useEffect(() => {
-    api
-      .get("/products?sort=rating")
-      .then(({ data }) => {
-        setProducts(Array.isArray(data?.products) ? data.products : []);
+    getProducts()
+      .then((items) => {
+        setProducts(
+          items
+            .filter((product) => product.stock > 0)
+            .sort(
+              (left, right) =>
+                right.discount - left.discount ||
+                Number(right.id) - Number(left.id),
+            ),
+        );
       })
-      .catch((error: any) => {
-        toast.error(error?.response?.data?.message || error?.message || "Unable to load products");
+      .catch((error) => {
+        toast.error(errorMessage(error, "Unable to load products."));
       });
   }, []);
 

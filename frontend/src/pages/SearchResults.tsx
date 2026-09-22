@@ -6,7 +6,8 @@ import toast from "react-hot-toast";
 import type { Product } from "../types";
 import Loading from "../components/Loading";
 import ProductCard from "../components/ProductCard";
-import api from "../config/api";
+import { errorMessage } from "../config/api";
+import { searchProducts } from "../config/ProductApi";
 
 const SearchResults = () => {
   const [products, setProducts] = useState<Product[]>([]);
@@ -15,15 +16,35 @@ const SearchResults = () => {
   const query = searchParams.get("q") || "";
 
   useEffect(() => {
-    if (!query) return;
-    setLoading(true);
-    api
-      .get(`/products?search=${encodeURIComponent(query)}`)
-      .then((res) => setProducts(res.data.products))
-      .catch((error: any) => {
-        toast.error(error.response?.data?.message || error.message);
-      })
-      .finally(() => setLoading(false));
+    let cancelled = false;
+
+    const runSearch = async () => {
+      const normalizedQuery = query.trim();
+
+      if (!normalizedQuery) {
+        setProducts([]);
+        setLoading(false);
+        return;
+      }
+
+      setLoading(true);
+      try {
+        const results = await searchProducts(normalizedQuery, 40);
+        if (!cancelled) setProducts(results);
+      } catch (error) {
+        if (!cancelled) {
+          setProducts([]);
+          toast.error(errorMessage(error, "Unable to search products."));
+        }
+      } finally {
+        if (!cancelled) setLoading(false);
+      }
+    };
+
+    void runSearch();
+    return () => {
+      cancelled = true;
+    };
   }, [query]);
 
   return (
