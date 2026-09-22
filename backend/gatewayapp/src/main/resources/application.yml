@@ -50,6 +50,10 @@ spring:
               uri: http://localhost:8089
               predicates:
                 - Path=/grocers/api/banks/**
+            - id: assistantapp
+              uri: http://localhost:8092
+              predicates:
+                - Path=/grocers/api/assistant/**
 
 server:
   port: 8091

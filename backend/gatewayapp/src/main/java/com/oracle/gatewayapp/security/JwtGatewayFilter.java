@@ -121,6 +121,9 @@ public class JwtGatewayFilter implements GlobalFilter {
         if (path.startsWith("/grocers/api/requests")) {
             return Set.of("EMPLOYEE", "ADMIN").contains(role);
         }
+        if (path.startsWith("/grocers/api/assistant")) {
+            return "USER".equals(role);
+        }
         return Set.of("USER", "EMPLOYEE", "ADMIN").contains(role);
     }
 
