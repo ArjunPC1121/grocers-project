@@ -155,8 +155,8 @@ public class EmployeeService {
             if (request.cancellationReason() == null || request.cancellationReason().isBlank()) {
                 throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "A cancellation reason is required");
             }
-            return orderApp(HttpMethod.POST, "/" + orderId + "/cancel", employeeId, role,
-                    Map.of("reason", request.cancellationReason().trim()), Object.class);
+            return orderApp(HttpMethod.POST, "/" + orderId + "/employee-cancel", employeeId, role,
+                    Map.of("reason", request.cancellationReason().trim(), "employeeId", employeeId), Object.class);
         }
         if (!List.of("SHIPPED", "OUT_FOR_DELIVERY", "DELIVERED").contains(status)) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Unsupported order status");

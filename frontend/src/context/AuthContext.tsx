@@ -73,9 +73,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     } catch (error) {
       localStorage.removeItem("grocers_access_token");
       if (role === "CUSTOMER" && axios.isAxiosError(error) && error.response?.status === 403) {
-        localStorage.setItem("grocers_recovery_email", identifier);
-        toast.error("Your account is locked. Answer your security question to reset your password.");
-        navigate(`/recover-account?email=${encodeURIComponent(identifier)}`, { replace: true });
+        const recovery = await api.get("/auth/locked-account/status", { params: { email: identifier } }).then(({ data }) => data).catch(() => null);
+        const target = recovery?.ticketOpen ? "/unlock-account" : "/recover-account";
+        toast.error(recovery?.ticketOpen ? "Your unlock request is still under review." : "Your account is locked. Answer your security question to reset your password.");
+        navigate(`${target}?email=${encodeURIComponent(identifier)}`, { replace: true });
         return;
       }
       toast.error(errorMessage(error, "Unable to sign in."));

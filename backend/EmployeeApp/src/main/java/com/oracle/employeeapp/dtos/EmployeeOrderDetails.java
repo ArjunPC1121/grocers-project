@@ -15,5 +15,6 @@ public record EmployeeOrderDetails(
         List<OrderItemDetails> items,
         String cancellationReason,
         LocalDateTime orderedAt,
-        LocalDateTime updatedAt
+        LocalDateTime updatedAt,
+        Integer handledByEmployeeId
 ) { }
