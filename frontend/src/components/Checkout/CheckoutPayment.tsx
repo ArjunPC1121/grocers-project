@@ -19,16 +19,21 @@ export default function CheckoutPayment({
       </h2>
       <div className="space-y-3">
         {[
-          {
-            value: "card",
-            label: "Credit / Debit Card",
-            desc: "Pay securely with your card",
-          },
-          {
-            value: "cash",
-            label: "Cash on Delivery",
-            desc: "Pay when you receive",
-          },
+            {
+                value: "FUNDS",
+                label: "Pay from Funds",
+                desc: "Use your available wallet balance",
+            },
+            {
+                value: "CARD",
+                label: "Credit / Debit Card",
+                desc: "Pay securely with your card",
+            },
+            {
+                value: "CASH_ON_DELIVERY",
+                label: "Cash on Delivery",
+                desc: "Pay when you receive your order",
+            },
         ].map((method) => (
           <label
             key={method.value}

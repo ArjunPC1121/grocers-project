@@ -1,9 +1,9 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, type FormEvent } from "react";
 import toast from "react-hot-toast";
 import api, { errorMessage } from "../../config/api";
 import { EmptyState, PageError } from "../../components/ApiState";
 import { useAuth } from "../../context/AuthContext";
-import type { Ticket, Wallet, WalletTransaction } from "../../types";
+import type { Ticket} from "../../types";
 import productApi from "../../config/ProductApi";
 
 type WishlistResponse = {
@@ -173,6 +173,92 @@ export function WishlistPage() {
         </section>
     );
 }
-export function FundsPage() { const [wallet,setWallet]=useState<Wallet|null>(null); const [transactions,setTransactions]=useState<WalletTransaction[]>([]); const [amount,setAmount]=useState(""); const [accountNumber,setAccountNumber]=useState(""); const [error,setError]=useState(""); const load=()=>api.get("/wallet").then(({data})=>{setWallet(data.wallet);setTransactions(Array.isArray(data.transactions)?data.transactions:[]);}).catch(()=>setError("Funds are unavailable until the Spring API is connected.")); useEffect(()=>{load();},[]); return <section className="mx-auto max-w-5xl p-6"><h1 className="text-3xl font-serif">Funds</h1><div className="mt-6 rounded-2xl bg-app-green p-6 text-white"><p className="text-sm opacity-70">Available balance</p><p className="text-4xl font-semibold mt-2">₹{wallet?.availableBalance?.toFixed(2) ?? "0.00"}</p></div>{error&&<div className="mt-4"><PageError message={error}/></div>}<form onSubmit={(e)=>{e.preventDefault();api.post("/wallet/fund",{accountNumber,amount:Number(amount)}).then(()=>{toast.success("Funds added");setAmount("");load();}).catch((err)=>toast.error(errorMessage(err)));}} className="mt-6 rounded-2xl border bg-white p-5"><h2 className="font-semibold">Add funds from dummy bank account</h2><div className="mt-4 grid gap-3 sm:grid-cols-2"><input required placeholder="Account number" value={accountNumber} onChange={(e)=>setAccountNumber(e.target.value)} className="rounded-lg border p-3"/><input required min="1" type="number" placeholder="Amount" value={amount} onChange={(e)=>setAmount(e.target.value)} className="rounded-lg border p-3"/></div><button className="mt-4 rounded-lg bg-app-orange px-4 py-2 text-white">Add funds</button></form><div className="mt-6">{transactions.map((item)=><div key={item.id} className="border-b py-3 flex justify-between"><span>{item.note||item.type}</span><strong>₹{item.amount.toFixed(2)}</strong></div>)}</div></section>; }
+export function FundsPage() {
+    const { user } = useAuth();
+    const [balance, setBalance] = useState<number | null>(null);
+    const [amount, setAmount] = useState("");
+    const [error, setError] = useState("");
+
+    const loadFunds = async () => {
+        if (!user) {
+            setBalance(null);
+            return;
+        }
+
+        try {
+            setError("");
+
+            const { data } = await api.get(`/users/${user.id}`);
+            setBalance(Number(data.funds));
+        } catch (error) {
+            setError(errorMessage(error, "Could not load your funds."));
+        }
+    };
+
+    useEffect(() => {
+        void loadFunds();
+    }, [user?.id]);
+
+    const addFunds = async (event: FormEvent<HTMLFormElement>) => {
+        event.preventDefault();
+
+        if (!user) {
+            toast.error("Please sign in to add funds.");
+            return;
+        }
+
+        try {
+            await api.post(`/users/${user.id}/funds`, {
+                amount: Number(amount),
+            });
+
+            toast.success("Funds added.");
+            setAmount("");
+            await loadFunds();
+        } catch (error) {
+            toast.error(errorMessage(error, "Could not add funds."));
+        }
+    };
+
+    return (
+        <section className="mx-auto max-w-5xl p-6">
+            <h1 className="text-3xl font-serif">Funds</h1>
+
+            <div className="mt-6 rounded-2xl bg-app-green p-6 text-white">
+                <p className="text-sm opacity-70">Available balance</p>
+                <p className="mt-2 text-4xl font-semibold">
+                    ₹{balance?.toFixed(2) ?? "0.00"}
+                </p>
+            </div>
+
+            {error && (
+                <div className="mt-4">
+                    <PageError message={error} />
+                </div>
+            )}
+
+            <form
+                onSubmit={addFunds}
+                className="mt-6 rounded-2xl border bg-white p-5"
+            >
+                <h2 className="font-semibold">Add funds from dummy bank account</h2>
+
+                <input
+                    required
+                    min="1"
+                    type="number"
+                    placeholder="Amount"
+                    value={amount}
+                    onChange={(event) => setAmount(event.target.value)}
+                    className="mt-4 w-full rounded-lg border p-3"
+                />
+
+                <button className="mt-4 rounded-lg bg-app-orange px-4 py-2 text-white">
+                    Add funds
+                </button>
+            </form>
+        </section>
+    );
+}
 export function ProfilePage() { const {user,updateUser}=useAuth(); const [email,setEmail]=useState(user?.email||""); const [phone,setPhone]=useState(user?.phone||""); const [password,setPassword]=useState(""); return <section className="mx-auto max-w-2xl p-6"><h1 className="text-3xl font-serif">My profile</h1><form onSubmit={(e)=>{e.preventDefault();api.put("/profile",{email,phone,password:password||undefined}).then(({data})=>{updateUser(data.user||{email,phone});toast.success("Profile updated");setPassword("");}).catch((err)=>toast.error(errorMessage(err)));}} className="mt-6 space-y-4 rounded-2xl border bg-white p-6"><label className="block">Email<input required value={email} onChange={(e)=>setEmail(e.target.value)} className="mt-1 w-full border rounded-lg p-3"/></label><label className="block">Phone<input value={phone} onChange={(e)=>setPhone(e.target.value)} className="mt-1 w-full border rounded-lg p-3"/></label><label className="block">New password<input type="password" value={password} onChange={(e)=>setPassword(e.target.value)} className="mt-1 w-full border rounded-lg p-3"/></label><button className="rounded-lg bg-app-green px-4 py-2 text-white">Save changes</button></form></section>; }
 export function SupportPage() { const [reason,setReason]=useState(""); const [tickets,setTickets]=useState<Ticket[]>([]); useEffect(()=>{api.get("/tickets/mine").then(({data})=>setTickets(Array.isArray(data.tickets)?data.tickets:[])).catch(()=>undefined);},[]); return <section className="mx-auto max-w-3xl p-6"><h1 className="text-3xl font-serif">Support tickets</h1><p className="mt-2 text-app-text-light">Locked account? Tell an employee why access should be restored.</p><form onSubmit={(e)=>{e.preventDefault();api.post("/tickets",{reason}).then(({data})=>{setTickets([data.ticket,...tickets]);setReason("");toast.success("Ticket raised");}).catch((err)=>toast.error(errorMessage(err)));}} className="mt-6 rounded-2xl border bg-white p-5"><textarea required value={reason} onChange={(e)=>setReason(e.target.value)} placeholder="Describe the reason for your unlock request" className="w-full min-h-28 rounded-lg border p-3"/><button className="mt-3 rounded-lg bg-app-green px-4 py-2 text-white">Raise ticket</button></form><div className="mt-6 space-y-3">{tickets.map((ticket)=><article key={ticket.id} className="rounded-xl border bg-white p-4"><span className="text-xs font-semibold text-app-orange">{ticket.status}</span><p>{ticket.reason}</p></article>)}</div></section>; }
