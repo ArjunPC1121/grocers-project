@@ -21,9 +21,7 @@ export function EmployeeAccessGuard() {
     if (!user?.id) return;
     const refreshStatus = () => api.get<EmployeeAccountResponse>(`/employees/${user.id}`)
       .then(({ data }) => updateUser({ employeeStatus: data.status }))
-      .catch((error: { response?: { status?: number } }) => {
-        if (error.response?.status === 403) updateUser({ employeeStatus: "INACTIVE" });
-      });
+      .catch(() => undefined);
     void refreshStatus();
     const interval = window.setInterval(refreshStatus, 10000);
     return () => window.clearInterval(interval);

@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { ShoppingBasket, ShieldCheck, UserRoundCog } from "lucide-react";
 import { useAuth } from "../context/AuthContext";
@@ -21,8 +21,6 @@ export default function AuthPortal() {
   const [form, setForm] = useState<Record<string, string>>({});
   const returnTo = (location.state as { returnTo?: string } | null)?.returnTo;
   const update = (key: string, value: string) => setForm({ ...form, [key]: value });
-  useEffect(() => { const lockedEmail=localStorage.getItem("grocers_recovery_email"); if (lockedEmail) navigate(`/recover-account?email=${encodeURIComponent(lockedEmail)}`, { replace: true }); }, [navigate]);
-
   if (!role) return <main className="min-h-screen bg-app-cream p-6 flex-center">
     <section className="w-full max-w-4xl"><p className="text-app-orange font-semibold">GROCERS</p><h1
       className="mt-2 text-4xl font-serif">Choose your workspace</h1><p className="mt-3 text-app-text-light">One

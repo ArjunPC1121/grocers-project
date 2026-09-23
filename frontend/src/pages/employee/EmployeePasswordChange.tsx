@@ -1,13 +1,11 @@
 import { useState } from "react";
-import { useNavigate } from "react-router-dom";
 import toast from "react-hot-toast";
 import api, { errorMessage } from "../../config/api";
 import { useAuth } from "../../context/AuthContext";
 import { meetsEmployeePasswordRequirements, PasswordRequirements } from "../../components/PasswordRequirements";
 
 export default function EmployeePasswordChange() {
-  const { user, logout, updateUser } = useAuth();
-  const navigate = useNavigate();
+  const { user, logout, login } = useAuth();
   const [currentPassword, setCurrentPassword] = useState("");
   const [newPassword, setNewPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
@@ -22,18 +20,10 @@ export default function EmployeePasswordChange() {
     setSubmitting(true);
     try {
       const { data: employee } = await api.put(`/employees/${user.id}/password`, { currentPassword, newPassword, confirmPassword });
-      const firstName = employee.firstName || user.firstName;
-      const lastName = employee.lastName || user.lastName;
-      updateUser({
-        firstName,
-        lastName,
-        name: [firstName, lastName].filter(Boolean).join(" ") || user.name,
-        email: employee.email || user.email,
-        mustChangePassword: false,
-        employeeStatus: employee.status,
-      });
       toast.success("Password updated.");
-      navigate("/employee", { replace: true });
+      // The old JWT still carries mustChangePassword=true. Sign in again with the
+      // new password to receive a fresh token before opening the workspace.
+      await login("EMPLOYEE", employee.email || user.email, newPassword);
     } catch (error) {
       toast.error(errorMessage(error, "Unable to update your password."));
     } finally {
