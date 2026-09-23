@@ -1,12 +1,12 @@
-import {useEffect, useState} from "react";
-import {Link, useSearchParams} from "react-router-dom";
-import {CalendarIcon, PackageIcon} from "lucide-react";
+import { useEffect, useState } from "react";
+import { Link, useSearchParams } from "react-router-dom";
+import { CalendarIcon, PackageIcon } from "lucide-react";
 import toast from "react-hot-toast";
 
-import {useCart} from "../context/CartContext";
+import { useCart } from "../context/CartContext";
 import Loading from "../components/Loading";
 import api from "../config/api";
-import {useAuth} from "../context/AuthContext";
+import { useAuth } from "../context/AuthContext";
 
 type CustomerOrderSummary = {
     orderId: number;
@@ -16,15 +16,23 @@ type CustomerOrderSummary = {
     checkedOutAt: string;
 };
 
+type BackendOrder = {
+    id: number;
+    orderNumber: string;
+    totalAmount: number;
+    status: string;
+    orderedAt: string;
+};
+
 const tabs = [
-    {label: "All Orders", status: null},
-    {label: "Placed", status: "PLACED"},
-    {label: "Out for Delivery", status: "OUT_FOR_DELIVERY"},
-    {label: "Delivered", status: "DELIVERED"},
+    { label: "All Orders", status: null },
+    { label: "Placed", status: "PLACED" },
+    { label: "Shipped", status: "SHIPPED" },
+    { label: "Out for Delivery", status: "OUT_FOR_DELIVERY" },
+    { label: "Delivered", status: "DELIVERED" },
 ];
 
-const formatStatus = (status: string) =>
-    status.replaceAll("_", " ");
+const formatStatus = (status: string) => status.replaceAll("_", " ");
 
 const MyOrders = () => {
     const currency = import.meta.env.VITE_CURRENCY_SYMBOL || "$";
@@ -34,13 +42,13 @@ const MyOrders = () => {
     const [activeStatus, setActiveStatus] = useState<string | null>(null);
     const [searchParams, setSearchParams] = useSearchParams();
 
-    const {user} = useAuth();
-    const {clearCart} = useCart();
+    const { user } = useAuth();
+    const { clearCart } = useCart();
 
     useEffect(() => {
         if (searchParams.get("clearCart")) {
             clearCart();
-            setSearchParams({}, {replace: true});
+            setSearchParams({}, { replace: true });
         }
     }, [clearCart, searchParams, setSearchParams]);
 
@@ -55,45 +63,55 @@ const MyOrders = () => {
             setLoading(true);
 
             try {
-                const {data} = await api.get<CustomerOrderSummary[]>(
-                    `/users/${user.id}/orders`
+                // Gets the latest status directly from OrderApp.
+                const { data } = await api.get<BackendOrder[]>(
+                    `/orders/customers/${user.id}`,
                 );
+
+                const customerOrders: CustomerOrderSummary[] = data.map((order) => ({
+                    orderId: order.id,
+                    orderNumber: order.orderNumber,
+                    totalAmount: order.totalAmount,
+                    status: order.status,
+                    checkedOutAt: order.orderedAt,
+                }));
 
                 setOrders(
                     activeStatus
-                        ? data.filter((order) => order.status === activeStatus)
-                        : data
+                        ? customerOrders.filter(
+                            (order) => order.status === activeStatus,
+                        )
+                        : customerOrders,
                 );
             } catch (error: any) {
                 toast.error(
                     error.response?.data?.message ||
-                    "Unable to load your orders. Please try again."
+                    "Unable to load your orders. Please try again.",
                 );
             } finally {
                 setLoading(false);
             }
         };
 
-        loadOrders();
+        void loadOrders();
     }, [activeStatus, user?.id]);
+
     const cancelOrder = async (order: CustomerOrderSummary) => {
         const reason = window.prompt("Why would you like to cancel this order?");
 
-        if (!reason?.trim()) {
-            return;
-        }
+        if (!reason?.trim()) return;
 
         try {
-            const {data: cancelledOrder} = await api.post(
+            const { data: cancelledOrder } = await api.post(
                 `/orders/${order.orderId}/cancel`,
-                {reason: reason.trim()},
+                { reason: reason.trim() },
             );
 
             setOrders((previous) =>
                 previous
                     .map((item) =>
                         item.orderId === order.orderId
-                            ? {...item, status: cancelledOrder.status}
+                            ? { ...item, status: cancelledOrder.status }
                             : item,
                     )
                     .filter((item) => !activeStatus || item.status === activeStatus),
@@ -107,6 +125,7 @@ const MyOrders = () => {
             );
         }
     };
+
     return (
         <div className="min-h-screen bg-app-cream mb-20">
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
@@ -131,15 +150,15 @@ const MyOrders = () => {
                 </div>
 
                 {loading ? (
-                    <Loading/>
+                    <Loading />
                 ) : orders.length === 0 ? (
                     <div className="text-center py-16">
-                        <PackageIcon className="size-16 text-app-border mx-auto mb-4"/>
+                        <PackageIcon className="size-16 text-app-border mx-auto mb-4" />
                         <h2 className="text-lg font-medium text-app-green mb-2">
-                            No orders yet
+                            No orders found
                         </h2>
                         <p className="text-sm text-app-text-light mb-4">
-                            Checked-out orders will appear here.
+                            Your placed orders will appear here.
                         </p>
                         <Link
                             to="/products"
@@ -160,8 +179,9 @@ const MyOrders = () => {
                                         <p className="text-sm font-medium text-app-green">
                                             {order.orderNumber}
                                         </p>
+
                                         <div className="flex items-center gap-2 mt-1">
-                                            <CalendarIcon className="size-3 text-app-text-light"/>
+                                            <CalendarIcon className="size-3 text-app-text-light" />
                                             <span className="text-xs text-app-text-light">
                         {new Date(order.checkedOutAt).toLocaleDateString(
                             "en-US",
@@ -169,26 +189,25 @@ const MyOrders = () => {
                                 month: "short",
                                 day: "numeric",
                                 year: "numeric",
-                            }
+                            },
                         )}
                       </span>
                                         </div>
                                     </div>
 
-                                    <span
-                                        className="px-3 py-1 text-xs font-medium rounded-full bg-green-100 text-green-800">
+                                    <span className="px-3 py-1 text-xs font-medium rounded-full bg-green-100 text-green-800">
                     {formatStatus(order.status)}
                   </span>
                                 </div>
 
-                                <div
-                                    className="mt-4 pt-3 border-t border-app-border flex justify-between items-center text-sm">
+                                <div className="mt-4 pt-3 border-t border-app-border flex justify-between items-center text-sm">
                                     <span className="text-app-text-light">Order total</span>
                                     <span className="font-semibold text-app-green">
                     {currency}
                                         {Number(order.totalAmount).toFixed(2)}
                   </span>
                                 </div>
+
                                 {order.status === "PLACED" && (
                                     <div className="mt-4 border-t border-app-border pt-4">
                                         <button
