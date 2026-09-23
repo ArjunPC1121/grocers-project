@@ -161,7 +161,12 @@ public class ExternalAdminOperationsService {
         List<Map<String, Object>> requestRows = requests();
         List<Map<String, Object>> orderRows = orders();
 
-        int lowStock = (int) productRows.stream().filter(product -> number(product.get("quantity")).intValue() <= 10).count();
+        List<Map<String, Object>> lowStockItems = productRows.stream()
+                .filter(product -> number(product.get("quantity")).intValue() <= 10)
+                .sorted(Comparator.comparingInt(product -> number(product.get("quantity")).intValue()))
+                .limit(5)
+                .toList();
+        int lowStock = lowStockItems.size();
         int activeEmployees = (int) employeeRows.stream()
                 .filter(employee -> !"INACTIVE".equalsIgnoreCase(text(employee.get("status")))).count();
         int pendingRequests = (int) requestRows.stream()
@@ -170,9 +175,15 @@ public class ExternalAdminOperationsService {
                 .filter(this::isRevenueOrder).toList();
         BigDecimal revenue = revenueOrders.stream().map(order -> decimal(order.get("totalAmount")))
                 .reduce(BigDecimal.ZERO, BigDecimal::add);
+        Map<String, Integer> orderStatuses = new java.util.LinkedHashMap<>();
+        orderRows.forEach(order -> orderStatuses.merge(text(order.get("status")).toUpperCase(), 1, Integer::sum));
+        List<Map<String, Object>> recentOrders = orderRows.stream()
+                .sorted(Comparator.comparing(order -> text(order.get("orderedAt")), Comparator.reverseOrder()))
+                .limit(5)
+                .toList();
 
         return new DashboardResponse(productRows.size(), lowStock, activeEmployees, pendingRequests,
-                orderRows.size(), revenue);
+                orderRows.size(), revenue, orderStatuses, recentOrders, lowStockItems);
     }
 
     public ReportResponse report(ReportPeriod period, LocalDate referenceDate, Integer productId, Integer customerId) {
