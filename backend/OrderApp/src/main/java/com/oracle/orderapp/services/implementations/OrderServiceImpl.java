@@ -222,11 +222,13 @@ public class OrderServiceImpl implements OrderService {
             );
         }
 
-        userClient.refund(
-                order.getCustomerId(),
-                order.getTotalAmount(),
-                order.getOrderNumber()
-        );
+        if (order.getPaymentMethod() == PaymentMethod.FUNDS) {
+            userClient.refund(
+                    order.getCustomerId(),
+                    order.getTotalAmount(),
+                    order.getOrderNumber()
+            );
+        }
 
         for (OrderItem item : order.getItems()) {
             productClient.increaseQuantity(
@@ -238,7 +240,20 @@ public class OrderServiceImpl implements OrderService {
         order.setStatus(OrderStatus.CANCELLED);
         order.setCancellationReason(cancellationReason);
 
-        return orderRepository.save(order);
+        Order cancelledOrder = orderRepository.save(order);
+
+        orderCheckoutEventPublisher.publish(
+                new OrderCheckedOutEvent(
+                        cancelledOrder.getId(),
+                        cancelledOrder.getCustomerId(),
+                        cancelledOrder.getOrderNumber(),
+                        cancelledOrder.getTotalAmount(),
+                        cancelledOrder.getStatus().name(),
+                        cancelledOrder.getUpdatedAt()
+                )
+        );
+
+        return cancelledOrder;
     }
 
     @Override
