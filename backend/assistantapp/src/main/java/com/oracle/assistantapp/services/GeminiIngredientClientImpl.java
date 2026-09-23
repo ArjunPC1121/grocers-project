@@ -2,6 +2,7 @@ package com.oracle.assistantapp.services;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import io.github.cdimascio.dotenv.Dotenv;
 import com.oracle.assistantapp.dto.AssistantRequest;
 import com.oracle.assistantapp.dto.IngredientPlan;
 import com.oracle.assistantapp.dto.ProductCatalogItem;
@@ -22,18 +23,28 @@ public class GeminiIngredientClientImpl implements GeminiIngredientClient {
     private final String apiKey;
     private final String model;
 
-    public GeminiIngredientClientImpl(ObjectMapper objectMapper,
-                                      @Value("${gemini.api-key:}") String apiKey,
+    public GeminiIngredientClientImpl(ObjectMapper objectMapper, Dotenv backendDotenv,
+                                      @Value("${gemini.api-key:}") String configuredApiKey,
                                       @Value("${gemini.model}") String model) {
         this.objectMapper = objectMapper;
-        this.apiKey = apiKey;
+        this.apiKey = firstNonBlank(System.getenv("GEMINI_API_KEY"),
+                backendDotenv.get("GEMINI_API_KEY"), configuredApiKey);
         this.model = model;
+    }
+
+    private String firstNonBlank(String... values) {
+        for (String value : values) {
+            if (value != null && !value.isBlank()) {
+                return value.trim();
+            }
+        }
+        return "";
     }
 
     @Override
     public IngredientPlan identifyIngredients(AssistantRequest request, List<ProductCatalogItem> catalogue) {
         if (apiKey == null || apiKey.isBlank()) {
-            throw new AssistantUnavailableException("Gemini is not configured. Set GEMINI_API_KEY before starting Assistant App.");
+            throw new AssistantUnavailableException("Gemini is not configured. Set GEMINI_API_KEY in backend/.env or in the environment.");
         }
         try {
             String catalogueJson = objectMapper.writeValueAsString(catalogue);

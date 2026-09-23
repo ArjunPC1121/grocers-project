@@ -4,15 +4,20 @@ This service turns a customer's food request into a catalogue-backed grocery pro
 
 ## Run locally
 
-Start Products App first on port `8083`, then set the Gemini key in the PowerShell window that will start Assistant App:
+Start Products App first on port `8083`. For local development, create `backend/.env` once and add this line (replace the placeholder with the real key):
 
 ```powershell
-$env:GEMINI_API_KEY = "paste-your-new-key-here"
-cd "C:\Users\Pranav Patil\Desktop\Project\grocers-project\backend\assistantapp"
+GEMINI_API_KEY=paste-your-new-key-here
+```
+
+Then start Assistant App from its own directory so it loads the parent `backend/.env` file:
+
+```powershell
+cd "C:\Users\akash\Documents\Project-grocers\grocers-project\backend\assistantapp"
 mvn spring-boot:run
 ```
 
-Do not paste the key into `application.properties` or commit it. Assistant App runs on port `8092`. Start Gateway on port `8091` too, then use the protected endpoint below with a normal customer JWT:
+Do not paste the key into `application.properties` or commit `backend/.env`. Assistant App runs on port `8092`. Start Gateway on port `8091` too, then use the protected endpoint below with a normal customer JWT:
 
 ```http
 POST http://localhost:8091/grocers/api/assistant/recommendations
