@@ -73,7 +73,8 @@ public class OrderServiceImpl implements OrderService {
         order.setCartId(request.cartId());
         order.setDeliveryAddress(request.deliveryAddress());
         order.setStatus(OrderStatus.CREATED);
-
+        order.setPaymentMethod(request.paymentMethod());
+        
         BigDecimal totalAmount = BigDecimal.ZERO;
 
         for (OrderItemRequest requestItem : request.items()) {
