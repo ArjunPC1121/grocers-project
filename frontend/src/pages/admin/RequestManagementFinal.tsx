@@ -14,6 +14,7 @@ export default function RequestManagementFinal(){
  useEffect(()=>{load()},[]);
  const employee=(id:number)=>{const e=staff.find(x=>x.id===id);return e?`${e.firstName} ${e.lastName}`:`Employee #${id}`};
  const product=(r:Req)=>products.find(x=>x.id===r.productId), productName=(r:Req)=>r.name||product(r)?.name||`Product #${r.productId||"new"}`, pending=rows.filter(r=>r.status==="PENDING");
+ useEffect(()=>{const heading=[...document.querySelectorAll("h2")].find(node=>node.textContent?.startsWith("Product requests")),badge=heading?.parentElement?.parentElement?.querySelector(":scope > span.bg-app-orange");if(heading&&badge){badge.classList.add("ml-3","inline-block","align-middle");heading.appendChild(badge)}},[pending.length]);
  const visible=useMemo(()=>rows.filter(r=>r.status===filter&&`${employee(r.employeeId)} ${productName(r)}`.toLowerCase().includes(query.toLowerCase())),[rows,filter,query,staff,products]);
  const decide=async(r:Req,outcome:"approve"|"reject")=>{if(outcome==="reject"&&!reason.trim()){setError("Add a rejection reason.");return}try{await api.post(`/admin/requests/${r.requestId}/${outcome}`,outcome==="reject"?{rejectionReason:reason}:undefined);setRejecting(null);setSelected(null);setReason("");load()}catch(e){setError(errorMessage(e,"Unable to update request."))}};
  const openReject=(r:Req)=>{setRejecting(r);setReason("");setError("")};
