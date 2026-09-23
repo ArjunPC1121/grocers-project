@@ -63,6 +63,7 @@ public class Product {
 
     @Column(name = "image_url", length = 1000)
     private String imageUrl;
+    
     @JsonIgnore
     @Column(name = "image_public_id", length = 500)
     private String imagePublicId;

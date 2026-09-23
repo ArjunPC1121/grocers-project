@@ -4,6 +4,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.oracle.assistantapp.dto.AssistantRequest;
 import com.oracle.assistantapp.dto.IngredientPlan;
+import com.oracle.assistantapp.dto.ProductCatalogItem;
 import com.oracle.assistantapp.exceptions.AssistantUnavailableException;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.MediaType;
@@ -30,24 +31,39 @@ public class GeminiIngredientClientImpl implements GeminiIngredientClient {
     }
 
     @Override
-    public IngredientPlan identifyIngredients(AssistantRequest request) {
+    public IngredientPlan identifyIngredients(AssistantRequest request, List<ProductCatalogItem> catalogue) {
         if (apiKey == null || apiKey.isBlank()) {
             throw new AssistantUnavailableException("Gemini is not configured. Set GEMINI_API_KEY before starting Assistant App.");
         }
-        String prompt = """
-                You are an ingredient planner for a grocery store. Interpret the user's food request and return ONLY valid JSON.
-                Never return product IDs, brands, prices, stock, recipes, explanations, markdown, or extra fields.
-                Ingredient quantities are simple whole grocery units suitable for the requested servings. Use generic lowercase names.
-                JSON format exactly: {\"dish\":\"string\",\"summary\":\"short string\",\"ingredients\":[{\"name\":\"string\",\"quantity\":1}]}
-                User request: %s
-                Servings: %d
-                """.formatted(request.message(), request.servings());
-
-        Map<String, Object> payload = Map.of(
-                "contents", List.of(Map.of("parts", List.of(Map.of("text", prompt)))),
-                "generationConfig", Map.of("responseMimeType", "application/json", "temperature", 0.2)
-        );
         try {
+            String catalogueJson = objectMapper.writeValueAsString(catalogue);
+            String prompt = """
+                    You are a grocery recipe planner. Return ONLY valid JSON.
+                    The following is the complete live grocery catalogue. It is authoritative: do not invent product IDs,
+                    product names, brands, pack sizes, prices, stock quantities, or products.
+
+                    CATALOGUE:
+                    %s
+
+                    Identify ingredients needed for the user's requested dish and servings.
+                    Rules:
+                    1. Include only essential ingredients. Do not include optional garnishes, toppings, substitutions,
+                       or non-essential ingredients when no catalogue product is available.
+                    2. For an essential ingredient with a suitable catalogue item, return that exact item ID as productId.
+                       If no suitable product exists, return productId as null; it will be displayed as OUT_OF_STOCK.
+                    3. Use recipe requirements, never package counts. allowed units: g, kg, ml, l, unit.
+                    4. Account for product pack sizes: 500 g required with a 1 kg pack needs one pack; 1 kg required
+                       with a 400 g pack needs three packs. Prefer active, in-stock catalogue products.
+                    5. Return precisely this JSON structure, without markdown or additional fields:
+                       {"dish":"string","summary":"short string","ingredients":[{"name":"generic lowercase ingredient","requiredAmount":1,"unit":"g|kg|ml|l|unit","mandatory":true,"productId":1}]}
+
+                    User request: %s
+                    Servings: %d
+                    """.formatted(catalogueJson, request.message(), request.servings());
+            Map<String, Object> payload = Map.of(
+                    "contents", List.of(Map.of("parts", List.of(Map.of("text", prompt)))),
+                    "generationConfig", Map.of("responseMimeType", "application/json", "temperature", 0.2)
+            );
             // Read Gemini's JSON as text first. With Spring Boot 4/Jackson 3 the
             // HTTP converter cannot construct JsonNode directly from RestClient.
             String responseBody = geminiClient.post()

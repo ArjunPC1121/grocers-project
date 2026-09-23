@@ -1,5 +1,6 @@
 package com.oracle.assistantapp.dto;
 
-import java.math.BigDecimal;
-
-public record ProductCatalogItem(Integer id, String name, BigDecimal price, Integer discount, Integer quantity) { }
+public record ProductCatalogItem(Integer id, String name, String brand, String category, String subCategory,
+                                 String description, String tags, String searchAliases, Double unitValue,
+                                 String unitType, String imageUrl, Double price, Integer discount,
+                                 Integer quantity, Boolean active) { }

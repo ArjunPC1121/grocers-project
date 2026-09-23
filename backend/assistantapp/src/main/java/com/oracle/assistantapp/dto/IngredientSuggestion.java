@@ -1,3 +1,4 @@
 package com.oracle.assistantapp.dto;
 
-public record IngredientSuggestion(String name, Integer quantity) { }
+public record IngredientSuggestion(String name, Double requiredAmount, String unit,
+                                   Boolean mandatory, Integer productId) { }
