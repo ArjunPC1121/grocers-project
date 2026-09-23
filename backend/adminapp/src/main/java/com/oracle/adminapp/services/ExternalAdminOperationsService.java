@@ -15,8 +15,10 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestClient;
 
 import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.time.DayOfWeek;
 import java.time.LocalDate;
+import java.util.LinkedHashMap;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
@@ -158,6 +160,7 @@ public class ExternalAdminOperationsService {
     public DashboardResponse dashboard() {
         List<Map<String, Object>> productRows = products();
         List<Map<String, Object>> employeeRows = employees();
+        List<Map<String, Object>> userRows = users();
         List<Map<String, Object>> requestRows = requests();
         List<Map<String, Object>> orderRows = orders();
 
@@ -166,7 +169,20 @@ public class ExternalAdminOperationsService {
                 .sorted(Comparator.comparingInt(product -> number(product.get("quantity")).intValue()))
                 .limit(5)
                 .toList();
-        int lowStock = lowStockItems.size();
+        int lowStock = (int) productRows.stream()
+                .filter(product -> number(product.get("quantity")).intValue() <= 10).count();
+        int inventoryUnits = productRows.stream()
+                .mapToInt(product -> number(product.get("quantity")).intValue()).sum();
+        BigDecimal inventoryValue = productRows.stream()
+                .map(product -> decimal(product.get("price"))
+                        .multiply(decimal(product.get("quantity"))))
+                .reduce(BigDecimal.ZERO, BigDecimal::add);
+        Map<String, Integer> categoryInventory = new LinkedHashMap<>();
+        productRows.stream()
+                .sorted(Comparator.comparing(product -> text(product.get("category"))))
+                .forEach(product -> categoryInventory.merge(
+                        text(product.get("category")).isBlank() ? "Other" : text(product.get("category")),
+                        number(product.get("quantity")).intValue(), Integer::sum));
         int activeEmployees = (int) employeeRows.stream()
                 .filter(employee -> !"INACTIVE".equalsIgnoreCase(text(employee.get("status")))).count();
         int pendingRequests = (int) requestRows.stream()
@@ -175,15 +191,50 @@ public class ExternalAdminOperationsService {
                 .filter(this::isRevenueOrder).toList();
         BigDecimal revenue = revenueOrders.stream().map(order -> decimal(order.get("totalAmount")))
                 .reduce(BigDecimal.ZERO, BigDecimal::add);
+        BigDecimal averageOrderValue = revenueOrders.isEmpty() ? BigDecimal.ZERO
+                : revenue.divide(BigDecimal.valueOf(revenueOrders.size()), 2, RoundingMode.HALF_UP);
+        int fulfilledOrders = (int) orderRows.stream()
+                .filter(order -> "DELIVERED".equalsIgnoreCase(text(order.get("status")))).count();
+        int fulfilmentRate = revenueOrders.isEmpty() ? 0
+                : (int) Math.round((fulfilledOrders * 100.0) / revenueOrders.size());
         Map<String, Integer> orderStatuses = new java.util.LinkedHashMap<>();
         orderRows.forEach(order -> orderStatuses.merge(text(order.get("status")).toUpperCase(), 1, Integer::sum));
+        Map<String, Integer> requestStatuses = new LinkedHashMap<>();
+        requestRows.forEach(request -> requestStatuses.merge(text(request.get("status")).toUpperCase(), 1, Integer::sum));
+        Map<Integer, Map<String, Object>> usersById = new java.util.HashMap<>();
+        userRows.forEach(user -> usersById.put(number(user.get("id")).intValue(), user));
         List<Map<String, Object>> recentOrders = orderRows.stream()
                 .sorted(Comparator.comparing(order -> text(order.get("orderedAt")), Comparator.reverseOrder()))
                 .limit(5)
+                .map(order -> enrichOrder(order, usersById.get(number(order.get("customerId")).intValue())))
+                .toList();
+        List<Map<String, Object>> recentRequests = requestRows.stream()
+                .sorted(Comparator.comparing(request -> requestSortValue(request), Comparator.reverseOrder()))
+                .limit(4)
                 .toList();
 
-        return new DashboardResponse(productRows.size(), lowStock, activeEmployees, pendingRequests,
-                orderRows.size(), revenue, orderStatuses, recentOrders, lowStockItems);
+        return new DashboardResponse(productRows.size(), userRows.size(), inventoryUnits, inventoryValue,
+                lowStock, activeEmployees, pendingRequests, orderRows.size(), revenue, averageOrderValue,
+                fulfilledOrders, fulfilmentRate, orderStatuses, requestStatuses, categoryInventory,
+                recentOrders, recentRequests, lowStockItems);
+    }
+
+    private Map<String, Object> enrichOrder(Map<String, Object> order, Map<String, Object> user) {
+        Map<String, Object> enriched = new LinkedHashMap<>(order);
+        if (user != null) {
+            String name = (text(user.get("firstName")) + " " + text(user.get("lastName"))).trim();
+            enriched.put("customerName", name.isBlank() ? "Customer" : name);
+            enriched.put("customerEmail", text(user.get("email")));
+        }
+        return enriched;
+    }
+
+    private String requestSortValue(Map<String, Object> request) {
+        for (String key : List.of("createdAt", "requestedAt", "updatedAt", "requestId", "id")) {
+            String value = text(request.get(key));
+            if (!value.isBlank()) return value;
+        }
+        return "";
     }
 
     public ReportResponse report(ReportPeriod period, LocalDate referenceDate, Integer productId, Integer customerId) {
