@@ -5,6 +5,8 @@ import { EmptyState, PageError } from "../../components/ApiState";
 import { useAuth } from "../../context/AuthContext";
 import type { Ticket} from "../../types";
 import productApi from "../../config/ProductApi";
+const GMAIL_PATTERN = /^[A-Za-z0-9._%+-]+@gmail\.com$/i;
+const PHONE_PATTERN = /^\d{10}$/;
 
 type WishlistResponse = {
     id: number;
@@ -279,8 +281,18 @@ export function ProfilePage() {
 
     const saveProfile = async (event: React.FormEvent<HTMLFormElement>) => {
         event.preventDefault();
+        if (!GMAIL_PATTERN.test(profile.email)) {
+            toast.error("Enter a valid Gmail address.");
+            return;
+        }
+
+        if (!PHONE_PATTERN.test(profile.phoneNumber)) {
+            toast.error("Phone number must contain exactly 10 digits.");
+            return;
+        }
 
         try {
+
             const { data } = await api.patch(`/users/${user.id}`, profile);
 
             updateUser({
@@ -367,10 +379,15 @@ export function ProfilePage() {
                     Email
                     <input
                         required
-                        type="email"
-                        value={profile.email}
+                        type="tel"
+                        inputMode="numeric"
+                        pattern="[0-9]{10}"
+                        minLength={10}
+                        maxLength={10}
+                        title="Enter exactly 10 digits"
+                        value={profile.phoneNumber}
                         onChange={(event) =>
-                            setProfile({ ...profile, email: event.target.value })
+                            setProfile({ ...profile, phoneNumber: event.target.value })
                         }
                         className="mt-1 w-full rounded-lg border p-3"
                     />

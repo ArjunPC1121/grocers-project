@@ -3,6 +3,7 @@ import {useLocation} from "react-router-dom";
 import {ShoppingBasket, ShieldCheck, UserRoundCog} from "lucide-react";
 import {useAuth} from "../context/AuthContext";
 import type {Role} from "../types";
+import toast from "react-hot-toast";
 
 const roles: Array<{ role: Role; label: string; detail: string; icon: typeof ShoppingBasket }> = [
     {role: "CUSTOMER", label: "Customer", detail: "Shop, manage funds, orders and support", icon: ShoppingBasket},
@@ -10,6 +11,8 @@ const roles: Array<{ role: Role; label: string; detail: string; icon: typeof Sho
     {role: "ADMIN", label: "Admin", detail: "Catalog, people, requests and reports", icon: ShieldCheck},
 ];
 export default function AuthPortal() {
+    const GMAIL_PATTERN = /^[A-Za-z0-9._%+-]+@gmail\.com$/i;
+    const PHONE_PATTERN = /^\d{10}$/;
     const {login, register} = useAuth();
     const location = useLocation();
     const [role, setRole] = useState<Role | null>(null);
@@ -51,6 +54,20 @@ export default function AuthPortal() {
         <form onSubmit={async (event) => {
             event.preventDefault();
             if (customerRegistration) {
+                if (!GMAIL_PATTERN.test(form.email || "")) {
+                    toast.error("Enter a valid Gmail address.");
+                    return;
+                }
+
+                if (!PHONE_PATTERN.test(form.phoneNumber || "")) {
+                    toast.error("Phone number must contain exactly 10 digits.");
+                    return;
+                }
+
+                if ((form.password || "").length < 8) {
+                    toast.error("Password must contain at least 8 characters.");
+                    return;
+                }
                 const created = await register(form);
                 if (created) {
                     setRegistering(false);
@@ -64,7 +81,28 @@ export default function AuthPortal() {
             </button>
             <p className="mt-6 text-app-orange font-semibold">{role}</p><h1
             className="mt-1 text-3xl font-serif">{customerRegistration ? "Create your account" : "Sign in to Grocers"}</h1>{fields.map(([key, label]) =>
-            <label key={key} className="block mt-4 text-sm font-medium">{label}<input required type={
+            <label key={key} className="block mt-4 text-sm font-medium">{label}<input
+                required
+                minLength={key === "password" ? 8 : undefined}
+                maxLength={key === "phoneNumber" ? 10 : undefined}
+                pattern={
+                    key === "email"
+                        ? "[A-Za-z0-9._%+-]+@gmail\\.com"
+                        : key === "phoneNumber"
+                            ? "[0-9]{10}"
+                            : undefined
+                }
+                inputMode={key === "phoneNumber" ? "numeric" : undefined}
+                title={
+                    key === "email"
+                        ? "Use a valid Gmail address, for example name@gmail.com"
+                        : key === "phoneNumber"
+                            ? "Enter exactly 10 digits"
+                            : key === "password"
+                                ? "Password must contain at least 8 characters"
+                                : undefined
+                }
+                type={
                 key === "password" || key === "secretAnswer"
                     ? "password"
                     : key === "dob"
