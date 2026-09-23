@@ -1,8 +1,8 @@
 import { useNavigate } from "react-router-dom";
 import type { Product } from "../types";
-import { Plus, Star } from "lucide-react";
+import { Heart, Plus, Star } from "lucide-react";
 import { useAuthenticatedCart } from "../hooks/useAuthenticatedCart";
-
+import { useWishlist } from "../hooks/useWishlist";
 interface Props {
   product: Product;
 }
@@ -11,6 +11,7 @@ const ProductCard = ({ product }: Props) => {
   const currency = import.meta.env.VITE_CURRENCY_SYMBOL || "$";
 
   const addToAuthenticatedCart = useAuthenticatedCart();
+  const addToWishlist = useWishlist();
   const navigate = useNavigate();
 
   return (
@@ -25,6 +26,16 @@ const ProductCard = ({ product }: Props) => {
           alt={product.name}
           className="w-full h-full object-cover p-4 group-hover:p-2 transition-all duration-300"
         />
+        <button
+            onClick={(event) => {
+              event.stopPropagation();
+              void addToWishlist(product.id);
+            }}
+            className="absolute top-3 right-3 z-10 size-8 rounded-full bg-white/90 text-app-orange flex-center hover:bg-white"
+            title="Add to wishlist"
+        >
+          <Heart className="size-4" />
+        </button>
 
         {/* Badges */}
         <div className="absolute top-3 left-3 flex flex-wrap gap-1.5">
