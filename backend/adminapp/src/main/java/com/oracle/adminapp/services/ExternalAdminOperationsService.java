@@ -93,6 +93,11 @@ public class ExternalAdminOperationsService {
                 .retrieve().toBodilessEntity();
     }
 
+    public void activateEmployee(Integer id) {
+        employees.patch().uri("/{id}/status", id).headers(this::employeeHeaders).body(Map.of("status", "ACTIVE"))
+                .retrieve().toBodilessEntity();
+    }
+
     @SuppressWarnings("unchecked")
     public Map<String, Object> createUser(UserCreateRequest request) {
         Map<?, ?> response = users.post().uri("/admin").body(request).retrieve().body(Map.class);

@@ -1,6 +1,8 @@
 package com.oracle.adminapp.controllers;
 
 import com.oracle.adminapp.dto.AdminCreateRequest;
+import com.oracle.adminapp.dto.AdminPasswordChangeRequest;
+import com.oracle.adminapp.dto.AdminProfileUpdateRequest;
 import com.oracle.adminapp.dto.AdminResponse;
 import com.oracle.adminapp.dto.AdminUpdateRequest;
 import com.oracle.adminapp.dto.DashboardResponse;
@@ -46,6 +48,19 @@ public class AdminController {
     @GetMapping("/me")
     public AdminResponse me(@RequestHeader("X-Authenticated-User-Id") Integer adminId) {
         return adminService.currentAdmin(adminId);
+    }
+
+    @PatchMapping("/me")
+    public AdminResponse updateMyProfile(@RequestHeader("X-Authenticated-User-Id") Integer adminId,
+                                         @Valid @RequestBody AdminProfileUpdateRequest request) {
+        return adminService.updateMyProfile(adminId, request);
+    }
+
+    @PutMapping("/me/password")
+    public ResponseEntity<Void> changeMyPassword(@RequestHeader("X-Authenticated-User-Id") Integer adminId,
+                                                  @Valid @RequestBody AdminPasswordChangeRequest request) {
+        adminService.changeMyPassword(adminId, request);
+        return ResponseEntity.noContent().build();
     }
 
     @GetMapping("/dashboard")
@@ -109,6 +124,12 @@ public class AdminController {
     @PostMapping("/employees/{id}/deactivate")
     public ResponseEntity<Void> deactivateEmployee(@PathVariable Integer id) {
         operations.deactivateEmployee(id);
+        return ResponseEntity.noContent().build();
+    }
+
+    @PostMapping("/employees/{id}/activate")
+    public ResponseEntity<Void> activateEmployee(@PathVariable Integer id) {
+        operations.activateEmployee(id);
         return ResponseEntity.noContent().build();
     }
 
