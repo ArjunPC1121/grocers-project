@@ -166,9 +166,9 @@ public class ExternalAdminOperationsService {
                 .filter(employee -> !"INACTIVE".equalsIgnoreCase(text(employee.get("status")))).count();
         int pendingRequests = (int) requestRows.stream()
                 .filter(request -> !List.of("APPROVED", "REJECTED").contains(text(request.get("status")).toUpperCase())).count();
-        List<Map<String, Object>> nonCancelled = orderRows.stream()
-                .filter(order -> !"CANCELLED".equalsIgnoreCase(text(order.get("status")))).toList();
-        BigDecimal revenue = nonCancelled.stream().map(order -> decimal(order.get("totalAmount")))
+        List<Map<String, Object>> revenueOrders = orderRows.stream()
+                .filter(this::isRevenueOrder).toList();
+        BigDecimal revenue = revenueOrders.stream().map(order -> decimal(order.get("totalAmount")))
                 .reduce(BigDecimal.ZERO, BigDecimal::add);
 
         return new DashboardResponse(productRows.size(), lowStock, activeEmployees, pendingRequests,
@@ -179,7 +179,7 @@ public class ExternalAdminOperationsService {
         LocalDate from = startOfPeriod(period, referenceDate);
         LocalDate to = endOfPeriod(period, referenceDate);
         List<Map<String, Object>> filtered = orders().stream()
-                .filter(order -> !"CANCELLED".equalsIgnoreCase(text(order.get("status"))))
+                .filter(this::isRevenueOrder)
                 .filter(order -> withinPeriod(order, from, to))
                 .filter(order -> customerId == null || customerId.equals(number(order.get("customerId")).intValue()))
                 .filter(order -> productId == null || containsProduct(order, productId))
@@ -291,6 +291,18 @@ public class ExternalAdminOperationsService {
         if (orderedAt.length() < 10) return false;
         LocalDate date = LocalDate.parse(orderedAt.substring(0, 10));
         return !date.isBefore(from) && !date.isAfter(to);
+    }
+
+    /**
+     * Revenue belongs only to successfully paid orders that entered fulfilment.
+     * Draft, rejected, failed-payment, and cancelled orders are operational data,
+     * but must never inflate sales reports.
+     */
+    private boolean isRevenueOrder(Map<String, Object> order) {
+        return switch (text(order.get("status")).toUpperCase()) {
+            case "PLACED", "SHIPPED", "OUT_FOR_DELIVERY", "DELIVERED" -> true;
+            default -> false;
+        };
     }
 
     private boolean containsProduct(Map<String, Object> order, Integer productId) {
