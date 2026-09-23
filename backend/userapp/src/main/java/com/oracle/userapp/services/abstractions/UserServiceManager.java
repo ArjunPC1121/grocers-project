@@ -1,5 +1,6 @@
 package com.oracle.userapp.services.abstractions;
 
+import com.oracle.userapp.dto.ChangePasswordRequest;
 import com.oracle.userapp.dto.ResetPasswordRequest;
 import com.oracle.userapp.dto.SecretAnswerRequest;
 import com.oracle.userapp.entities.SecretQuestion;
@@ -33,4 +34,5 @@ public  interface UserServiceManager<TRequest,TResponse,TUpdateRequest,TTicketRe
     void clearFailedAttempts(Id id);
 
     SecretQuestion getSecretQuestion(Id id);
+    public void changePassword(Integer userId, ChangePasswordRequest request);
 }
