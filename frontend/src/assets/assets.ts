@@ -68,7 +68,7 @@ export const footerData = {
   brand: {
     name: "Grocers",
     description:
-      "Bringing fresh, organic groceries straight from local farms to your doorstep. Nourish your home with Earth's finest.",
+      "A Bengaluru-born quick-commerce startup bringing daily essentials, fresh produce, and local favourites to your doorstep.",
     socials: [
       { icon: SiFacebook, link: "#" },
       { icon: SiX, link: "#" },
@@ -80,31 +80,31 @@ export const footerData = {
     {
       title: "Quick Links",
       links: [
-        { label: "All Products", to: "/products" },
-        { label: "Flash Deals", to: "/deals" },
-        { label: "Track Order", to: "/orders" },
-        { label: "Employee", to: "/delivery" },
+        { label: "Shop Groceries", to: "/products" },
+        { label: "Today's Deals", to: "/deals" },
+        { label: "Plan a Recipe", to: "/recipe-assistant" },
+        { label: "Track an Order", to: "/orders" },
       ],
     },
     {
       title: "Customer Service",
       links: [
-        { label: "My Account", to: "#" },
-        { label: "Order History", to: "#" },
-        { label: "Addresses", to: "#" },
+        { label: "My Account", to: "/profile" },
+        { label: "Order History", to: "/orders" },
+        { label: "Saved Addresses", to: "/addresses" },
         { label: "Help Center", href: "#" },
       ],
     },
   ],
 
   contact: [
-    { icon: MapPinIcon, text: "123 Green Valley Rd, Portland" },
-    { icon: PhoneIcon, text: "+1 (111) 123-4567" },
-    { icon: MailIcon, text: "hello@example.com" },
+    { icon: MapPinIcon, text: "Koramangala, Bengaluru, Karnataka 560034" },
+    { icon: PhoneIcon, text: "+91 80 4567 8900" },
+    { icon: MailIcon, text: "hello@grocers.in" },
   ],
 
   bottom: {
-    copyright: "© 2026 Greatstack. All rights reserved.",
+    copyright: "© 2026 Grocers Technologies Pvt. Ltd. Built in Bengaluru, Karnataka.",
     links: [
       { label: "Privacy Policy", href: "#" },
       { label: "Terms of Service", href: "#" },

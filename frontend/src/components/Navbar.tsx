@@ -1,4 +1,4 @@
-import { Heart, LogIn, Search, ShoppingBasket, Wallet } from "lucide-react";
+import { CookingPot, Heart, LogIn, Search, ShoppingBasket, Wallet } from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
 import { useState, type FormEvent } from "react";
 import { useAuth } from "../context/AuthContext";
@@ -26,24 +26,33 @@ export default function Navbar() {
           Grocers
         </Link>
 
-        <form
-          onSubmit={submitSearch}
-          className="order-last w-full sm:order-none sm:max-w-md sm:flex-1"
-        >
-          <div className="relative">
-            <Search
-              size={16}
-              className="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-400"
-            />
-            <input
-              value={query}
-              onChange={(event) => setQuery(event.target.value)}
-              placeholder="Search groceries"
-              aria-label="Search groceries"
-              className="w-full rounded-full bg-orange-50 py-2 pl-9 pr-3 text-sm"
-            />
-          </div>
-        </form>
+        <div className="order-last flex w-full gap-2 sm:order-none sm:max-w-xl sm:flex-1">
+          <form onSubmit={submitSearch} className="min-w-0 flex-1">
+            <div className="relative">
+              <Search
+                size={16}
+                className="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-400"
+              />
+              <input
+                value={query}
+                onChange={(event) => setQuery(event.target.value)}
+                placeholder="Search groceries"
+                aria-label="Search groceries"
+                className="w-full rounded-full bg-orange-50 py-2 pl-9 pr-3 text-sm"
+              />
+            </div>
+          </form>
+          {user?.role === "CUSTOMER" && (
+            <button
+              type="button"
+              onClick={() => navigate(`/recipe-assistant${query.trim() ? `?recipe=${encodeURIComponent(query.trim())}` : ""}`)}
+              className="inline-flex shrink-0 items-center gap-1.5 rounded-full border border-app-orange bg-orange-50 px-3 py-2 text-xs font-semibold text-app-orange transition-colors hover:bg-app-orange hover:text-white"
+            >
+              <CookingPot className="size-3.5" />
+              Plan a recipe
+            </button>
+          )}
+        </div>
 
         <div className="ml-auto flex items-center gap-3 text-sm">
           {user?.role === "CUSTOMER" && (
