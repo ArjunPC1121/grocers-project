@@ -1,6 +1,8 @@
 package com.oracle.authapp.services;
 
 import com.oracle.authapp.dto.AuthResponse;
+import com.oracle.authapp.dto.LockedAccountTicketRequest;
+import com.oracle.authapp.dto.LockedAccountRecoveryStatus;
 import com.oracle.authapp.dto.LoginRequest;
 import com.oracle.authapp.entities.AdminLoginAccount;
 import com.oracle.authapp.entities.EmployeeLoginAccount;
@@ -17,6 +19,8 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
+import org.springframework.http.HttpStatus;
+import org.springframework.web.client.HttpClientErrorException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
@@ -35,6 +39,10 @@ public class AuthService {
 
     private static final String FAILED_ATTEMPTS_URL =
             "http://localhost:8091/grocers/api/users/{id}/failed-attempts";
+    private static final String LOCKED_ACCOUNT_TICKET_URL =
+            "http://localhost:8091/grocers/api/users/tickets";
+    private static final String OPEN_TICKET_URL =
+            "http://localhost:8087/grocers/api/tickets/user/{userId}/open";
 
     public AuthService(UserLoginAccountRepository userAccounts,
                        EmployeeLoginAccountRepository employeeAccounts,
@@ -76,6 +84,42 @@ public class AuthService {
             throw e;
         }
 
+    }
+
+    /** Starts employee-assisted recovery after the customer cannot use the security-question path. */
+    public void raiseLockedAccountTicket(LockedAccountTicketRequest request) {
+        UserLoginAccount account = userAccounts.findByEmailIgnoreCase(request.email())
+                .orElseThrow(InvalidCredentialsException::new);
+        if (!account.isAccountLocked()) {
+            throw new AccountLockedException();
+        }
+
+        HttpHeaders headers = new HttpHeaders();
+        headers.setContentType(MediaType.APPLICATION_JSON);
+        headers.set("X-Internal-Service", "authapp");
+        headers.set("X-Internal-Secret", internalSecret);
+
+        restTemplate.postForEntity(LOCKED_ACCOUNT_TICKET_URL,
+                new HttpEntity<>(request, headers), Void.class);
+    }
+
+    public LockedAccountRecoveryStatus lockedAccountStatus(String email) {
+        UserLoginAccount account = userAccounts.findByEmailIgnoreCase(email)
+                .orElseThrow(InvalidCredentialsException::new);
+        if (!account.isAccountLocked()) {
+            return new LockedAccountRecoveryStatus(true, false);
+        }
+        return new LockedAccountRecoveryStatus(false, hasOpenTicket(account.getId()));
+    }
+
+    private boolean hasOpenTicket(Integer userId) {
+        try {
+            restTemplate.getForEntity(OPEN_TICKET_URL, Object.class, userId);
+            return true;
+        } catch (HttpClientErrorException exception) {
+            if (exception.getStatusCode() == HttpStatus.NOT_FOUND) return false;
+            throw exception;
+        }
     }
 
     public AuthResponse loginEmployee(LoginRequest request) {

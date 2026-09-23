@@ -13,8 +13,20 @@ public record CreateProductRequest(
         @NotNull RequestAction action,
         Integer productId,
         @Size(max = 150) String name,
+        @Size(max = 100) String brand,
+        @Size(max = 100) String category,
+        @Size(max = 100) String subCategory,
         @DecimalMin(value = "0.01", message = "price must be greater than zero") BigDecimal price,
         @Min(value = 1, message = "quantity must be at least one") Integer quantity,
         @Min(0) @Max(100) Integer discount,
-        @Size(max = 2000) String description) {
+        @Size(max = 2000) String description,
+        @Size(max = 1000) String tags,
+        @Size(max = 1000) String searchAliases,
+        Double unitValue,
+        @Size(max = 20) String unitType,
+        Boolean active,
+        String imageData,
+        @Size(max = 255) String imageFileName,
+        @Size(max = 2000) String reason,
+        String previousValues) {
 }

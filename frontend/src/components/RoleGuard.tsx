@@ -18,8 +18,8 @@ export default function RoleGuard({ allow }: { allow: Role[] }) {
     return <Navigate to={destination} replace />;
   }
 
-  if (user.role === "EMPLOYEE" && user.mustChangePassword && !location.pathname.includes("/employee/profile")) {
-    return <Navigate to="/employee/profile" replace />;
+  if (user.role === "EMPLOYEE" && user.mustChangePassword && !location.pathname.includes("/employee/change-password")) {
+    return <Navigate to="/employee/change-password" replace />;
   }
 
   return <Outlet />;

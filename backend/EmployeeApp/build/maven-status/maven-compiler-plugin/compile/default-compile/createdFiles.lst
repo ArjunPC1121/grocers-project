@@ -1,0 +1,4 @@
+com\oracle\employeeapp\dtos\OrderCustomerDetails.class
+com\oracle\employeeapp\dtos\OrderItemDetails.class
+com\oracle\employeeapp\dtos\EmployeeOrderDetails.class
+com\oracle\employeeapp\dtos\TicketUserDetails.class

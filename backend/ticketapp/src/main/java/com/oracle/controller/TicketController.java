@@ -33,11 +33,17 @@ public class TicketController {
 
 
     @PostMapping public ResponseEntity<TicketServiceResponse> createTicket(@Valid @RequestBody TicketRequest request ) {
-       ticket ticket = ticketService.createTicket(new ticket(request.userId(), request.lockedReason()));
+       ticket ticket = ticketService.createTicket(new ticket(request.userId(), request.lockedReason(), request.requestNote()));
        return ResponseEntity.status(HttpStatus.CREATED).body(new TicketServiceResponse(ticket.getTicketId()));
     }
     @GetMapping public List<ticket> getAllTickets() { return ticketService.getAllTickets(); }
     @GetMapping("/open") public List<ticket> getOpenTickets() { return ticketService.getOpenTickets(); }
+    @GetMapping("/user/{userId}/open") public ResponseEntity<ticket> getOpenTicketForUser(@PathVariable Integer userId) {
+        return ticketService.getOpenTicketForUser(userId).map(ResponseEntity::ok).orElseGet(() -> ResponseEntity.notFound().build());
+    }
+    @GetMapping("/employee/{employeeId}/history") public List<ticket> getTicketHistoryForEmployee(@PathVariable Integer employeeId) {
+        return ticketService.getTicketHistoryForEmployee(employeeId);
+    }
     @GetMapping("/{ticketId}") public ResponseEntity<ticket> getTicketById(@PathVariable Integer ticketId) {
         return ticketService.getTicketById(ticketId).map(ResponseEntity::ok).orElseGet(() -> ResponseEntity.notFound().build());
     }

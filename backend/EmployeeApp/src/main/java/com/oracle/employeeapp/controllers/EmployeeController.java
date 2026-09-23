@@ -7,6 +7,7 @@ import com.oracle.employeeapp.dtos.InventoryRequest;
 import com.oracle.employeeapp.dtos.ProductRequestSummary;
 import com.oracle.employeeapp.dtos.TicketSummary;
 import com.oracle.employeeapp.dtos.UpdateOrderStatusRequest;
+import com.oracle.employeeapp.dtos.EmployeeOrderDetails;
 import com.oracle.employeeapp.services.EmployeeService;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
@@ -32,6 +33,17 @@ public class EmployeeController {
         this.service = service;
     }
 
+    @GetMapping
+    public List<EmployeeSummary> employees(@RequestHeader("X-Authenticated-Role") String role) {
+        return service.employees(role);
+    }
+
+    /** Used by OrderApp to verify the authenticated employee before a status change. */
+    @GetMapping("/{employeeId}")
+    public EmployeeSummary employeeById(@PathVariable Integer employeeId) {
+        return service.employeeById(employeeId);
+    }
+
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
     public EmployeeSummary createEmployee(@RequestHeader("X-Authenticated-Role") String role,
@@ -50,6 +62,12 @@ public class EmployeeController {
     @GetMapping("/tickets")
     public List<TicketSummary> openTickets(@RequestHeader("X-Authenticated-Role") String role) {
         return service.openTickets(role);
+    }
+
+    @GetMapping("/tickets/history")
+    public List<TicketSummary> ticketHistory(@RequestHeader("X-Authenticated-User-Id") Integer employeeId,
+                                              @RequestHeader("X-Authenticated-Role") String role) {
+        return service.ticketHistory(employeeId, role);
     }
 
     @PostMapping("/tickets/{ticketId}/resolve")
@@ -81,8 +99,8 @@ public class EmployeeController {
     }
 
     @GetMapping("/orders")
-    public List<Object> getAllOrders(@RequestHeader("X-Authenticated-User-Id") Integer employeeId,
-                                     @RequestHeader("X-Authenticated-Role") String role) {
+    public List<EmployeeOrderDetails> getAllOrders(@RequestHeader("X-Authenticated-User-Id") Integer employeeId,
+                                                   @RequestHeader("X-Authenticated-Role") String role) {
         return service.getAllOrders(employeeId, role);
     }
 

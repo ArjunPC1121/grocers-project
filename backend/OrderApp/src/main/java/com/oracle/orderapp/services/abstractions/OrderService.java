@@ -1,6 +1,7 @@
 package com.oracle.orderapp.services.abstractions;
 
 import com.oracle.orderapp.dtos.CreateOrderRequest;
+import com.oracle.orderapp.dtos.EmployeeOrderDetails;
 import com.oracle.orderapp.dtos.UpdateOrderAddressRequest;
 import com.oracle.orderapp.dtos.UpdateOrderStatusRequest;
 import com.oracle.orderapp.entities.Order;
@@ -13,6 +14,8 @@ public interface OrderService {
     Order create(CreateOrderRequest request);
 
     List<Order> getAll();
+
+    List<EmployeeOrderDetails> getAllEmployeeDetails();
 
     Order getById(Integer orderId);
 

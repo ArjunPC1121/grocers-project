@@ -9,6 +9,8 @@ public interface TicketServiceManager {
     List<ticket> getAllTickets();
     Optional<ticket> getTicketById(Integer ticketId);
     List<ticket> getOpenTickets();
+    Optional<ticket> getOpenTicketForUser(Integer userId);
+    List<ticket> getTicketHistoryForEmployee(Integer employeeId);
     Optional<ticket> resolveTicket(Integer ticketId, Integer employeeId);
     Optional<ticket> rejectTicket(Integer ticketId, Integer employeeId);
     boolean deleteTicket(Integer ticketId);

@@ -93,6 +93,17 @@ public class UserAppController {
                 .body(userService.raiseTicket(id));
     }
 
+    /** Called internally by AuthApp after a locked customer fails self-service recovery. */
+    @PostMapping("/tickets")
+    public ResponseEntity<TicketResponse> raiseLockedAccountTicket(@Valid @RequestBody PublicTicketRequest request) {
+        return ResponseEntity.status(HttpStatus.CREATED).body(userService.raiseTicketByEmail(request));
+    }
+
+    @GetMapping("/{id}/ticket-details")
+    public ResponseEntity<TicketUserDetails> ticketDetails(@PathVariable Integer id) {
+        return ResponseEntity.ok(userService.ticketDetails(id));
+    }
+
     @PostMapping("/{id}/refund")
     public ResponseEntity<String> refund(@PathVariable Integer id, @RequestBody OrderCancelRequest request)
     {
