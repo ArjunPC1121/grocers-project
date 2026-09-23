@@ -1,8 +1,10 @@
 package com.oracle.productsapp.controller;
 
 import java.util.List;
+import java.util.Map;
 
 import com.oracle.productsapp.dtos.ImageUploadResponse;
+import com.oracle.productsapp.dtos.UploadedImageResponse;
 import com.oracle.productsapp.dtos.ProductSearchResult;
 import com.oracle.productsapp.dtos.QuantityRequest;
 import org.springframework.http.HttpStatus;
@@ -13,6 +15,7 @@ import org.springframework.web.bind.annotation.*;
 import com.oracle.productsapp.dtos.ProductRequest;
 import com.oracle.productsapp.entities.Product;
 import com.oracle.productsapp.services.abstractions.ProductService;
+import com.oracle.productsapp.services.implementations.CloudinaryImageService;
 
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -24,6 +27,7 @@ import org.springframework.web.multipart.MultipartFile;
 public class ProductController {
 
     private final ProductService productService;
+    private final CloudinaryImageService cloudinaryImageService;
 
     @PostMapping
     public ResponseEntity<Product> create(@Valid @RequestBody ProductRequest request) {
@@ -95,6 +99,14 @@ public class ProductController {
                         product.getImageUrl()
                 )
         );
+    }
+
+    @PostMapping(value = "/images", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    public ResponseEntity<UploadedImageResponse> uploadRequestImage(
+            @RequestParam("image") MultipartFile image) {
+        Map uploadResult = cloudinaryImageService.upload(image);
+        return ResponseEntity.status(HttpStatus.CREATED)
+                .body(new UploadedImageResponse((String) uploadResult.get("secure_url")));
     }
 
     
