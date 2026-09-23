@@ -3,6 +3,7 @@ package com.oracle.userapp.controllers;
 import com.oracle.userapp.dto.*;
 import com.oracle.userapp.entities.SecretQuestion;
 import com.oracle.userapp.services.implementations.UserService;
+import com.oracle.userapp.services.implementations.WishlistService;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -16,6 +17,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import java.util.Collection;
+import java.util.List;
 import java.util.Map;
 
 @RestController
@@ -23,11 +25,15 @@ import java.util.Map;
 public class UserAppController {
 
     private final UserService userService;
+    private final WishlistService wishlistService;
 
-    public UserAppController(UserService userService) {
+    public UserAppController(
+            UserService userService,
+            WishlistService wishlistService
+    ) {
         this.userService = userService;
+        this.wishlistService = wishlistService;
     }
-
     @PostMapping
     public ResponseEntity<UserResponse> add(@Valid @RequestBody UserRequest request) {
         UserResponse response = userService.add(request);
@@ -123,6 +129,33 @@ public class UserAppController {
             @PathVariable Integer id) {
 
         return ResponseEntity.ok(userService.getSecretQuestion(id));
+    }
+    @PostMapping("/{userId}/wishlist/{productId}")
+    public ResponseEntity<WishlistItemResponse> addWishlistItem(
+            @PathVariable Integer userId,
+            @PathVariable Integer productId
+    ) {
+        return ResponseEntity.status(HttpStatus.CREATED)
+                .body(wishlistService.addItem(userId, productId));
+    }
+
+    @GetMapping("/{userId}/wishlist")
+    public ResponseEntity<List<WishlistItemResponse>> getWishlist(
+            @PathVariable Integer userId
+    ) {
+        return ResponseEntity.ok(
+                wishlistService.getItems(userId)
+        );
+    }
+
+    @DeleteMapping("/{userId}/wishlist/{productId}")
+    public ResponseEntity<Void> removeWishlistItem(
+            @PathVariable Integer userId,
+            @PathVariable Integer productId
+    ) {
+        wishlistService.removeItem(userId, productId);
+
+        return ResponseEntity.noContent().build();
     }
 
 
