@@ -13,6 +13,7 @@ import com.oracle.employeeapp.dtos.TicketSummary;
 import com.oracle.employeeapp.dtos.TicketUserDetails;
 import com.oracle.employeeapp.dtos.UpdateOrderStatusRequest;
 import com.oracle.employeeapp.entities.Employee;
+import com.oracle.employeeapp.entities.EmployeeStatus;
 import com.oracle.employeeapp.repositories.EmployeeRepository;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpEntity;
@@ -87,6 +88,13 @@ public class EmployeeService {
         }
         employee.setPassword(passwordEncoder.encode(request.newPassword()));
         employee.setMustChangePassword(false);
+        return summary(employees.save(employee));
+    }
+
+    public EmployeeSummary updateStatus(String role, Integer employeeId, EmployeeStatus status) {
+        requireAdmin(role);
+        Employee employee = employee(employeeId);
+        employee.setStatus(status);
         return summary(employees.save(employee));
     }
 
@@ -234,6 +242,6 @@ public class EmployeeService {
 
     private EmployeeSummary summary(Employee employee) {
         return new EmployeeSummary(employee.getId(), employee.getFirstName(), employee.getLastName(),
-                employee.getEmail(), employee.getMustChangePassword());
+                employee.getEmail(), employee.getMustChangePassword(), employee.getStatus());
     }
 }

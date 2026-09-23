@@ -4,6 +4,9 @@ import com.oracle.authapp.dto.AuthResponse;
 import com.oracle.authapp.dto.LockedAccountTicketRequest;
 import com.oracle.authapp.dto.LockedAccountRecoveryStatus;
 import com.oracle.authapp.dto.LoginRequest;
+import com.oracle.authapp.dto.SecurityRecoveryAnswerRequest;
+import com.oracle.authapp.dto.SecurityRecoveryAnswerResponse;
+import com.oracle.authapp.dto.SecurityRecoveryResetPasswordRequest;
 import com.oracle.authapp.entities.AdminLoginAccount;
 import com.oracle.authapp.entities.EmployeeLoginAccount;
 import com.oracle.authapp.entities.LoginRole;
@@ -11,6 +14,7 @@ import com.oracle.authapp.entities.UserLoginAccount;
 import com.oracle.authapp.exceptions.AccountLockedException;
 import com.oracle.authapp.exceptions.EmployeeInactiveException;
 import com.oracle.authapp.exceptions.InvalidCredentialsException;
+import com.oracle.authapp.exceptions.SecurityRecoveryEscalatedException;
 import com.oracle.authapp.repositories.AdminLoginAccountRepository;
 import com.oracle.authapp.repositories.EmployeeLoginAccountRepository;
 import com.oracle.authapp.repositories.UserLoginAccountRepository;
@@ -21,6 +25,7 @@ import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.client.HttpClientErrorException;
+import org.springframework.web.client.HttpServerErrorException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
@@ -43,6 +48,9 @@ public class AuthService {
             "http://localhost:8091/grocers/api/users/tickets";
     private static final String OPEN_TICKET_URL =
             "http://localhost:8087/grocers/api/tickets/user/{userId}/open";
+    private static final String SECRET_QUESTION_URL = "http://localhost:8091/grocers/api/users/{id}/secret-question";
+    private static final String SECRET_ANSWER_URL = "http://localhost:8091/grocers/api/users/{id}/secret-answer";
+    private static final String PASSWORD_RESET_URL = "http://localhost:8091/grocers/api/users/{id}/password-reset";
 
     public AuthService(UserLoginAccountRepository userAccounts,
                        EmployeeLoginAccountRepository employeeAccounts,
@@ -75,12 +83,13 @@ public class AuthService {
 
             HttpEntity<Void> entity = new HttpEntity<>(headers);
 
-            restTemplate.postForEntity(
+            Integer attempts = restTemplate.postForEntity(
                     FAILED_ATTEMPTS_URL,
                     entity,
                     Integer.class,
                     account.getId()
-            );
+            ).getBody();
+            if (attempts != null && attempts >= 3) throw new AccountLockedException();
             throw e;
         }
 
@@ -110,6 +119,50 @@ public class AuthService {
             return new LockedAccountRecoveryStatus(true, false);
         }
         return new LockedAccountRecoveryStatus(false, hasOpenTicket(account.getId()));
+    }
+
+    public String securityQuestion(String email) {
+        UserLoginAccount account = lockedUser(email);
+        try {
+            return restTemplate.exchange(SECRET_QUESTION_URL, org.springframework.http.HttpMethod.GET,
+                    new HttpEntity<Void>(internalHeaders()), String.class, account.getId()).getBody();
+        } catch (HttpServerErrorException exception) {
+            throw new SecurityRecoveryEscalatedException();
+        }
+    }
+
+    public SecurityRecoveryAnswerResponse verifySecurityAnswer(SecurityRecoveryAnswerRequest request) {
+        UserLoginAccount account = lockedUser(request.email());
+        String resetToken;
+        try {
+            resetToken = restTemplate.postForEntity(SECRET_ANSWER_URL,
+                    new HttpEntity<>(java.util.Map.of("answer", request.answer()), internalHeaders()), String.class, account.getId()).getBody();
+        } catch (HttpServerErrorException exception) {
+            throw new SecurityRecoveryEscalatedException();
+        }
+        if (resetToken == null || resetToken.isBlank()) throw new IllegalStateException("Recovery could not be started");
+        return new SecurityRecoveryAnswerResponse(resetToken);
+    }
+
+    public void resetPasswordFromSecurityQuestion(SecurityRecoveryResetPasswordRequest request) {
+        UserLoginAccount account = lockedUser(request.email());
+        restTemplate.postForEntity(PASSWORD_RESET_URL,
+                new HttpEntity<>(java.util.Map.of("resetToken", request.resetToken(), "newPassword", request.newPassword()), internalHeaders()),
+                Void.class, account.getId());
+    }
+
+    private UserLoginAccount lockedUser(String email) {
+        UserLoginAccount account = userAccounts.findByEmailIgnoreCase(email).orElseThrow(InvalidCredentialsException::new);
+        if (!account.isAccountLocked()) throw new AccountLockedException();
+        return account;
+    }
+
+    private HttpHeaders internalHeaders() {
+        HttpHeaders headers = new HttpHeaders();
+        headers.setContentType(MediaType.APPLICATION_JSON);
+        headers.set("X-Internal-Service", "authapp");
+        headers.set("X-Internal-Secret", internalSecret);
+        return headers;
     }
 
     private boolean hasOpenTicket(Integer userId) {

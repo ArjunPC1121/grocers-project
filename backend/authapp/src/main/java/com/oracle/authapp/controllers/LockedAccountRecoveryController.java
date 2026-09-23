@@ -2,6 +2,9 @@ package com.oracle.authapp.controllers;
 
 import com.oracle.authapp.dto.LockedAccountTicketRequest;
 import com.oracle.authapp.dto.LockedAccountRecoveryStatus;
+import com.oracle.authapp.dto.SecurityRecoveryAnswerRequest;
+import com.oracle.authapp.dto.SecurityRecoveryAnswerResponse;
+import com.oracle.authapp.dto.SecurityRecoveryResetPasswordRequest;
 import com.oracle.authapp.services.AuthService;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
@@ -34,5 +37,19 @@ public class LockedAccountRecoveryController {
     @GetMapping("/status")
     public ResponseEntity<LockedAccountRecoveryStatus> status(@RequestParam @NotBlank @Email String email) {
         return ResponseEntity.ok(authService.lockedAccountStatus(email));
+    }
+
+    @GetMapping("/security-question")
+    public ResponseEntity<String> securityQuestion(@RequestParam @NotBlank @Email String email) { return ResponseEntity.ok(authService.securityQuestion(email)); }
+
+    @PostMapping("/verify-security-answer")
+    public ResponseEntity<SecurityRecoveryAnswerResponse> verifySecurityAnswer(@Valid @RequestBody SecurityRecoveryAnswerRequest request) {
+        return ResponseEntity.ok(authService.verifySecurityAnswer(request));
+    }
+
+    @PostMapping("/reset-password")
+    public ResponseEntity<Void> resetPassword(@Valid @RequestBody SecurityRecoveryResetPasswordRequest request) {
+        authService.resetPasswordFromSecurityQuestion(request);
+        return ResponseEntity.noContent().build();
     }
 }

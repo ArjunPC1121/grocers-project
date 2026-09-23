@@ -1,11 +1,13 @@
 import { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import toast from "react-hot-toast";
 import api, { errorMessage } from "../../config/api";
 import { useAuth } from "../../context/AuthContext";
 import { meetsEmployeePasswordRequirements, PasswordRequirements } from "../../components/PasswordRequirements";
 
 export default function EmployeePasswordChange() {
-  const { user, logout } = useAuth();
+  const { user, logout, updateUser } = useAuth();
+  const navigate = useNavigate();
   const [currentPassword, setCurrentPassword] = useState("");
   const [newPassword, setNewPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
@@ -19,9 +21,19 @@ export default function EmployeePasswordChange() {
     if (!user) return;
     setSubmitting(true);
     try {
-      await api.put(`/employees/${user.id}/password`, { currentPassword, newPassword, confirmPassword });
-      toast.success("Password updated. Please sign in with your new password.");
-      logout();
+      const { data: employee } = await api.put(`/employees/${user.id}/password`, { currentPassword, newPassword, confirmPassword });
+      const firstName = employee.firstName || user.firstName;
+      const lastName = employee.lastName || user.lastName;
+      updateUser({
+        firstName,
+        lastName,
+        name: [firstName, lastName].filter(Boolean).join(" ") || user.name,
+        email: employee.email || user.email,
+        mustChangePassword: false,
+        employeeStatus: employee.status,
+      });
+      toast.success("Password updated.");
+      navigate("/employee", { replace: true });
     } catch (error) {
       toast.error(errorMessage(error, "Unable to update your password."));
     } finally {
