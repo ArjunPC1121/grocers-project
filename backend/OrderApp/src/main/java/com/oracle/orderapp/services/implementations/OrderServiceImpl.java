@@ -11,6 +11,7 @@ import java.util.UUID;
 import com.oracle.orderapp.clients.CartClient;
 import com.oracle.orderapp.clients.EmployeeClient;
 import com.oracle.orderapp.dtos.*;
+import com.oracle.orderapp.entities.PaymentMethod;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -22,6 +23,7 @@ import com.oracle.orderapp.entities.OrderStatus;
 import com.oracle.orderapp.exceptions.ResourceNotFoundException;
 import com.oracle.orderapp.repository.OrderRepository;
 import com.oracle.orderapp.services.abstractions.OrderService;
+import com.oracle.orderapp.events.OrderCheckoutEventPublisher;
 
 import lombok.RequiredArgsConstructor;
 
@@ -34,6 +36,8 @@ public class OrderServiceImpl implements OrderService {
     private final UserClient userClient;
     private final CartClient cartClient;
     private final EmployeeClient employeeClient;
+    private final OrderCheckoutEventPublisher orderCheckoutEventPublisher;
+
     private boolean isValidEmployeeStatusChange(
             OrderStatus currentStatus,
             OrderStatus newStatus) {
@@ -70,7 +74,8 @@ public class OrderServiceImpl implements OrderService {
         order.setCartId(request.cartId());
         order.setDeliveryAddress(request.deliveryAddress());
         order.setStatus(OrderStatus.CREATED);
-
+        order.setPaymentMethod(request.paymentMethod());
+        
         BigDecimal totalAmount = BigDecimal.ZERO;
 
         for (OrderItemRequest requestItem : request.items()) {
@@ -139,6 +144,16 @@ public class OrderServiceImpl implements OrderService {
     public Order checkout(Integer orderId) {
         Order order = getById(orderId);
 
+        if (order.getPaymentMethod() == null) {
+            throw new IllegalStateException("Order has no payment method");
+        }
+
+        if (order.getPaymentMethod() == PaymentMethod.CARD) {
+            throw new IllegalStateException(
+                    "Card payments are not available yet. Choose Funds or Cash on Delivery."
+            );
+        }
+
         if (order.getStatus() != OrderStatus.CREATED
                 && order.getStatus() != OrderStatus.PAYMENT_FAILED) {
             throw new IllegalStateException(
@@ -167,19 +182,21 @@ public class OrderServiceImpl implements OrderService {
             return orderRepository.save(order);
         }
 
-        try {
-            userClient.debit(
-                    order.getCustomerId(),
-                    order.getTotalAmount(),
-                    order.getOrderNumber()
-            );
-        } catch (Exception exception) {
-            exception.printStackTrace();
+        if (order.getPaymentMethod() == PaymentMethod.FUNDS) {
+            try {
+                userClient.debit(
+                        order.getCustomerId(),
+                        order.getTotalAmount(),
+                        order.getOrderNumber()
+                );
+            } catch (Exception exception) {
+                exception.printStackTrace();
 
-            releaseReducedStock(order.getItems());
+                releaseReducedStock(order.getItems());
 
-            order.setStatus(OrderStatus.PAYMENT_FAILED);
-            return orderRepository.save(order);
+                order.setStatus(OrderStatus.PAYMENT_FAILED);
+                return orderRepository.save(order);
+            }
         }
 
         // Requires cartClient.checkoutCart(Integer cartId).
@@ -187,7 +204,20 @@ public class OrderServiceImpl implements OrderService {
         cartClient.checkoutCart(order.getCartId());
 
         order.setStatus(OrderStatus.PLACED);
-        return orderRepository.save(order);
+        Order checkedOutOrder = orderRepository.save(order);
+
+        orderCheckoutEventPublisher.publish(
+                new OrderCheckedOutEvent(
+                        checkedOutOrder.getId(),
+                        checkedOutOrder.getCustomerId(),
+                        checkedOutOrder.getOrderNumber(),
+                        checkedOutOrder.getTotalAmount(),
+                        checkedOutOrder.getStatus().name(),
+                        checkedOutOrder.getUpdatedAt()
+                )
+        );
+
+        return checkedOutOrder;
     }
 
     @Override
@@ -215,11 +245,13 @@ public class OrderServiceImpl implements OrderService {
             );
         }
 
-        userClient.refund(
-                order.getCustomerId(),
-                order.getTotalAmount(),
-                order.getOrderNumber()
-        );
+        if (order.getPaymentMethod() == PaymentMethod.FUNDS) {
+            userClient.refund(
+                    order.getCustomerId(),
+                    order.getTotalAmount(),
+                    order.getOrderNumber()
+            );
+        }
 
         for (OrderItem item : order.getItems()) {
             productClient.increaseQuantity(
@@ -232,7 +264,20 @@ public class OrderServiceImpl implements OrderService {
         if (employeeId != null) order.setUpdatedByEmployeeId(employeeId);
         order.setCancellationReason(cancellationReason);
 
-        return orderRepository.save(order);
+        Order cancelledOrder = orderRepository.save(order);
+
+        orderCheckoutEventPublisher.publish(
+                new OrderCheckedOutEvent(
+                        cancelledOrder.getId(),
+                        cancelledOrder.getCustomerId(),
+                        cancelledOrder.getOrderNumber(),
+                        cancelledOrder.getTotalAmount(),
+                        cancelledOrder.getStatus().name(),
+                        cancelledOrder.getUpdatedAt()
+                )
+        );
+
+        return cancelledOrder;
     }
 
     @Override

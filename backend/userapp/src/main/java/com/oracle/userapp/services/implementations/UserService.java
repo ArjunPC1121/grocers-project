@@ -8,11 +8,13 @@ import com.oracle.userapp.repositories.UserRepository;
 import com.oracle.userapp.services.abstractions.UserServiceManager;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.client.RestTemplate;
+import org.springframework.web.server.ResponseStatusException;
 
 import java.time.LocalDateTime;
 import java.util.Collection;
@@ -157,11 +159,23 @@ public class UserService implements UserServiceManager<UserRequest,UserResponse,
     }
 
     @Override
-    public double deductFunds(Integer id, double amount) throws RuntimeException
-    {
-        User user = repository.findById(id).orElseThrow(()-> new RuntimeException("User not found"));
-        user.setFunds(user.getFunds()-amount);
+    public double deductFunds(Integer id, double amount) throws RuntimeException {
+        if (amount <= 0) {
+            throw new IllegalArgumentException("Debit amount must be greater than zero");
+        }
+
+        User user = repository.findById(id)
+                .orElseThrow(() -> new RuntimeException("User not found"));
+
+        if (user.getFunds() < amount) {
+            throw new IllegalStateException(
+                    "Insufficient funds. Available balance: " + user.getFunds()
+            );
+        }
+
+        user.setFunds(user.getFunds() - amount);
         repository.save(user);
+
         return user.getFunds();
     }
 
@@ -380,5 +394,16 @@ public class UserService implements UserServiceManager<UserRequest,UserResponse,
         if (data.getAccountNumber() != null) {
             user.setAccountNumber(data.getAccountNumber());
         }
+    }
+    @Transactional
+    public void changePassword(Integer userId, ChangePasswordRequest request) {
+        User user = repository.findById(userId)
+                .orElseThrow(() -> new ResponseStatusException(
+                        HttpStatus.NOT_FOUND,
+                        "User not found"
+                ));
+
+        user.setPassword(passwordEncoder.encode(request.newPassword()));
+        repository.save(user);
     }
 }

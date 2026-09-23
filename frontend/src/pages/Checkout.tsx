@@ -41,11 +41,11 @@ const Checkout = () => {
     lng: 0,
   });
 
-  const [paymentMethod, setPaymentMethod] = useState("card");
+  const [paymentMethod, setPaymentMethod] = useState("FUNDS");
 
-  const deliveryFee = cartTotal > 20 ? 0 : 1.99;
-  const tax = cartTotal * 0.08;
-  const total = cartTotal + deliveryFee + tax;
+  const deliveryFee = 0;
+  const tax = 0;
+  const total = cartTotal;
 
   const steps: { key: string; label: string; icon: typeof MapPinIcon }[] = [
     { key: "address", label: "Address", icon: MapPinIcon },
@@ -81,6 +81,7 @@ const Checkout = () => {
         deliveryAddress:
             `${address.address}, ${address.city}, ` +
             `${address.state} - ${address.zip}`,
+        paymentMethod,
         items: items.map((item) => ({
           productId: Number(item.product.id),
           quantity: item.quantity,

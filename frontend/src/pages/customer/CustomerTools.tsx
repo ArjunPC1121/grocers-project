@@ -1,10 +1,12 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, type FormEvent } from "react";
 import toast from "react-hot-toast";
 import api, { errorMessage } from "../../config/api";
 import { EmptyState, PageError } from "../../components/ApiState";
 import { useAuth } from "../../context/AuthContext";
-import type { Ticket, Wallet, WalletTransaction } from "../../types";
+import type { Ticket} from "../../types";
 import productApi from "../../config/ProductApi";
+const GMAIL_PATTERN = /^[A-Za-z0-9._%+-]+@gmail\.com$/i;
+const PHONE_PATTERN = /^\d{10}$/;
 
 type WishlistResponse = {
     id: number;
@@ -173,6 +175,293 @@ export function WishlistPage() {
         </section>
     );
 }
-export function FundsPage() { const [wallet,setWallet]=useState<Wallet|null>(null); const [transactions,setTransactions]=useState<WalletTransaction[]>([]); const [amount,setAmount]=useState(""); const [accountNumber,setAccountNumber]=useState(""); const [error,setError]=useState(""); const load=()=>api.get("/wallet").then(({data})=>{setWallet(data.wallet);setTransactions(Array.isArray(data.transactions)?data.transactions:[]);}).catch(()=>setError("Funds are unavailable until the Spring API is connected.")); useEffect(()=>{load();},[]); return <section className="mx-auto max-w-5xl p-6"><h1 className="text-3xl font-serif">Funds</h1><div className="mt-6 rounded-2xl bg-app-green p-6 text-white"><p className="text-sm opacity-70">Available balance</p><p className="text-4xl font-semibold mt-2">₹{wallet?.availableBalance?.toFixed(2) ?? "0.00"}</p></div>{error&&<div className="mt-4"><PageError message={error}/></div>}<form onSubmit={(e)=>{e.preventDefault();api.post("/wallet/fund",{accountNumber,amount:Number(amount)}).then(()=>{toast.success("Funds added");setAmount("");load();}).catch((err)=>toast.error(errorMessage(err)));}} className="mt-6 rounded-2xl border bg-white p-5"><h2 className="font-semibold">Add funds from dummy bank account</h2><div className="mt-4 grid gap-3 sm:grid-cols-2"><input required placeholder="Account number" value={accountNumber} onChange={(e)=>setAccountNumber(e.target.value)} className="rounded-lg border p-3"/><input required min="1" type="number" placeholder="Amount" value={amount} onChange={(e)=>setAmount(e.target.value)} className="rounded-lg border p-3"/></div><button className="mt-4 rounded-lg bg-app-orange px-4 py-2 text-white">Add funds</button></form><div className="mt-6">{transactions.map((item)=><div key={item.id} className="border-b py-3 flex justify-between"><span>{item.note||item.type}</span><strong>₹{item.amount.toFixed(2)}</strong></div>)}</div></section>; }
-export function ProfilePage() { const {user,updateUser}=useAuth(); const [email,setEmail]=useState(user?.email||""); const [phone,setPhone]=useState(user?.phone||""); const [password,setPassword]=useState(""); return <section className="mx-auto max-w-2xl p-6"><h1 className="text-3xl font-serif">My profile</h1><form onSubmit={(e)=>{e.preventDefault();api.put("/profile",{email,phone,password:password||undefined}).then(({data})=>{updateUser(data.user||{email,phone});toast.success("Profile updated");setPassword("");}).catch((err)=>toast.error(errorMessage(err)));}} className="mt-6 space-y-4 rounded-2xl border bg-white p-6"><label className="block">Email<input required value={email} onChange={(e)=>setEmail(e.target.value)} className="mt-1 w-full border rounded-lg p-3"/></label><label className="block">Phone<input value={phone} onChange={(e)=>setPhone(e.target.value)} className="mt-1 w-full border rounded-lg p-3"/></label><label className="block">New password<input type="password" value={password} onChange={(e)=>setPassword(e.target.value)} className="mt-1 w-full border rounded-lg p-3"/></label><button className="rounded-lg bg-app-green px-4 py-2 text-white">Save changes</button></form></section>; }
+export function FundsPage() {
+    const { user } = useAuth();
+    const [balance, setBalance] = useState<number | null>(null);
+    const [amount, setAmount] = useState("");
+    const [error, setError] = useState("");
+
+    const loadFunds = async () => {
+        if (!user) {
+            setBalance(null);
+            return;
+        }
+
+        try {
+            setError("");
+
+            const { data } = await api.get(`/users/${user.id}`);
+            setBalance(Number(data.funds));
+        } catch (error) {
+            setError(errorMessage(error, "Could not load your funds."));
+        }
+    };
+
+    useEffect(() => {
+        void loadFunds();
+    }, [user?.id]);
+
+    const addFunds = async (event: FormEvent<HTMLFormElement>) => {
+        event.preventDefault();
+
+        if (!user) {
+            toast.error("Please sign in to add funds.");
+            return;
+        }
+
+        try {
+            await api.post(`/users/${user.id}/funds`, {
+                amount: Number(amount),
+            });
+
+            toast.success("Funds added.");
+            setAmount("");
+            await loadFunds();
+        } catch (error) {
+            toast.error(errorMessage(error, "Could not add funds."));
+        }
+    };
+
+    return (
+        <section className="mx-auto max-w-5xl p-6">
+            <h1 className="text-3xl font-serif">Funds</h1>
+
+            <div className="mt-6 rounded-2xl bg-app-green p-6 text-white">
+                <p className="text-sm opacity-70">Available balance</p>
+                <p className="mt-2 text-4xl font-semibold">
+                    ₹{balance?.toFixed(2) ?? "0.00"}
+                </p>
+            </div>
+
+            {error && (
+                <div className="mt-4">
+                    <PageError message={error} />
+                </div>
+            )}
+
+            <form
+                onSubmit={addFunds}
+                className="mt-6 rounded-2xl border bg-white p-5"
+            >
+                <h2 className="font-semibold">Add funds from dummy bank account</h2>
+
+                <input
+                    required
+                    min="1"
+                    type="number"
+                    placeholder="Amount"
+                    value={amount}
+                    onChange={(event) => setAmount(event.target.value)}
+                    className="mt-4 w-full rounded-lg border p-3"
+                />
+
+                <button className="mt-4 rounded-lg bg-app-orange px-4 py-2 text-white">
+                    Add funds
+                </button>
+            </form>
+        </section>
+    );
+}
+export function ProfilePage() {
+    const { user, updateUser } = useAuth();
+
+    const [profile, setProfile] = useState({
+        firstName: user?.firstName || "",
+        lastName: user?.lastName || "",
+        email: user?.email || "",
+        phoneNumber: user?.phone || "",
+        address: user?.address || "",
+    });
+
+
+    const [newPassword, setNewPassword] = useState("");
+    const [confirmPassword, setConfirmPassword] = useState("");
+
+    if (!user) return null;
+
+    const saveProfile = async (event: React.FormEvent<HTMLFormElement>) => {
+        event.preventDefault();
+        if (!GMAIL_PATTERN.test(profile.email)) {
+            toast.error("Enter a valid Gmail address.");
+            return;
+        }
+
+        if (!PHONE_PATTERN.test(profile.phoneNumber)) {
+            toast.error("Phone number must contain exactly 10 digits.");
+            return;
+        }
+
+        try {
+
+            const { data } = await api.patch(`/users/${user.id}`, profile);
+
+            updateUser({
+                firstName: data.firstName,
+                lastName: data.lastName,
+                name: `${data.firstName} ${data.lastName}`,
+                email: data.email,
+                phone: data.phoneNumber,
+                address: data.address,
+            });
+
+            toast.success("Profile updated.");
+        } catch (error) {
+            toast.error(errorMessage(error, "Could not update profile."));
+        }
+    };
+    const changePassword = async (
+        event: React.FormEvent<HTMLFormElement>,
+    ) => {
+        event.preventDefault();
+
+        if (newPassword.length < 8) {
+            toast.error("New password must be at least 8 characters.");
+            return;
+        }
+
+        if (newPassword !== confirmPassword) {
+            toast.error("New password and confirmation do not match.");
+            return;
+        }
+
+        try {
+            await api.patch(`/users/${user.id}/password`, {
+                newPassword,
+            });
+
+            setNewPassword("");
+            setConfirmPassword("");
+            toast.success("Password changed successfully.");
+        } catch (error) {
+            toast.error(errorMessage(error, "Could not change password."));
+        }
+    };
+
+    return (
+        <section className="mx-auto max-w-2xl p-6">
+            <h1 className="text-3xl font-serif">My profile</h1>
+
+            <form
+                onSubmit={saveProfile}
+                className="mt-6 space-y-4 rounded-2xl border bg-white p-6"
+            >
+                <h2 className="text-lg font-semibold text-app-green">
+                    Personal details
+                </h2>
+
+                <div className="grid gap-4 sm:grid-cols-2">
+                    <label className="block">
+                        First name
+                        <input
+                            required
+                            value={profile.firstName}
+                            onChange={(event) =>
+                                setProfile({ ...profile, firstName: event.target.value })
+                            }
+                            className="mt-1 w-full rounded-lg border p-3"
+                        />
+                    </label>
+
+                    <label className="block">
+                        Last name
+                        <input
+                            required
+                            value={profile.lastName}
+                            onChange={(event) =>
+                                setProfile({ ...profile, lastName: event.target.value })
+                            }
+                            className="mt-1 w-full rounded-lg border p-3"
+                        />
+                    </label>
+                </div>
+
+                <label className="block">
+                    Email
+                    <input
+                        required
+                        type="tel"
+                        inputMode="numeric"
+                        pattern="[0-9]{10}"
+                        minLength={10}
+                        maxLength={10}
+                        title="Enter exactly 10 digits"
+                        value={profile.phoneNumber}
+                        onChange={(event) =>
+                            setProfile({ ...profile, phoneNumber: event.target.value })
+                        }
+                        className="mt-1 w-full rounded-lg border p-3"
+                    />
+                </label>
+
+                <label className="block">
+                    Phone number
+                    <input
+                        required
+                        value={profile.phoneNumber}
+                        onChange={(event) =>
+                            setProfile({ ...profile, phoneNumber: event.target.value })
+                        }
+                        className="mt-1 w-full rounded-lg border p-3"
+                    />
+                </label>
+
+                <label className="block">
+                    Address
+                    <textarea
+                        required
+                        value={profile.address}
+                        onChange={(event) =>
+                            setProfile({ ...profile, address: event.target.value })
+                        }
+                        className="mt-1 min-h-24 w-full rounded-lg border p-3"
+                    />
+                </label>
+
+                <button className="rounded-lg bg-app-green px-4 py-2 text-white">
+                    Save profile
+                </button>
+            </form>
+
+            <form
+                onSubmit={changePassword}
+                className="mt-6 space-y-4 rounded-2xl border bg-white p-6"
+            >
+                <h2 className="text-lg font-semibold text-app-green">
+                    Change password
+                </h2>
+
+
+
+
+                <label className="block">
+                    New password
+                    <input
+                        required
+                        minLength={8}
+                        type="password"
+                        value={newPassword}
+                        onChange={(event) => setNewPassword(event.target.value)}
+                        className="mt-1 w-full rounded-lg border p-3"
+                    />
+                </label>
+
+                <label className="block">
+                    Confirm new password
+                    <input
+                        required
+                        minLength={8}
+                        type="password"
+                        value={confirmPassword}
+                        onChange={(event) => setConfirmPassword(event.target.value)}
+                        className="mt-1 w-full rounded-lg border p-3"
+                    />
+                </label>
+
+                <button className="rounded-lg bg-app-orange px-4 py-2 text-white">
+                    Change password
+                </button>
+            </form>
+        </section>
+    );
+}
 export function SupportPage() { const [reason,setReason]=useState(""); const [tickets,setTickets]=useState<Ticket[]>([]); useEffect(()=>{api.get("/tickets/mine").then(({data})=>setTickets(Array.isArray(data.tickets)?data.tickets:[])).catch(()=>undefined);},[]); return <section className="mx-auto max-w-3xl p-6"><h1 className="text-3xl font-serif">Support tickets</h1><p className="mt-2 text-app-text-light">Locked account? Tell an employee why access should be restored.</p><form onSubmit={(e)=>{e.preventDefault();api.post("/tickets",{reason}).then(({data})=>{setTickets([data.ticket,...tickets]);setReason("");toast.success("Ticket raised");}).catch((err)=>toast.error(errorMessage(err)));}} className="mt-6 rounded-2xl border bg-white p-5"><textarea required value={reason} onChange={(e)=>setReason(e.target.value)} placeholder="Describe the reason for your unlock request" className="w-full min-h-28 rounded-lg border p-3"/><button className="mt-3 rounded-lg bg-app-green px-4 py-2 text-white">Raise ticket</button></form><div className="mt-6 space-y-3">{tickets.map((ticket)=><article key={ticket.id} className="rounded-xl border bg-white p-4"><span className="text-xs font-semibold text-app-orange">{ticket.status}</span><p>{ticket.reason}</p></article>)}</div></section>; }
