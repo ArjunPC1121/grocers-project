@@ -18,14 +18,18 @@ import static org.mockito.Mockito.*;
 
 class ProductRequestServiceImplTests {
     private final ProductRequestRepository repository = mock(ProductRequestRepository.class);
-    private final ProductRequestServiceImpl service = new ProductRequestServiceImpl(repository);
+    private final ProductRequestServiceImpl service = new ProductRequestServiceImpl(
+            repository, "http://example.test/products");
 
     @Test
     void createProductRequestDoesNotRequireProductId() {
         when(repository.save(any(ProductRequest.class))).thenAnswer(invocation -> invocation.getArgument(0));
 
-        var response = service.create(7, new CreateProductRequest(RequestAction.CREATE, null, "Rice",
-                new BigDecimal("250.00"), 20, 5, "New item"));
+        var response = service.create(7, new CreateProductRequest(
+                RequestAction.CREATE, null, "Rice", "Seed Brand", "Grains", "Rice",
+                new BigDecimal("250.00"), 20, 5, "New item", "rice, grain", "basmati rice",
+                1.0, "kg", true, "data:image/png;base64,aGVsbG8=", "rice.png",
+                "New product request", null));
 
         assertEquals(RequestStatus.PENDING, response.status());
         assertEquals(7, response.employeeId());
@@ -34,7 +38,9 @@ class ProductRequestServiceImplTests {
 
     @Test
     void rejectionRequiresReason() {
-        ProductRequest pending = new ProductRequest(7, 4, RequestAction.RESTOCK, null, null, 10, null, null);
+        ProductRequest pending = new ProductRequest(
+                7, 4, RequestAction.RESTOCK, null, null, null, null, null, 10, null,
+                null, null, null, null, null, null, null, null, null, null);
         when(repository.findById(9)).thenReturn(Optional.of(pending));
 
         assertThrows(InvalidRequestStateException.class,
@@ -44,7 +50,9 @@ class ProductRequestServiceImplTests {
 
     @Test
     void approvedRequestCannotBeDecidedAgain() {
-        ProductRequest approved = new ProductRequest(7, 4, RequestAction.RESTOCK, null, null, 10, null, null);
+        ProductRequest approved = new ProductRequest(
+                7, 4, RequestAction.RESTOCK, null, null, null, null, null, 10, null,
+                null, null, null, null, null, null, null, null, null, null);
         approved.review(RequestStatus.APPROVED, null, 1);
         when(repository.findById(9)).thenReturn(Optional.of(approved));
 
