@@ -33,7 +33,7 @@ public class TicketController {
 
 
     @PostMapping public ResponseEntity<TicketServiceResponse> createTicket(@Valid @RequestBody TicketRequest request ) {
-       ticket ticket = ticketService.createTicket(new ticket(request.userId(), request.lockedReason()));
+       ticket ticket = ticketService.createTicket(new ticket(request.userId(), request.lockedReason(), request.requestNote()));
        return ResponseEntity.status(HttpStatus.CREATED).body(new TicketServiceResponse(ticket.getTicketId()));
     }
     @GetMapping public List<ticket> getAllTickets() { return ticketService.getAllTickets(); }

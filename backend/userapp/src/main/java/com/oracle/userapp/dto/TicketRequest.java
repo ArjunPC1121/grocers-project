@@ -19,4 +19,6 @@ public class TicketRequest {
 
     @NotNull
     private LockedReason lockedReason;
+
+    private String requestNote;
 }

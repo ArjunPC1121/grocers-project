@@ -1,6 +1,7 @@
 package com.oracle.authapp.services;
 
 import com.oracle.authapp.dto.AuthResponse;
+import com.oracle.authapp.dto.LockedAccountTicketRequest;
 import com.oracle.authapp.dto.LoginRequest;
 import com.oracle.authapp.entities.AdminLoginAccount;
 import com.oracle.authapp.entities.EmployeeLoginAccount;
@@ -35,6 +36,8 @@ public class AuthService {
 
     private static final String FAILED_ATTEMPTS_URL =
             "http://localhost:8091/grocers/api/users/{id}/failed-attempts";
+    private static final String LOCKED_ACCOUNT_TICKET_URL =
+            "http://localhost:8091/grocers/api/users/tickets";
 
     public AuthService(UserLoginAccountRepository userAccounts,
                        EmployeeLoginAccountRepository employeeAccounts,
@@ -76,6 +79,23 @@ public class AuthService {
             throw e;
         }
 
+    }
+
+    /** Starts employee-assisted recovery after the customer cannot use the security-question path. */
+    public void raiseLockedAccountTicket(LockedAccountTicketRequest request) {
+        UserLoginAccount account = userAccounts.findByEmailIgnoreCase(request.email())
+                .orElseThrow(InvalidCredentialsException::new);
+        if (!account.isAccountLocked()) {
+            throw new AccountLockedException();
+        }
+
+        HttpHeaders headers = new HttpHeaders();
+        headers.setContentType(MediaType.APPLICATION_JSON);
+        headers.set("X-Internal-Service", "authapp");
+        headers.set("X-Internal-Secret", internalSecret);
+
+        restTemplate.postForEntity(LOCKED_ACCOUNT_TICKET_URL,
+                new HttpEntity<>(request, headers), Void.class);
     }
 
     public AuthResponse loginEmployee(LoginRequest request) {

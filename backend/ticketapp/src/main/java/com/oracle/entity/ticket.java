@@ -35,6 +35,9 @@ public class ticket {
     @Column(name = "locked_reason", nullable = false, length = 50)
     private LockedReason lockedReason;
 
+    @Column(name = "request_note", length = 1000)
+    private String requestNote;
+
     @Column(name = "created_at", nullable = false, updatable = false)
     private Instant createdAt = Instant.now();
 
@@ -51,9 +54,10 @@ public class ticket {
 
     protected ticket() { }
 
-    public ticket(Integer userId, LockedReason lockedReason) {
+    public ticket(Integer userId, LockedReason lockedReason, String requestNote) {
         this.userId = userId;
         this.lockedReason = lockedReason;
+        this.requestNote = requestNote;
     }
 
     public Integer getTicketId() { return ticketId; }
@@ -61,6 +65,7 @@ public class ticket {
     public Integer getEmployeeId() { return employeeId; }
     public ticketstatus getStatus() { return status; }
     public LockedReason getLockedReason() { return lockedReason; }
+    public String getRequestNote() { return requestNote; }
 
     public void assignTo(Integer employeeId) { this.employeeId = employeeId; }
     public void resolve(Integer employeeId) { this.employeeId = employeeId; this.status = ticketstatus.RESOLVED; }

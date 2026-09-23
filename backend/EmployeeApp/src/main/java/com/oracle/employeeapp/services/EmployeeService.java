@@ -9,6 +9,7 @@ import com.oracle.employeeapp.dtos.ProductRequestSummary;
 import com.oracle.employeeapp.dtos.RequestAppPayload;
 import com.oracle.employeeapp.dtos.TicketActionRequest;
 import com.oracle.employeeapp.dtos.TicketSummary;
+import com.oracle.employeeapp.dtos.TicketUserDetails;
 import com.oracle.employeeapp.dtos.UpdateOrderStatusRequest;
 import com.oracle.employeeapp.entities.Employee;
 import com.oracle.employeeapp.repositories.EmployeeRepository;
@@ -28,6 +29,7 @@ import org.springframework.web.server.ResponseStatusException;
 
 import java.util.Arrays;
 import java.util.List;
+import java.util.Map;
 
 @Service
 public class EmployeeService {
@@ -63,13 +65,19 @@ public class EmployeeService {
         return summary(employees.save(employee));
     }
 
+    public List<EmployeeSummary> employees(String role) {
+        requireAdmin(role);
+        return employees.findAll().stream().map(this::summary).toList();
+    }
+
+    public EmployeeSummary employeeById(Integer employeeId) {
+        return summary(employee(employeeId));
+    }
+
     public EmployeeSummary changePassword(Integer authenticatedEmployeeId, String role, Integer employeeId,
                                           ChangePasswordRequest request) {
         requireEmployeeAccess(authenticatedEmployeeId, role, employeeId);
         Employee employee = employee(employeeId);
-        if (!passwordEncoder.matches(request.currentPassword(), employee.getPassword())) {
-            throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Current password is incorrect");
-        }
         if (!request.newPassword().equals(request.confirmPassword())) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "New password and confirmation password do not match");
         }
@@ -81,17 +89,17 @@ public class EmployeeService {
     public List<TicketSummary> openTickets(String role) {
         requireEmployee(role);
         TicketSummary[] tickets = restTemplate.getForObject("http://localhost:8087/grocers/api/tickets/open", TicketSummary[].class);
-        return tickets == null ? List.of() : Arrays.asList(tickets);
+        return tickets == null ? List.of() : Arrays.stream(tickets).map(this::withCustomerDetails).toList();
     }
 
     public TicketSummary resolveTicket(Integer employeeId, String role, Integer ticketId) {
         requireEmployee(role);
-        return ticketAction(ticketId, "resolve", employeeId);
+        return withCustomerDetails(ticketAction(ticketId, "resolve", employeeId));
     }
 
     public TicketSummary rejectTicket(Integer employeeId, String role, Integer ticketId) {
         requireEmployee(role);
-        return ticketAction(ticketId, "reject", employeeId);
+        return withCustomerDetails(ticketAction(ticketId, "reject", employeeId));
     }
 
     public ProductRequestSummary createProductRequest(Integer employeeId, String role, InventoryRequest request) {
@@ -122,7 +130,19 @@ public class EmployeeService {
 
     public Object updateOrderStatus(Integer employeeId, String role, Integer orderId, UpdateOrderStatusRequest request) {
         requireEmployee(role);
-        return orderApp(HttpMethod.PATCH, "/" + orderId + "/status", employeeId, role, request, Object.class);
+        String status = request.status().trim().toUpperCase();
+        if ("CANCELLED".equals(status)) {
+            if (request.cancellationReason() == null || request.cancellationReason().isBlank()) {
+                throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "A cancellation reason is required");
+            }
+            return orderApp(HttpMethod.POST, "/" + orderId + "/cancel", employeeId, role,
+                    Map.of("reason", request.cancellationReason().trim()), Object.class);
+        }
+        if (!List.of("SHIPPED", "OUT_FOR_DELIVERY", "DELIVERED").contains(status)) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Unsupported order status");
+        }
+        return orderApp(HttpMethod.PATCH, "/" + orderId + "/status", employeeId, role,
+                Map.of("employeeId", employeeId, "status", status), Object.class);
     }
 
     private TicketSummary ticketAction(Integer ticketId, String action, Integer employeeId) {
@@ -130,6 +150,16 @@ public class EmployeeService {
                 new TicketActionRequest(employeeId), TicketSummary.class, ticketId);
         if (response == null) throw new ResponseStatusException(HttpStatus.BAD_GATEWAY, "Ticket service returned no ticket");
         return response;
+    }
+
+    private TicketSummary withCustomerDetails(TicketSummary ticket) {
+        TicketUserDetails customer = restTemplate.getForObject(
+                "http://localhost:8080/grocers/api/users/{userId}/ticket-details", TicketUserDetails.class, ticket.userId());
+        if (customer == null) return ticket;
+        return new TicketSummary(ticket.ticketId(), ticket.userId(), ticket.employeeId(), ticket.status(),
+                ticket.lockedReason(), ticket.createdAt(), ticket.updatedAt(), ticket.requestNote(),
+                customer.firstName(), customer.lastName(), customer.email(), customer.accountLocked(),
+                customer.failedLoginAttempts());
     }
 
     private <T> T requestApp(HttpMethod method, String path, Integer employeeId, Object body, Class<T> responseType) {

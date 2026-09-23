@@ -174,7 +174,31 @@ public class UserService implements UserServiceManager<UserRequest,UserResponse,
             throw new RuntimeException("User account is not locked");
         }
 
-        TicketRequest ticketRequest = new TicketRequest(user.getId(), user.getLockedReason());
+        return createLockedAccountTicket(user, null);
+    }
+
+    /** Lets a locked customer request help before they can authenticate again. */
+    public TicketResponse raiseTicketByEmail(PublicTicketRequest request) {
+        User user = repository.findByEmail(request.email())
+                .orElseThrow(() -> new RuntimeException("No account exists for this email"));
+        if (!user.isAccountLocked() || user.getLockedReason() == null) {
+            throw new RuntimeException("This account is not locked");
+        }
+        return createLockedAccountTicket(user, request.note());
+    }
+
+    public TicketUserDetails ticketDetails(Integer id) {
+        User user = repository.findById(id).orElseThrow(() -> new RuntimeException("User not found"));
+        return new TicketUserDetails(user.getId(), user.getFirstName(), user.getLastName(), user.getEmail(),
+                user.isAccountLocked(), user.getFailedLoginAttempts(),
+                user.getLockedReason() == null ? null : user.getLockedReason().name());
+    }
+
+    private TicketResponse createLockedAccountTicket(User user, String note) {
+        TicketRequest ticketRequest = new TicketRequest();
+        ticketRequest.setUserId(user.getId());
+        ticketRequest.setLockedReason(user.getLockedReason());
+        ticketRequest.setRequestNote(note);
 
         HttpHeaders headers = new HttpHeaders();
         headers.setContentType(MediaType.APPLICATION_JSON);
@@ -194,7 +218,7 @@ public class UserService implements UserServiceManager<UserRequest,UserResponse,
         }
 
         int ticketId = ticketServiceResponse.ticketId();
-        return new TicketResponse(ticketId,id);
+        return new TicketResponse(ticketId, user.getId());
 
     }
 

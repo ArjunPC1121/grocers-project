@@ -32,6 +32,17 @@ public class EmployeeController {
         this.service = service;
     }
 
+    @GetMapping
+    public List<EmployeeSummary> employees(@RequestHeader("X-Authenticated-Role") String role) {
+        return service.employees(role);
+    }
+
+    /** Used by OrderApp to verify the authenticated employee before a status change. */
+    @GetMapping("/{employeeId}")
+    public EmployeeSummary employeeById(@PathVariable Integer employeeId) {
+        return service.employeeById(employeeId);
+    }
+
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
     public EmployeeSummary createEmployee(@RequestHeader("X-Authenticated-Role") String role,

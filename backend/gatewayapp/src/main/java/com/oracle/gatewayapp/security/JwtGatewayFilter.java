@@ -52,7 +52,7 @@ public class JwtGatewayFilter implements GlobalFilter {
     @Override
     public Mono<Void> filter(ServerWebExchange exchange, GatewayFilterChain chain) {
         String path = exchange.getRequest().getPath().value();
-        if (isAuthAppFailedAttemptRequest(exchange)) {
+        if (isAuthAppInternalRequest(exchange)) {
             return chain.filter(exchange);
         }
         if (exchange.getRequest().getMethod() == HttpMethod.OPTIONS || isPublic(path)) {
@@ -101,6 +101,7 @@ public class JwtGatewayFilter implements GlobalFilter {
     private boolean isPublic(String path) {
 
         return path.startsWith("/grocers/api/auth/login/")
+                || path.equals("/grocers/api/auth/locked-account/ticket")
                 || path.equals("/grocers/api/users");
     }
 
@@ -137,11 +138,12 @@ public class JwtGatewayFilter implements GlobalFilter {
         return exchange.getResponse().setComplete();
     }
 
-    private boolean isAuthAppFailedAttemptRequest(ServerWebExchange exchange) {
+    private boolean isAuthAppInternalRequest(ServerWebExchange exchange) {
         String path = exchange.getRequest().getPath().value();
 
         return exchange.getRequest().getMethod() == HttpMethod.POST
-                && path.matches("/grocers/api/users/\\d+/failed-attempts")
+                && (path.matches("/grocers/api/users/\\d+/failed-attempts")
+                || path.equals("/grocers/api/users/tickets"))
                 && "authapp".equals(
                 exchange.getRequest().getHeaders()
                         .getFirst(INTERNAL_SERVICE_HEADER))

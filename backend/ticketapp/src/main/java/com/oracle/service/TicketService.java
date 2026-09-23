@@ -14,8 +14,8 @@ public class TicketService implements TicketServiceManager {
     private final TicketRepository ticketRepository;
     public TicketService(TicketRepository ticketRepository) { this.ticketRepository = ticketRepository; }
     @Override public ticket createTicket(ticket ticket) {
-        
-        return ticketRepository.save(ticket); 
+        return ticketRepository.findFirstByUserIdAndStatus(ticket.getUserId(), ticketstatus.OPEN)
+                .orElseGet(() -> ticketRepository.save(ticket));
     }
     @Override public List<ticket> getAllTickets() { return ticketRepository.findAll(); }
     @Override public Optional<ticket> getTicketById(Integer ticketId) { return ticketRepository.findById(ticketId); }
