@@ -15,6 +15,8 @@ import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
+import com.oracle.userapp.dto.CustomerOrderSummaryResponse;
+import com.oracle.userapp.repositories.CustomerOrderSummaryRepository;
 
 import java.util.Collection;
 import java.util.List;
@@ -26,13 +28,16 @@ public class UserAppController {
 
     private final UserService userService;
     private final WishlistService wishlistService;
+    private final CustomerOrderSummaryRepository customerOrderSummaryRepository;
 
     public UserAppController(
             UserService userService,
-            WishlistService wishlistService
+            WishlistService wishlistService,
+            CustomerOrderSummaryRepository customerOrderSummaryRepository
     ) {
         this.userService = userService;
         this.wishlistService = wishlistService;
+        this.customerOrderSummaryRepository = customerOrderSummaryRepository;
     }
     @PostMapping
     public ResponseEntity<UserResponse> add(@Valid @RequestBody UserRequest request) {
@@ -156,6 +161,20 @@ public class UserAppController {
         wishlistService.removeItem(userId, productId);
 
         return ResponseEntity.noContent().build();
+    }
+
+    @GetMapping("/{userId}/orders")
+    public ResponseEntity<List<CustomerOrderSummaryResponse>> getOrders(
+            @PathVariable Integer userId
+    ) {
+        List<CustomerOrderSummaryResponse> orders =
+                customerOrderSummaryRepository
+                        .findByCustomerIdOrderByCheckedOutAtDesc(userId)
+                        .stream()
+                        .map(CustomerOrderSummaryResponse::from)
+                        .toList();
+
+        return ResponseEntity.ok(orders);
     }
 
 

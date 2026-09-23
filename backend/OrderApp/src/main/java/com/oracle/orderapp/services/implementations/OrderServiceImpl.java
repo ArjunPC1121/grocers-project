@@ -22,6 +22,7 @@ import com.oracle.orderapp.entities.OrderStatus;
 import com.oracle.orderapp.exceptions.ResourceNotFoundException;
 import com.oracle.orderapp.repository.OrderRepository;
 import com.oracle.orderapp.services.abstractions.OrderService;
+import com.oracle.orderapp.events.OrderCheckoutEventPublisher;
 
 import lombok.RequiredArgsConstructor;
 
@@ -34,6 +35,8 @@ public class OrderServiceImpl implements OrderService {
     private final UserClient userClient;
     private final CartClient cartClient;
     private final EmployeeClient employeeClient;
+    private final OrderCheckoutEventPublisher orderCheckoutEventPublisher;
+
     private boolean isValidEmployeeStatusChange(
             OrderStatus currentStatus,
             OrderStatus newStatus) {
@@ -178,7 +181,20 @@ public class OrderServiceImpl implements OrderService {
         cartClient.checkoutCart(order.getCartId());
 
         order.setStatus(OrderStatus.PLACED);
-        return orderRepository.save(order);
+        Order checkedOutOrder = orderRepository.save(order);
+
+        orderCheckoutEventPublisher.publish(
+                new OrderCheckedOutEvent(
+                        checkedOutOrder.getId(),
+                        checkedOutOrder.getCustomerId(),
+                        checkedOutOrder.getOrderNumber(),
+                        checkedOutOrder.getTotalAmount(),
+                        checkedOutOrder.getStatus().name(),
+                        checkedOutOrder.getUpdatedAt()
+                )
+        );
+
+        return checkedOutOrder;
     }
 
     @Override
