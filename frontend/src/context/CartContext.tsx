@@ -163,7 +163,9 @@ const mapProduct = (product: BackendProduct): Product => {
     id: String(product.id),
     name: product.name,
     description: product.description || "",
-    price: product.price * (1 - discount / 100),
+    price: Number(
+        (product.price * (1 - discount / 100)).toFixed(2),
+    ),
     originalPrice: discount > 0 ? product.price : undefined,
     image: product.imageUrl,
     category: product.category || "Groceries",

@@ -159,11 +159,23 @@ public class UserService implements UserServiceManager<UserRequest,UserResponse,
     }
 
     @Override
-    public double deductFunds(Integer id, double amount) throws RuntimeException
-    {
-        User user = repository.findById(id).orElseThrow(()-> new RuntimeException("User not found"));
-        user.setFunds(user.getFunds()-amount);
+    public double deductFunds(Integer id, double amount) throws RuntimeException {
+        if (amount <= 0) {
+            throw new IllegalArgumentException("Debit amount must be greater than zero");
+        }
+
+        User user = repository.findById(id)
+                .orElseThrow(() -> new RuntimeException("User not found"));
+
+        if (user.getFunds() < amount) {
+            throw new IllegalStateException(
+                    "Insufficient funds. Available balance: " + user.getFunds()
+            );
+        }
+
+        user.setFunds(user.getFunds() - amount);
         repository.save(user);
+
         return user.getFunds();
     }
 

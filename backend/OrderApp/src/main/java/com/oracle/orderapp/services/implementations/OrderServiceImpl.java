@@ -11,6 +11,7 @@ import java.util.UUID;
 import com.oracle.orderapp.clients.CartClient;
 import com.oracle.orderapp.clients.EmployeeClient;
 import com.oracle.orderapp.dtos.*;
+import com.oracle.orderapp.entities.PaymentMethod;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -73,7 +74,8 @@ public class OrderServiceImpl implements OrderService {
         order.setCartId(request.cartId());
         order.setDeliveryAddress(request.deliveryAddress());
         order.setStatus(OrderStatus.CREATED);
-
+        order.setPaymentMethod(request.paymentMethod());
+        
         BigDecimal totalAmount = BigDecimal.ZERO;
 
         for (OrderItemRequest requestItem : request.items()) {
@@ -133,6 +135,16 @@ public class OrderServiceImpl implements OrderService {
     public Order checkout(Integer orderId) {
         Order order = getById(orderId);
 
+        if (order.getPaymentMethod() == null) {
+            throw new IllegalStateException("Order has no payment method");
+        }
+
+        if (order.getPaymentMethod() == PaymentMethod.CARD) {
+            throw new IllegalStateException(
+                    "Card payments are not available yet. Choose Funds or Cash on Delivery."
+            );
+        }
+
         if (order.getStatus() != OrderStatus.CREATED
                 && order.getStatus() != OrderStatus.PAYMENT_FAILED) {
             throw new IllegalStateException(
@@ -161,19 +173,21 @@ public class OrderServiceImpl implements OrderService {
             return orderRepository.save(order);
         }
 
-        try {
-            userClient.debit(
-                    order.getCustomerId(),
-                    order.getTotalAmount(),
-                    order.getOrderNumber()
-            );
-        } catch (Exception exception) {
-            exception.printStackTrace();
+        if (order.getPaymentMethod() == PaymentMethod.FUNDS) {
+            try {
+                userClient.debit(
+                        order.getCustomerId(),
+                        order.getTotalAmount(),
+                        order.getOrderNumber()
+                );
+            } catch (Exception exception) {
+                exception.printStackTrace();
 
-            releaseReducedStock(order.getItems());
+                releaseReducedStock(order.getItems());
 
-            order.setStatus(OrderStatus.PAYMENT_FAILED);
-            return orderRepository.save(order);
+                order.setStatus(OrderStatus.PAYMENT_FAILED);
+                return orderRepository.save(order);
+            }
         }
 
         // Requires cartClient.checkoutCart(Integer cartId).
