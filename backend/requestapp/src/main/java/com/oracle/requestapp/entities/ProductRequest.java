@@ -61,9 +61,8 @@ public class ProductRequest {
 
     private Boolean active;
 
-    @Lob
-    @Column(name = "image_data")
-    private String imageData;
+    @Column(name = "image_url", length = 1000)
+    private String imageUrl;
 
     @Column(name = "image_file_name", length = 255)
     private String imageFileName;
@@ -71,8 +70,7 @@ public class ProductRequest {
     @Column(name = "request_reason", length = 2000)
     private String reason;
 
-    @Lob
-    @Column(name = "previous_values")
+    @Column(name = "previous_values", length = 4000)
     private String previousValues;
 
     @Enumerated(EnumType.STRING)
@@ -93,7 +91,7 @@ public class ProductRequest {
                           String name, String brand, String category, String subCategory,
                           BigDecimal price, Integer quantity, Integer discount, String description,
                           String tags, String searchAliases, Double unitValue, String unitType,
-                          Boolean active, String imageData, String imageFileName, String reason,
+                          Boolean active, String imageUrl, String imageFileName, String reason,
                           String previousValues) {
         this.employeeId = employeeId;
         this.productId = productId;
@@ -111,7 +109,7 @@ public class ProductRequest {
         this.unitValue = unitValue;
         this.unitType = unitType;
         this.active = active;
-        this.imageData = imageData;
+        this.imageUrl = imageUrl;
         this.imageFileName = imageFileName;
         this.reason = reason;
         this.previousValues = previousValues;
@@ -135,7 +133,7 @@ public class ProductRequest {
     public Double getUnitValue() { return unitValue; }
     public String getUnitType() { return unitType; }
     public Boolean getActive() { return active; }
-    public String getImageData() { return imageData; }
+    public String getImageUrl() { return imageUrl; }
     public String getImageFileName() { return imageFileName; }
     public String getReason() { return reason; }
     public String getPreviousValues() { return previousValues; }

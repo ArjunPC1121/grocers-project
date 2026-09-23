@@ -13,17 +13,11 @@ import com.oracle.requestapp.repositories.ProductRequestRepository;
 import com.oracle.requestapp.services.abstractions.ProductRequestService;
 import org.springframework.stereotype.Service;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.core.io.ByteArrayResource;
 import org.springframework.http.HttpEntity;
-import org.springframework.http.HttpHeaders;
-import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
-import org.springframework.util.LinkedMultiValueMap;
-import org.springframework.util.MultiValueMap;
 import org.springframework.web.client.RestTemplate;
 
 import java.util.List;
-import java.util.Base64;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -45,7 +39,7 @@ public class ProductRequestServiceImpl implements ProductRequestService {
         ProductRequest productRequest = new ProductRequest(employeeId, request.productId(), request.action(),
                 request.name(), request.brand(), request.category(), request.subCategory(), request.price(),
                 request.quantity(), request.discount(), request.description(), request.tags(), request.searchAliases(),
-                request.unitValue(), request.unitType(), request.active(), request.imageData(), request.imageFileName(),
+                request.unitValue(), request.unitType(), request.active(), request.imageUrl(), request.imageFileName(),
                 request.reason(), request.previousValues());
         return ProductRequestResponse.from(repository.save(productRequest));
     }
@@ -106,7 +100,6 @@ public class ProductRequestServiceImpl implements ProductRequestService {
                 ResponseEntity<Map> response = restTemplate.postForEntity(productsUrl, new HttpEntity<>(productPayload(request, null)), Map.class);
                 Object id = response.getBody() == null ? null : response.getBody().get("id");
                 if (id == null) throw new IllegalStateException("Product service did not return the new product ID");
-                if (request.getImageData() != null && !request.getImageData().isBlank()) uploadImage(((Number) id).intValue(), request);
             }
             case UPDATE -> {
                 Map<String, Object> existing = restTemplate.getForObject(productsUrl + "/{id}", Map.class, request.getProductId());
@@ -129,7 +122,7 @@ public class ProductRequestServiceImpl implements ProductRequestService {
         payload.put("searchAliases", value(request.getSearchAliases(), existing, "searchAliases"));
         payload.put("unitValue", value(request.getUnitValue(), existing, "unitValue"));
         payload.put("unitType", value(request.getUnitType(), existing, "unitType"));
-        payload.put("imageUrl", existing == null ? null : existing.get("imageUrl"));
+        payload.put("imageUrl", value(request.getImageUrl(), existing, "imageUrl"));
         payload.put("price", value(request.getPrice(), existing, "price"));
         payload.put("discount", value(request.getDiscount(), existing, "discount"));
         payload.put("quantity", value(request.getQuantity(), existing, "quantity"));
@@ -139,20 +132,6 @@ public class ProductRequestServiceImpl implements ProductRequestService {
 
     private Object value(Object requested, Map<String, Object> existing, String key) {
         return requested != null ? requested : existing == null ? null : existing.get(key);
-    }
-
-    private void uploadImage(Integer productId, ProductRequest request) {
-        String data = request.getImageData();
-        String base64 = data.contains(",") ? data.substring(data.indexOf(',') + 1) : data;
-        byte[] bytes = Base64.getDecoder().decode(base64);
-        ByteArrayResource resource = new ByteArrayResource(bytes) {
-            @Override public String getFilename() { return request.getImageFileName() == null ? "product-image" : request.getImageFileName(); }
-        };
-        MultiValueMap<String, Object> body = new LinkedMultiValueMap<>();
-        body.add("image", resource);
-        HttpHeaders headers = new HttpHeaders();
-        headers.setContentType(MediaType.MULTIPART_FORM_DATA);
-        restTemplate.postForEntity(productsUrl + "/{id}/image", new HttpEntity<>(body, headers), Void.class, productId);
     }
 
     private ProductRequest requiredRequest(Integer requestId) {
@@ -188,8 +167,8 @@ public class ProductRequestServiceImpl implements ProductRequestService {
 
     private void requireProductDetails(CreateProductRequest request) {
         if (request.name() == null || request.name().isBlank() || request.price() == null
-                || request.quantity() == null || request.discount() == null || request.imageData() == null
-                || request.imageData().isBlank()) {
+                || request.quantity() == null || request.discount() == null || request.imageUrl() == null
+                || request.imageUrl().isBlank()) {
             throw new IllegalArgumentException("CREATE requires name, price, quantity, discount, and an image");
         }
     }

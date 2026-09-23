@@ -25,8 +25,8 @@ public record CreateProductRequest(
         Double unitValue,
         @Size(max = 20) String unitType,
         Boolean active,
-        String imageData,
+        @Size(max = 1000) String imageUrl,
         @Size(max = 255) String imageFileName,
         @Size(max = 2000) String reason,
-        String previousValues) {
+        @Size(max = 4000) String previousValues) {
 }

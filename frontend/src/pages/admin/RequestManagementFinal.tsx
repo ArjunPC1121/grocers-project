@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import { ArrowRight, CirclePlus, Package, PackagePlus, Pencil, Search, Trash2, X } from "lucide-react";
 import api, { errorMessage } from "../../config/api";
 
-type Req = { requestId:number; employeeId:number; productId?:number; action:string; status:string; description?:string; name?:string; price?:number; quantity?:number; discount?:number; rejectionReason?:string };
+type Req = { requestId:number; employeeId:number; productId?:number; action:string; status:string; description?:string; name?:string; price?:number; quantity?:number; discount?:number; imageUrl?:string; rejectionReason?:string };
 type Product = { id:number; name:string; imageUrl?:string; description?:string; price?:number; quantity?:number; discount?:number };
 type Emp = { id:number; firstName:string; lastName:string };
 const actionInfo=(r:Req)=>r.action.toUpperCase()==="CREATE"?["Create product",CirclePlus,"bg-orange-100 text-orange-700"] as const:r.action.toUpperCase()==="UPDATE"?["Update product",Pencil,"bg-blue-100 text-blue-700"] as const:r.action.toUpperCase()==="DELETE"?["Delete product",Trash2,"bg-rose-100 text-rose-700"] as const:["Restock product",PackagePlus,"bg-green-100 text-green-700"] as const;
