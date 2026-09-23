@@ -1,10 +1,8 @@
 package com.oracle.userapp.dto;
 
-import com.oracle.userapp.entities.CustomerOrderSummary;
-
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
-
+import com.oracle.userapp.entities.CustomerOrderSummary;
 public record CustomerOrderSummaryResponse(
         Integer orderId,
         String orderNumber,
