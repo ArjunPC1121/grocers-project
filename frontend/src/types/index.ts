@@ -1,4 +1,4 @@
-export type Role = "CUSTOMER" | "EMPLOYEE" | "ADMIN";
+export type Role = "CUSTOMER" | "EMPLOYEE" | "ADMIN" | "SUPER_ADMIN";
 export interface Address { id: string; label: string; address: string; city: string; state: string; zip: string; isDefault: boolean; lat?: number; lng?: number; }
 export interface SessionUser { id: string; firstName: string; lastName: string; name: string; email: string;address?: string; employeeId?: string; phone?: string; role: Role; locked?: boolean; mustChangePassword?: boolean; addresses?: Address[]; }
 export type User = SessionUser;

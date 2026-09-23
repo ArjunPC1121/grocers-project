@@ -1,6 +1,8 @@
 package com.oracle.adminapp.services;
 
 import com.oracle.adminapp.dto.AdminCreateRequest;
+import com.oracle.adminapp.dto.AdminPasswordChangeRequest;
+import com.oracle.adminapp.dto.AdminProfileUpdateRequest;
 import com.oracle.adminapp.dto.AdminResponse;
 import com.oracle.adminapp.dto.AdminUpdateRequest;
 import com.oracle.adminapp.entities.Admin;
@@ -27,6 +29,28 @@ public class AdminService {
     @Transactional(readOnly = true)
     public AdminResponse currentAdmin(Integer adminId) {
         return toResponse(requireAdmin(adminId));
+    }
+
+    public AdminResponse updateMyProfile(Integer adminId, AdminProfileUpdateRequest request) {
+        Admin admin = requireAdmin(adminId);
+        admins.findByEmailIgnoreCase(request.email())
+                .filter(existing -> !existing.getId().equals(adminId))
+                .ifPresent(existing -> { throw new IllegalArgumentException("An admin already exists with this email address"); });
+        admin.setFirstName(request.firstName().trim());
+        admin.setLastName(request.lastName().trim());
+        admin.setEmail(request.email().trim().toLowerCase());
+        return toResponse(admin);
+    }
+
+    public void changeMyPassword(Integer adminId, AdminPasswordChangeRequest request) {
+        Admin admin = requireAdmin(adminId);
+        if (!passwordEncoder.matches(request.currentPassword(), admin.getPassword())) {
+            throw new IllegalArgumentException("Your current password is incorrect");
+        }
+        if (passwordEncoder.matches(request.newPassword(), admin.getPassword())) {
+            throw new IllegalArgumentException("Your new password must be different from your current password");
+        }
+        admin.setPassword(passwordEncoder.encode(request.newPassword()));
     }
 
     @Transactional(readOnly = true)

@@ -1,0 +1,6 @@
+/* Keep the request-summary panel beside the cards at normal desktop zoom. */
+@media (min-width: 768px) {
+  [class*="xl:grid-cols-[minmax(0,1fr)_270px]"] {
+    grid-template-columns: minmax(0, 1fr) 270px;
+  }
+}
