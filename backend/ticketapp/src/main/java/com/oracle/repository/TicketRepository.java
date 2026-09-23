@@ -10,4 +10,5 @@ import java.util.Optional;
 public interface TicketRepository extends JpaRepository<ticket, Integer> {
     List<ticket> findByStatus(ticketstatus status);
     Optional<ticket> findFirstByUserIdAndStatus(Integer userId, ticketstatus status);
+    List<ticket> findByEmployeeIdOrderByUpdatedAtDesc(Integer employeeId);
 }

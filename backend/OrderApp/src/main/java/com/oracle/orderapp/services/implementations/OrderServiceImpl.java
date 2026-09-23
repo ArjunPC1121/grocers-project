@@ -110,6 +110,12 @@ public class OrderServiceImpl implements OrderService {
     }
 
     @Override
+    @Transactional(readOnly = true)
+    public List<EmployeeOrderDetails> getAllEmployeeDetails() {
+        return orderRepository.findAll().stream().map(this::employeeDetails).toList();
+    }
+
+    @Override
     public Order getById(Integer orderId) {
         return orderRepository.findById(orderId)
                 .orElseThrow(() ->
@@ -269,6 +275,16 @@ public class OrderServiceImpl implements OrderService {
                 .toString()
                 .substring(0, 8)
                 .toUpperCase(Locale.ROOT);
+    }
+
+    private EmployeeOrderDetails employeeDetails(Order order) {
+        List<OrderItemDetails> items = order.getItems().stream()
+                .map(item -> new OrderItemDetails(item.getProductId(), item.getProductName(),
+                        item.getQuantity(), item.getUnitPrice(), item.getSubtotal()))
+                .toList();
+        return new EmployeeOrderDetails(order.getId(), order.getOrderNumber(), order.getCustomerId(),
+                userClient.getCustomer(order.getCustomerId()), order.getStatus().name(), order.getTotalAmount(),
+                order.getDeliveryAddress(), items, order.getCancellationReason(), order.getOrderedAt(), order.getUpdatedAt());
     }
     @Override
     @Transactional

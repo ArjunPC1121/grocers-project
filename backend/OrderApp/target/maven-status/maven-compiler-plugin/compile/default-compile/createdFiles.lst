@@ -12,13 +12,17 @@ com\oracle\orderapp\dtos\CartItemResponse.class
 com\oracle\orderapp\exceptions\ResourceNotFoundException.class
 com\oracle\orderapp\clients\UserClient.class
 com\oracle\orderapp\clients\EmployeeClient.class
+com\oracle\orderapp\dtos\OrderItemDetails.class
 com\oracle\orderapp\entities\OrderItem.class
 com\oracle\orderapp\dtos\CartResponse.class
+com\oracle\orderapp\dtos\OrderCustomerDetails.class
 com\oracle\orderapp\clients\CartClient.class
 com\oracle\orderapp\dtos\UpdateOrderAddressRequest.class
 com\oracle\orderapp\services\implementations\OrderServiceImpl.class
 com\oracle\orderapp\dtos\ProductQuantityRequest.class
+com\oracle\orderapp\dtos\EmployeeOrderDetails.class
 com\oracle\orderapp\entities\OrderStatus.class
+com\oracle\orderapp\config\OrderIdSequenceInitializer.class
 com\oracle\orderapp\dtos\OrderItemRequest.class
 com\oracle\orderapp\controllers\OrderController.class
 com\oracle\orderapp\clients\ProductClient.class

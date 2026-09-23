@@ -3,6 +3,7 @@ package com.oracle.employeeapp.services;
 import com.oracle.employeeapp.dtos.ChangePasswordRequest;
 import com.oracle.employeeapp.dtos.CreateEmployeeRequest;
 import com.oracle.employeeapp.dtos.EmployeeSummary;
+import com.oracle.employeeapp.dtos.EmployeeOrderDetails;
 import com.oracle.employeeapp.dtos.InventoryOperation;
 import com.oracle.employeeapp.dtos.InventoryRequest;
 import com.oracle.employeeapp.dtos.ProductRequestSummary;
@@ -78,6 +79,9 @@ public class EmployeeService {
                                           ChangePasswordRequest request) {
         requireEmployeeAccess(authenticatedEmployeeId, role, employeeId);
         Employee employee = employee(employeeId);
+        if (!passwordEncoder.matches(request.currentPassword(), employee.getPassword())) {
+            throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Current password is incorrect");
+        }
         if (!request.newPassword().equals(request.confirmPassword())) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "New password and confirmation password do not match");
         }
@@ -89,6 +93,13 @@ public class EmployeeService {
     public List<TicketSummary> openTickets(String role) {
         requireEmployee(role);
         TicketSummary[] tickets = restTemplate.getForObject("http://localhost:8087/grocers/api/tickets/open", TicketSummary[].class);
+        return tickets == null ? List.of() : Arrays.stream(tickets).map(this::withCustomerDetails).toList();
+    }
+
+    public List<TicketSummary> ticketHistory(Integer employeeId, String role) {
+        requireEmployee(role);
+        TicketSummary[] tickets = restTemplate.getForObject(
+                "http://localhost:8087/grocers/api/tickets/employee/{employeeId}/history", TicketSummary[].class, employeeId);
         return tickets == null ? List.of() : Arrays.stream(tickets).map(this::withCustomerDetails).toList();
     }
 
@@ -119,9 +130,10 @@ public class EmployeeService {
         return response == null ? List.of() : Arrays.asList(response);
     }
 
-    public List<Object> getAllOrders(Integer employeeId, String role) {
+    public List<EmployeeOrderDetails> getAllOrders(Integer employeeId, String role) {
         requireEmployee(role);
-        Object[] orders = orderApp(HttpMethod.GET, "", employeeId, role, null, Object[].class);
+        EmployeeOrderDetails[] orders = orderApp(HttpMethod.GET, "/employee-details", employeeId, role, null,
+                EmployeeOrderDetails[].class);
         if (orders == null) {
             throw new RuntimeException("Could not retrieve orders from Orders service");
         }

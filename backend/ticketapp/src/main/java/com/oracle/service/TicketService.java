@@ -20,6 +20,8 @@ public class TicketService implements TicketServiceManager {
     @Override public List<ticket> getAllTickets() { return ticketRepository.findAll(); }
     @Override public Optional<ticket> getTicketById(Integer ticketId) { return ticketRepository.findById(ticketId); }
     @Override public List<ticket> getOpenTickets() { return ticketRepository.findByStatus(ticketstatus.OPEN); }
+    @Override public Optional<ticket> getOpenTicketForUser(Integer userId) { return ticketRepository.findFirstByUserIdAndStatus(userId, ticketstatus.OPEN); }
+    @Override public List<ticket> getTicketHistoryForEmployee(Integer employeeId) { return ticketRepository.findByEmployeeIdOrderByUpdatedAtDesc(employeeId); }
     @Override public Optional<ticket> resolveTicket(Integer ticketId, Integer employeeId) {
         return ticketRepository.findById(ticketId).map(existing -> {
             if (existing.getStatus() != ticketstatus.OPEN) throw new IllegalStateException("Only open tickets can be resolved");

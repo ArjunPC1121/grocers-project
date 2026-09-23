@@ -102,6 +102,7 @@ public class JwtGatewayFilter implements GlobalFilter {
 
         return path.startsWith("/grocers/api/auth/login/")
                 || path.equals("/grocers/api/auth/locked-account/ticket")
+                || path.equals("/grocers/api/auth/locked-account/status")
                 || path.equals("/grocers/api/users");
     }
 

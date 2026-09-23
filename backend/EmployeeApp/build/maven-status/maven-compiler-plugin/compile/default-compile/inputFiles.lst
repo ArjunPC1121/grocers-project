@@ -2,9 +2,12 @@ C:\Project\grocers-project\backend\EmployeeApp\src\main\java\com\oracle\employee
 C:\Project\grocers-project\backend\EmployeeApp\src\main\java\com\oracle\employeeapp\controllers\EmployeeController.java
 C:\Project\grocers-project\backend\EmployeeApp\src\main\java\com\oracle\employeeapp\dtos\ChangePasswordRequest.java
 C:\Project\grocers-project\backend\EmployeeApp\src\main\java\com\oracle\employeeapp\dtos\CreateEmployeeRequest.java
+C:\Project\grocers-project\backend\EmployeeApp\src\main\java\com\oracle\employeeapp\dtos\EmployeeOrderDetails.java
 C:\Project\grocers-project\backend\EmployeeApp\src\main\java\com\oracle\employeeapp\dtos\EmployeeSummary.java
 C:\Project\grocers-project\backend\EmployeeApp\src\main\java\com\oracle\employeeapp\dtos\InventoryOperation.java
 C:\Project\grocers-project\backend\EmployeeApp\src\main\java\com\oracle\employeeapp\dtos\InventoryRequest.java
+C:\Project\grocers-project\backend\EmployeeApp\src\main\java\com\oracle\employeeapp\dtos\OrderCustomerDetails.java
+C:\Project\grocers-project\backend\EmployeeApp\src\main\java\com\oracle\employeeapp\dtos\OrderItemDetails.java
 C:\Project\grocers-project\backend\EmployeeApp\src\main\java\com\oracle\employeeapp\dtos\ProductRequestSummary.java
 C:\Project\grocers-project\backend\EmployeeApp\src\main\java\com\oracle\employeeapp\dtos\RequestAppPayload.java
 C:\Project\grocers-project\backend\EmployeeApp\src\main\java\com\oracle\employeeapp\dtos\TicketActionRequest.java

@@ -2,6 +2,7 @@ package com.oracle.orderapp.controllers;
 
 import com.oracle.orderapp.dtos.CancelOrderRequest;
 import com.oracle.orderapp.dtos.CreateOrderRequest;
+import com.oracle.orderapp.dtos.EmployeeOrderDetails;
 import com.oracle.orderapp.dtos.UpdateOrderAddressRequest;
 import com.oracle.orderapp.dtos.UpdateOrderStatusRequest;
 import com.oracle.orderapp.entities.Order;
@@ -31,6 +32,12 @@ public class OrderController {
     @GetMapping
     public List<Order> getAll() {
         return orderService.getAll();
+    }
+
+    /** Used by EmployeeApp to show fulfilment details without exposing them to customer order views. */
+    @GetMapping("/employee-details")
+    public List<EmployeeOrderDetails> getAllEmployeeDetails() {
+        return orderService.getAllEmployeeDetails();
     }
 
     @GetMapping("/{orderId}")

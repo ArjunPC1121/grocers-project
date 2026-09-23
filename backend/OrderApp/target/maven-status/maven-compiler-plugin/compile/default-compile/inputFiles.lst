@@ -2,11 +2,15 @@ C:\Project\grocers-project\backend\OrderApp\src\main\java\com\oracle\orderapp\cl
 C:\Project\grocers-project\backend\OrderApp\src\main\java\com\oracle\orderapp\clients\EmployeeClient.java
 C:\Project\grocers-project\backend\OrderApp\src\main\java\com\oracle\orderapp\clients\ProductClient.java
 C:\Project\grocers-project\backend\OrderApp\src\main\java\com\oracle\orderapp\clients\UserClient.java
+C:\Project\grocers-project\backend\OrderApp\src\main\java\com\oracle\orderapp\config\OrderIdSequenceInitializer.java
 C:\Project\grocers-project\backend\OrderApp\src\main\java\com\oracle\orderapp\controllers\OrderController.java
 C:\Project\grocers-project\backend\OrderApp\src\main\java\com\oracle\orderapp\dtos\CancelOrderRequest.java
 C:\Project\grocers-project\backend\OrderApp\src\main\java\com\oracle\orderapp\dtos\CartItemResponse.java
 C:\Project\grocers-project\backend\OrderApp\src\main\java\com\oracle\orderapp\dtos\CartResponse.java
 C:\Project\grocers-project\backend\OrderApp\src\main\java\com\oracle\orderapp\dtos\CreateOrderRequest.java
+C:\Project\grocers-project\backend\OrderApp\src\main\java\com\oracle\orderapp\dtos\EmployeeOrderDetails.java
+C:\Project\grocers-project\backend\OrderApp\src\main\java\com\oracle\orderapp\dtos\OrderCustomerDetails.java
+C:\Project\grocers-project\backend\OrderApp\src\main\java\com\oracle\orderapp\dtos\OrderItemDetails.java
 C:\Project\grocers-project\backend\OrderApp\src\main\java\com\oracle\orderapp\dtos\OrderItemRequest.java
 C:\Project\grocers-project\backend\OrderApp\src\main\java\com\oracle\orderapp\dtos\PaymentRequest.java
 C:\Project\grocers-project\backend\OrderApp\src\main\java\com\oracle\orderapp\dtos\ProductQuantityRequest.java

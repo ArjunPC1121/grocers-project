@@ -7,6 +7,7 @@ import com.oracle.employeeapp.dtos.InventoryRequest;
 import com.oracle.employeeapp.dtos.ProductRequestSummary;
 import com.oracle.employeeapp.dtos.TicketSummary;
 import com.oracle.employeeapp.dtos.UpdateOrderStatusRequest;
+import com.oracle.employeeapp.dtos.EmployeeOrderDetails;
 import com.oracle.employeeapp.services.EmployeeService;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
@@ -63,6 +64,12 @@ public class EmployeeController {
         return service.openTickets(role);
     }
 
+    @GetMapping("/tickets/history")
+    public List<TicketSummary> ticketHistory(@RequestHeader("X-Authenticated-User-Id") Integer employeeId,
+                                              @RequestHeader("X-Authenticated-Role") String role) {
+        return service.ticketHistory(employeeId, role);
+    }
+
     @PostMapping("/tickets/{ticketId}/resolve")
     public TicketSummary resolveTicket(@RequestHeader("X-Authenticated-User-Id") Integer employeeId,
                                        @RequestHeader("X-Authenticated-Role") String role,
@@ -92,8 +99,8 @@ public class EmployeeController {
     }
 
     @GetMapping("/orders")
-    public List<Object> getAllOrders(@RequestHeader("X-Authenticated-User-Id") Integer employeeId,
-                                     @RequestHeader("X-Authenticated-Role") String role) {
+    public List<EmployeeOrderDetails> getAllOrders(@RequestHeader("X-Authenticated-User-Id") Integer employeeId,
+                                                   @RequestHeader("X-Authenticated-Role") String role) {
         return service.getAllOrders(employeeId, role);
     }
 

@@ -38,6 +38,12 @@ public class TicketController {
     }
     @GetMapping public List<ticket> getAllTickets() { return ticketService.getAllTickets(); }
     @GetMapping("/open") public List<ticket> getOpenTickets() { return ticketService.getOpenTickets(); }
+    @GetMapping("/user/{userId}/open") public ResponseEntity<ticket> getOpenTicketForUser(@PathVariable Integer userId) {
+        return ticketService.getOpenTicketForUser(userId).map(ResponseEntity::ok).orElseGet(() -> ResponseEntity.notFound().build());
+    }
+    @GetMapping("/employee/{employeeId}/history") public List<ticket> getTicketHistoryForEmployee(@PathVariable Integer employeeId) {
+        return ticketService.getTicketHistoryForEmployee(employeeId);
+    }
     @GetMapping("/{ticketId}") public ResponseEntity<ticket> getTicketById(@PathVariable Integer ticketId) {
         return ticketService.getTicketById(ticketId).map(ResponseEntity::ok).orElseGet(() -> ResponseEntity.notFound().build());
     }

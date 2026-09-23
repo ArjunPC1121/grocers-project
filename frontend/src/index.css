@@ -128,3 +128,13 @@ input:focus {
 .animate-pulse-soft {
   animation: pulse-soft 2s ease-in-out infinite;
 }
+
+/* Employee workspace brand shown in the top navigation. */
+p.font-mono.text-lg.font-bold.tracking-tight {
+  font-size: 0;
+}
+
+p.font-mono.text-lg.font-bold.tracking-tight::after {
+  content: "GROCERS//NEXUS";
+  font-size: 1.125rem;
+}
