@@ -111,8 +111,11 @@ public class OrderServiceImpl implements OrderService {
 
     @Override
     @Transactional(readOnly = true)
-    public List<EmployeeOrderDetails> getAllEmployeeDetails() {
-        return orderRepository.findAll().stream().map(this::employeeDetails).toList();
+    public List<EmployeeOrderDetails> getAllEmployeeDetails(Integer employeeId) {
+        return orderRepository.findAll().stream()
+                .filter(order -> order.getUpdatedByEmployeeId() == null
+                        || employeeId.equals(order.getUpdatedByEmployeeId()))
+                .map(this::employeeDetails).toList();
     }
 
     @Override
@@ -192,6 +195,20 @@ public class OrderServiceImpl implements OrderService {
     public Order cancel(Integer orderId, String cancellationReason) {
         Order order = getById(orderId);
 
+        return cancelOrder(order, cancellationReason, null);
+    }
+
+    @Override
+    @Transactional
+    public Order cancelByEmployee(Integer orderId, String cancellationReason, Integer employeeId) {
+        employeeClient.checkEmployeeExists(employeeId);
+        Order order = getById(orderId);
+        claimableBy(order, employeeId);
+        return cancelOrder(order, cancellationReason, employeeId);
+    }
+
+    private Order cancelOrder(Order order, String cancellationReason, Integer employeeId) {
+
         if (order.getStatus() != OrderStatus.PLACED) {
             throw new IllegalStateException(
                     "Only PLACED orders can be cancelled"
@@ -212,6 +229,7 @@ public class OrderServiceImpl implements OrderService {
         }
 
         order.setStatus(OrderStatus.CANCELLED);
+        if (employeeId != null) order.setUpdatedByEmployeeId(employeeId);
         order.setCancellationReason(cancellationReason);
 
         return orderRepository.save(order);
@@ -249,6 +267,12 @@ public class OrderServiceImpl implements OrderService {
         return orderRepository.save(order);
     }
 
+    private void claimableBy(Order order, Integer employeeId) {
+        if (order.getUpdatedByEmployeeId() != null && !employeeId.equals(order.getUpdatedByEmployeeId())) {
+            throw new IllegalStateException("This order is already being handled by another employee");
+        }
+    }
+
     private void releaseReducedStock(List<OrderItem> items) {
         for (OrderItem item : items) {
             productClient.increaseQuantity(
@@ -284,7 +308,8 @@ public class OrderServiceImpl implements OrderService {
                 .toList();
         return new EmployeeOrderDetails(order.getId(), order.getOrderNumber(), order.getCustomerId(),
                 userClient.getCustomer(order.getCustomerId()), order.getStatus().name(), order.getTotalAmount(),
-                order.getDeliveryAddress(), items, order.getCancellationReason(), order.getOrderedAt(), order.getUpdatedAt());
+                order.getDeliveryAddress(), items, order.getCancellationReason(), order.getOrderedAt(), order.getUpdatedAt(),
+                order.getUpdatedByEmployeeId());
     }
     @Override
     @Transactional
@@ -295,6 +320,8 @@ public class OrderServiceImpl implements OrderService {
         employeeClient.checkEmployeeExists(request.employeeId());
 
         Order order = getById(orderId);
+
+        claimableBy(order, request.employeeId());
 
         if (!isValidEmployeeStatusChange(
                 order.getStatus(),

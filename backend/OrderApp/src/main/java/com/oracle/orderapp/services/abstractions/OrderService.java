@@ -15,7 +15,7 @@ public interface OrderService {
 
     List<Order> getAll();
 
-    List<EmployeeOrderDetails> getAllEmployeeDetails();
+    List<EmployeeOrderDetails> getAllEmployeeDetails(Integer employeeId);
 
     Order getById(Integer orderId);
 
@@ -32,6 +32,8 @@ public interface OrderService {
     Order checkout(Integer orderId);
 
     Order cancel(Integer orderId, String reason);
+
+    Order cancelByEmployee(Integer orderId, String reason, Integer employeeId);
 
     void deleteCreatedOrder(Integer orderId);
     public Order updateAddress(
