@@ -16,6 +16,7 @@ type AuthContextType = {
 type LoginResponse = { accessToken: string; tokenType: string; expiresInSeconds: number; role: string; mustChangePassword: boolean; message: string };
 type JwtClaims = { sub: string; email: string; role: string; mustChangePassword?: boolean };
 type CustomerProfileResponse = { id: number; firstName: string; lastName: string; email: string; dob: string; phoneNumber: string; address: string; accountNumber: string; funds: number };
+type EmployeeProfileResponse = { id: number; firstName: string; lastName: string; email: string; mustChangePassword: boolean; status: "ACTIVE" | "INACTIVE" };
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 const readJwtClaims = (token: string): JwtClaims => {
@@ -57,7 +58,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         const { data: profile } = await api.get<CustomerProfileResponse>(`/users/${claims.sub}`);
         next = { id: String(profile.id), firstName: profile.firstName, lastName: profile.lastName, name: `${profile.firstName} ${profile.lastName}`, email: profile.email, address: profile.address, phone: profile.phoneNumber, role: "CUSTOMER" };
       } else if (role === "EMPLOYEE") {
-        next = { id: claims.sub, employeeId: claims.sub, firstName: "Employee", lastName: "", name: "Employee", email: claims.email || identifier, role: "EMPLOYEE", mustChangePassword: Boolean(data.mustChangePassword ?? claims.mustChangePassword) };
+        const profile = await api.get<EmployeeProfileResponse>(`/employees/${claims.sub}`).then(({ data: employee }) => employee).catch(() => null);
+        const firstName = profile?.firstName ?? "Employee";
+        const lastName = profile?.lastName ?? "";
+        next = { id: claims.sub, employeeId: claims.sub, firstName, lastName, name: [firstName, lastName].filter(Boolean).join(" "), email: profile?.email ?? claims.email ?? identifier, role: "EMPLOYEE", mustChangePassword: Boolean(data.mustChangePassword ?? claims.mustChangePassword), employeeStatus: profile?.status };
       } else {
         const profile = await api.get("/admin/me").then(({ data: admin }) => admin).catch(() => null);
         const resolvedRole: Role = profile?.role === "SUPER_ADMIN" ? "SUPER_ADMIN" : "ADMIN";
@@ -69,8 +73,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     } catch (error) {
       localStorage.removeItem("grocers_access_token");
       if (role === "CUSTOMER" && axios.isAxiosError(error) && error.response?.status === 403) {
-        toast.error("This account is locked. Send an unlock request to an employee.");
-        navigate(`/unlock-account?email=${encodeURIComponent(identifier)}`, { replace: true });
+        localStorage.setItem("grocers_recovery_email", identifier);
+        toast.error("Your account is locked. Answer your security question to reset your password.");
+        navigate(`/recover-account?email=${encodeURIComponent(identifier)}`, { replace: true });
         return;
       }
       toast.error(errorMessage(error, "Unable to sign in."));

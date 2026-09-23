@@ -107,6 +107,9 @@ public class JwtGatewayFilter implements GlobalFilter {
         return path.startsWith("/grocers/api/auth/login/")
                 || path.equals("/grocers/api/auth/locked-account/ticket")
                 || path.equals("/grocers/api/auth/locked-account/status")
+                || path.equals("/grocers/api/auth/locked-account/security-question")
+                || path.equals("/grocers/api/auth/locked-account/verify-security-answer")
+                || path.equals("/grocers/api/auth/locked-account/reset-password")
                 || path.equals("/grocers/api/users")
                 || (method == HttpMethod.GET
                 && path.startsWith("/grocers/api/products"));
@@ -148,9 +151,13 @@ public class JwtGatewayFilter implements GlobalFilter {
     private boolean isAuthAppInternalRequest(ServerWebExchange exchange) {
         String path = exchange.getRequest().getPath().value();
 
-        return exchange.getRequest().getMethod() == HttpMethod.POST
+        HttpMethod method = exchange.getRequest().getMethod();
+        boolean failedLoginUpdate = method == HttpMethod.POST
                 && (path.matches("/grocers/api/users/\\d+/failed-attempts")
-                || path.equals("/grocers/api/users/tickets"))
+                || path.equals("/grocers/api/users/tickets"));
+        boolean securityRecovery = (method == HttpMethod.GET && path.matches("/grocers/api/users/\\d+/secret-question"))
+                || (method == HttpMethod.POST && path.matches("/grocers/api/users/\\d+/(secret-answer|password-reset)"));
+        return (failedLoginUpdate || securityRecovery)
                 && "authapp".equals(
                 exchange.getRequest().getHeaders()
                         .getFirst(INTERNAL_SERVICE_HEADER))

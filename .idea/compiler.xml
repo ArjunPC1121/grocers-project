@@ -9,15 +9,6 @@
         <module name="gatewayapp" />
         <module name="authapp" />
       </profile>
-      <profile name="Annotation profile for EmployeeApp" enabled="true">
-        <sourceOutputDir name="build/generated-sources/annotations" />
-        <sourceTestOutputDir name="build/generated-test-sources/test-annotations" />
-        <outputRelativeToContentRoot value="true" />
-        <processorPath useClasspath="false">
-          <entry name="$MAVEN_REPOSITORY$/org/projectlombok/lombok/1.18.46/lombok-1.18.46.jar" />
-        </processorPath>
-        <module name="employeeapp" />
-      </profile>
       <profile name="Annotation profile for userapp" enabled="true">
         <sourceOutputDir name="target/generated-sources/annotations" />
         <sourceTestOutputDir name="target/generated-test-sources/test-annotations" />
@@ -27,12 +18,34 @@
           <entry name="$MAVEN_REPOSITORY$/org/projectlombok/lombok/1.18.46/lombok-1.18.46.jar" />
         </processorPath>
         <module name="userapp (3)" />
+      </profile>
+      <profile name="Annotation profile for EmployeeApp" enabled="true">
+        <sourceOutputDir name="build/generated-sources/annotations" />
+        <sourceTestOutputDir name="build/generated-test-sources/test-annotations" />
+        <outputRelativeToContentRoot value="true" />
+        <processorPath useClasspath="false">
+          <entry name="$MAVEN_REPOSITORY$/org/projectlombok/lombok/1.18.46/lombok-1.18.46.jar" />
+        </processorPath>
+        <module name="employeeapp" />
+      </profile>
+      <profile name="Annotation profile for ticketapp" enabled="true">
+        <sourceOutputDir name="target/generated-sources/annotations" />
+        <sourceTestOutputDir name="target/generated-test-sources/test-annotations" />
+        <outputRelativeToContentRoot value="true" />
+        <processorPath useClasspath="false">
+          <entry name="$MAVEN_REPOSITORY$/org/projectlombok/lombok/1.18.46/lombok-1.18.46.jar" />
+        </processorPath>
         <module name="orderapp" />
+        <module name="requestapp" />
+        <module name="ticketapp" />
+        <module name="productsapp" />
         <module name="cartapp" />
         <module name="userapp (1)" />
+        <module name="userapp" />
+        <module name="adminapp" />
         <module name="fundsapp" />
       </profile>
-      <profile name="Annotation profile for productsapp" enabled="true">
+      <profile name="Annotation profile for userapp (2)" enabled="true">
         <sourceOutputDir name="target/generated-sources/annotations" />
         <sourceTestOutputDir name="target/generated-test-sources/test-annotations" />
         <outputRelativeToContentRoot value="true" />
@@ -40,10 +53,6 @@
           <entry name="$MAVEN_REPOSITORY$/org/projectlombok/lombok/1.18.46/lombok-1.18.46.jar" />
         </processorPath>
         <module name="userapp (2)" />
-        <module name="requestapp" />
-        <module name="userapp" />
-        <module name="adminapp" />
-        <module name="ticketapp" />
       </profile>
     </annotationProcessing>
   </component>
@@ -56,6 +65,7 @@
       <module name="fundsapp" options="-parameters" />
       <module name="gatewayapp" options="-parameters" />
       <module name="orderapp" options="-parameters" />
+      <module name="productsapp" options="-parameters" />
       <module name="requestapp" options="-parameters" />
       <module name="ticketapp" options="-parameters" />
       <module name="userapp" options="-parameters" />

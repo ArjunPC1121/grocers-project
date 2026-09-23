@@ -5,6 +5,8 @@ import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.core.Ordered;
+import org.springframework.core.annotation.Order;
 import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
 
@@ -12,6 +14,7 @@ import java.io.IOException;
 
 /** Rejects requests that did not originate at the API gateway. */
 @Component
+@Order(Ordered.HIGHEST_PRECEDENCE)
 public class GatewayOnlyFilter extends OncePerRequestFilter {
     private static final String GATEWAY_HEADER = "X-Gateway-Request";
     private final String internalRequestSecret;

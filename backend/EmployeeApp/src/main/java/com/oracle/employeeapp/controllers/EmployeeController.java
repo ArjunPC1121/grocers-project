@@ -7,6 +7,7 @@ import com.oracle.employeeapp.dtos.InventoryRequest;
 import com.oracle.employeeapp.dtos.ProductRequestSummary;
 import com.oracle.employeeapp.dtos.TicketSummary;
 import com.oracle.employeeapp.dtos.UpdateOrderStatusRequest;
+import com.oracle.employeeapp.dtos.UpdateEmployeeStatusRequest;
 import com.oracle.employeeapp.dtos.EmployeeOrderDetails;
 import com.oracle.employeeapp.services.EmployeeService;
 import jakarta.validation.Valid;
@@ -57,6 +58,13 @@ public class EmployeeController {
                                           @PathVariable Integer employeeId,
                                           @Valid @RequestBody ChangePasswordRequest request) {
         return service.changePassword(authenticatedEmployeeId, role, employeeId, request);
+    }
+
+    @PatchMapping("/{employeeId}/status")
+    public EmployeeSummary updateStatus(@RequestHeader("X-Authenticated-Role") String role,
+                                        @PathVariable Integer employeeId,
+                                        @Valid @RequestBody UpdateEmployeeStatusRequest request) {
+        return service.updateStatus(role, employeeId, request.status());
     }
 
     @GetMapping("/tickets")
