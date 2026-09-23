@@ -3,6 +3,7 @@ import { useLocation, useNavigate } from "react-router-dom";
 import { ShoppingBasket, ShieldCheck, UserRoundCog } from "lucide-react";
 import { useAuth } from "../context/AuthContext";
 import type { Role } from "../types";
+import api from "../config/api";
 
 const roles: Array<{ role: Role; label: string; detail: string; icon: typeof ShoppingBasket }> = [
   { role: "CUSTOMER", label: "Customer", detail: "Shop, manage funds, orders and support", icon: ShoppingBasket },
@@ -19,7 +20,19 @@ export default function AuthPortal() {
   const [form, setForm] = useState<Record<string, string>>({});
   const returnTo = (location.state as { returnTo?: string } | null)?.returnTo;
   const update = (key: string, value: string) => setForm({ ...form, [key]: value });
-  useEffect(() => { const lockedEmail=localStorage.getItem("grocers_recovery_email"); if (lockedEmail) navigate(`/recover-account?email=${encodeURIComponent(lockedEmail)}`, { replace: true }); }, [navigate]);
+  // Recovery restrictions apply only to the locked customer account. Admins and
+  // employees must still be able to choose and enter their own workspaces.
+  useEffect(() => {
+    const lockedEmail=localStorage.getItem("grocers_recovery_email");
+    if (role !== "CUSTOMER" || !lockedEmail) return;
+    let cancelled=false;
+    api.get("/auth/locked-account/status", { params: { email: lockedEmail } }).then(({data}) => {
+      if (cancelled) return;
+      if (data.unlocked) { localStorage.removeItem("grocers_recovery_email"); return; }
+      navigate(`/recover-account?email=${encodeURIComponent(lockedEmail)}`, { replace: true });
+    }).catch(() => { if (!cancelled) navigate(`/recover-account?email=${encodeURIComponent(lockedEmail)}`, { replace: true }); });
+    return () => { cancelled=true; };
+  }, [navigate, role]);
 
   if (!role) return <main className="min-h-screen bg-app-cream p-6 flex-center">
     <section className="w-full max-w-4xl"><p className="text-app-orange font-semibold">GROCERS</p><h1
