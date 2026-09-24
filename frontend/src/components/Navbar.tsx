@@ -2,7 +2,6 @@ import { CookingPot, Heart,
     LogIn,
     Package,
     Search,
-    ShoppingBasket,
     Wallet,
 } from "lucide-react";
 import {Link, useNavigate} from "react-router-dom";
@@ -29,7 +28,7 @@ export default function Navbar() {
             <div
                 className="mx-auto flex max-w-7xl flex-wrap items-center gap-3 px-4 py-3 sm:h-16 sm:flex-nowrap sm:py-0">
                 <Link to="/" className="flex items-center gap-2 font-serif text-xl">
-                    <ShoppingBasket className="text-app-orange"/>
+                    <img src="/main_logo.png" alt="Grocers" className="size-6 object-contain"/>
                     Grocers
                 </Link>
 
@@ -64,7 +63,7 @@ export default function Navbar() {
                 <div className="ml-auto flex items-center gap-3 text-sm">
                     {user?.role === "CUSTOMER" && (
                         <>
-                            <Link to="/orders" title="My Orders">
+                            <Link to="/orders" title="My orders">
                                 <Package size={19}/>
                             </Link>
                             <Link to="/wishlist" title="Wishlist">

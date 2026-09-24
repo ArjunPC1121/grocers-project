@@ -1,8 +1,6 @@
 import { CheckIcon, TruckIcon } from "lucide-react";
-import type { Address } from "../../types";
-
 interface CheckoutReviewProps {
-  address: Address;
+  deliveryAddress: string;
   items: any[];
   handlePlaceOrder: () => void;
   loading: boolean;
@@ -10,13 +8,13 @@ interface CheckoutReviewProps {
 }
 
 export default function CheckoutReview({
-  address,
+  deliveryAddress,
   items,
   handlePlaceOrder,
   loading,
   total,
 }: CheckoutReviewProps) {
-  const currency = import.meta.env.VITE_CURRENCY_SYMBOL || "$";
+  const currency = "₹";
 
   return (
     <div className="bg-white rounded-2xl p-6 animate-fade-in">
@@ -33,8 +31,7 @@ export default function CheckoutReview({
           </span>
         </div>
         <p className="text-sm text-app-text-light">
-          {address.label} — {address.address}, {address.city}, {address.state}{" "}
-          {address.zip}
+          {deliveryAddress}
         </p>
       </div>
 

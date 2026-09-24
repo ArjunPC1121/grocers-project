@@ -24,7 +24,7 @@ import {
 import { useAuthenticatedCart } from "../hooks/useAuthenticatedCart";
 
 const ProductPage = () => {
-  const currency = import.meta.env.VITE_CURRENCY_SYMBOL || "$";
+  const currency = "₹";
   const { id } = useParams();
   const navigate = useNavigate();
   const { items, updateQuantity, removeFromCart } = useCart();
