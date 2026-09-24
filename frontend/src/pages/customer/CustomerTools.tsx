@@ -5,6 +5,13 @@ import { EmptyState, PageError } from "../../components/ApiState";
 import { useAuth } from "../../context/AuthContext";
 import type { Ticket} from "../../types";
 import productApi from "../../config/ProductApi";
+import type { WalletTransaction } from "../../types";
+import {
+    ArrowDownLeft,
+    ArrowUpRight,
+    RotateCcw,
+} from "lucide-react";
+
 const GMAIL_PATTERN = /^[A-Za-z0-9._%+-]+@gmail\.com$/i;
 const PHONE_PATTERN = /^\d{10}$/;
 
@@ -180,6 +187,9 @@ export function FundsPage() {
     const [balance, setBalance] = useState<number | null>(null);
     const [amount, setAmount] = useState("");
     const [error, setError] = useState("");
+    const [transactions, setTransactions] = useState<WalletTransaction[]>([]);
+    const [transactionsLoading, setTransactionsLoading] = useState(true);
+    const [transactionsError, setTransactionsError] = useState("");
 
     const loadFunds = async () => {
         if (!user) {
@@ -197,8 +207,36 @@ export function FundsPage() {
         }
     };
 
+    const loadTransactions = async () => {
+        if (!user) {
+            setTransactions([]);
+            setTransactionsLoading(false);
+            return;
+        }
+
+        try {
+            setTransactionsLoading(true);
+            setTransactionsError("");
+
+            const { data } = await api.get<WalletTransaction[]>(
+                `/users/${user.id}/wallet-transactions`,
+            );
+
+            setTransactions(data);
+        } catch (error) {
+            setTransactionsError(
+                errorMessage(error, "Could not load wallet history."),
+            );
+        } finally {
+            setTransactionsLoading(false);
+        }
+    };
+
     useEffect(() => {
-        void loadFunds();
+        void Promise.all([
+            loadFunds(),
+            loadTransactions(),
+        ]);
     }, [user?.id]);
 
     const addFunds = async (event: FormEvent<HTMLFormElement>) => {
@@ -216,10 +254,31 @@ export function FundsPage() {
 
             toast.success("Funds added.");
             setAmount("");
-            await loadFunds();
+            await Promise.all([
+                loadFunds(),
+                loadTransactions(),
+            ]);
         } catch (error) {
             toast.error(errorMessage(error, "Could not add funds."));
         }
+    };
+
+    const transactionLabel = (type: WalletTransaction["type"]) =>
+        type.replaceAll("_", " ");
+
+    const isCredit = (type: WalletTransaction["type"]) =>
+        type === "ADD_FUNDS" || type === "REFUND";
+
+    const transactionIcon = (type: WalletTransaction["type"]) => {
+        if (type === "ADD_FUNDS") {
+            return <ArrowDownLeft className="size-5 text-green-600" />;
+        }
+
+        if (type === "REFUND") {
+            return <RotateCcw className="size-5 text-green-600" />;
+        }
+
+        return <ArrowUpRight className="size-5 text-red-600" />;
     };
 
     return (
@@ -259,6 +318,92 @@ export function FundsPage() {
                     Add funds
                 </button>
             </form>
+            <section className="mt-6 rounded-2xl border bg-white p-5">
+                <div className="flex items-center justify-between">
+                    <h2 className="font-semibold text-app-green">
+                        Wallet history
+                    </h2>
+
+                    <button
+                        type="button"
+                        onClick={() => void loadTransactions()}
+                        className="text-sm text-app-green hover:underline"
+                    >
+                        Refresh
+                    </button>
+                </div>
+
+                {transactionsLoading ? (
+                    <p className="mt-4 text-sm text-app-text-light">
+                        Loading wallet history...
+                    </p>
+                ) : transactionsError ? (
+                    <p className="mt-4 text-sm text-red-600">
+                        {transactionsError}
+                    </p>
+                ) : transactions.length === 0 ? (
+                    <p className="mt-4 text-sm text-app-text-light">
+                        No wallet transactions yet.
+                    </p>
+                ) : (
+                    <div className="mt-4 divide-y">
+                        {transactions.map((transaction) => {
+                            const credit = isCredit(transaction.type);
+
+                            return (
+                                <article
+                                    key={transaction.id}
+                                    className="flex items-center justify-between gap-4 py-4"
+                                >
+                                    <div className="flex min-w-0 items-center gap-3">
+                                        <div className="rounded-full bg-app-cream p-2">
+                                            {transactionIcon(transaction.type)}
+                                        </div>
+
+                                        <div className="min-w-0">
+                                            <p className="font-medium text-app-text">
+                                                {transactionLabel(transaction.type)}
+                                            </p>
+
+                                            {transaction.reference && (
+                                                <p className="truncate text-xs text-app-text-light">
+                                                    Reference: {transaction.reference}
+                                                </p>
+                                            )}
+
+                                            <p className="text-xs text-app-text-light">
+                                                {new Date(
+                                                    transaction.createdAt,
+                                                ).toLocaleString()}
+                                            </p>
+                                        </div>
+                                    </div>
+
+                                    <div className="shrink-0 text-right">
+                                        <p
+                                            className={
+                                                credit
+                                                    ? "font-semibold text-green-600"
+                                                    : "font-semibold text-red-600"
+                                            }
+                                        >
+                                            {credit ? "+" : "-"}₹
+                                            {Number(transaction.amount).toFixed(2)}
+                                        </p>
+
+                                        <p className="text-xs text-app-text-light">
+                                            Balance: ₹
+                                            {Number(
+                                                transaction.balanceAfterTransaction,
+                                            ).toFixed(2)}
+                                        </p>
+                                    </div>
+                                </article>
+                            );
+                        })}
+                    </div>
+                )}
+            </section>
         </section>
     );
 }

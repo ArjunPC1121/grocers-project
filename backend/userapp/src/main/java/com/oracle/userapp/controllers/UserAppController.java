@@ -101,11 +101,17 @@ public class UserAppController {
      */
 
     @PostMapping("/{id}/debit")
-    // Removes money from the user's wallet when an order is paid for.
     public ResponseEntity<Double> deductFunds(
             @PathVariable Integer id,
-            @RequestBody AddFundsRequest request) {
-        return ResponseEntity.ok(userService.deductFunds(id, request.amount()));
+            @Valid @RequestBody PaymentRequest request) {
+
+        return ResponseEntity.ok(
+                userService.deductFunds(
+                        id,
+                        request.amount(),
+                        request.reference()
+                )
+        );
     }
 
     @PostMapping("/{id}/tickets")
@@ -132,9 +138,20 @@ public class UserAppController {
     Called by Order app in service -> cancelOrder()
      */
     @PostMapping("/{id}/refund")
-    public ResponseEntity<String> refund(@PathVariable Integer id, @RequestBody OrderCancelRequest request)
-    {
-        return ResponseEntity.ok("Order "+request.reference()+" cancelled :(\nNew fund balance : "+userService.refund(id, request.amount()));
+    public ResponseEntity<String> refund(
+            @PathVariable Integer id,
+            @Valid @RequestBody PaymentRequest request) {
+
+        double balance = userService.refund(
+                id,
+                request.amount(),
+                request.reference()
+        );
+
+        return ResponseEntity.ok(
+                "Order " + request.reference()
+                        + " cancelled. New fund balance: " + balance
+        );
     }
 
     /*
@@ -232,6 +249,23 @@ public class UserAppController {
 
         userService.changePassword(id, request);
         return ResponseEntity.noContent().build();
+    }
+
+    @GetMapping("/{userId}/wallet-transactions")
+    public ResponseEntity<List<WalletTransactionResponse>> getWalletTransactions(
+            @PathVariable Integer userId,
+            @RequestHeader("X-Authenticated-User-Id") Integer authenticatedUserId
+    ) {
+        if (!userId.equals(authenticatedUserId)) {
+            throw new ResponseStatusException(
+                    HttpStatus.FORBIDDEN,
+                    "You can only view your own wallet transactions"
+            );
+        }
+
+        return ResponseEntity.ok(
+                userService.getWalletTransactions(userId)
+        );
     }
 
 

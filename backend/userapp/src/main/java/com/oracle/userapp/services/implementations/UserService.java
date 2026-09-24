@@ -5,6 +5,7 @@ import com.oracle.userapp.entities.LockedReason;
 import com.oracle.userapp.entities.SecretQuestion;
 import com.oracle.userapp.entities.User;
 import com.oracle.userapp.repositories.UserRepository;
+import com.oracle.userapp.repositories.WalletTransactionRepository;
 import com.oracle.userapp.services.abstractions.UserServiceManager;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
@@ -20,6 +21,11 @@ import java.time.LocalDateTime;
 import java.util.Collection;
 import java.util.Map;
 import java.util.UUID;
+
+import com.oracle.userapp.dto.WalletTransactionResponse;
+import com.oracle.userapp.entities.WalletTransaction;
+import com.oracle.userapp.entities.WalletTransactionType;
+import java.util.List;
 
 @Service
 // Contains the business rules for user accounts, wallets, and account recovery.
@@ -39,12 +45,15 @@ public class UserService implements UserServiceManager<UserRequest,UserResponse,
     private final UserRepository repository;
     private final PasswordEncoder passwordEncoder;
     private final RestTemplate restTemplate;
+    private final WalletTransactionRepository walletTransactionRepository;
 
-    public UserService(UserRepository repository, PasswordEncoder passwordEncoder, RestTemplate restTemplate)
+    public UserService(UserRepository repository, PasswordEncoder passwordEncoder,
+                       RestTemplate restTemplate, WalletTransactionRepository walletTransactionRepository)
     {
         this.repository = repository;
         this.passwordEncoder=passwordEncoder;
         this.restTemplate = restTemplate;
+        this.walletTransactionRepository = walletTransactionRepository;
     }
     @Override
     @Transactional
@@ -170,14 +179,22 @@ public class UserService implements UserServiceManager<UserRequest,UserResponse,
 
         user.setFunds(user.getFunds() + deductedAmount);
         user = repository.save(user);
+        recordTransaction(
+                user,
+                WalletTransactionType.ADD_FUNDS,
+                deductedAmount,
+                "Bank wallet top-up"
+        );
         return user.getFunds();
     }
 
     @Override
-    // Deducts an order amount only when the wallet has enough money.
-    public double deductFunds(Integer id, double amount) throws RuntimeException {
+    @Transactional
+    public double deductFunds(Integer id, double amount, String reference) {
         if (amount <= 0) {
-            throw new IllegalArgumentException("Debit amount must be greater than zero");
+            throw new IllegalArgumentException(
+                    "Debit amount must be greater than zero"
+            );
         }
 
         User user = repository.findById(id)
@@ -190,7 +207,14 @@ public class UserService implements UserServiceManager<UserRequest,UserResponse,
         }
 
         user.setFunds(user.getFunds() - amount);
-        repository.save(user);
+        user = repository.save(user);
+
+        recordTransaction(
+                user,
+                WalletTransactionType.ORDER_PAYMENT,
+                amount,
+                reference
+        );
 
         return user.getFunds();
     }
@@ -254,12 +278,27 @@ public class UserService implements UserServiceManager<UserRequest,UserResponse,
     }
 
     @Override
-    // Adds a cancelled order's amount back to the user's wallet.
-    public Double refund(Integer id, double amount)
-    {
-        User user = repository.findById(id).orElseThrow(()-> new RuntimeException("User not found"));
-        user.setFunds(user.getFunds()+amount);
-        repository.save(user);
+    @Transactional
+    public Double refund(Integer id, double amount, String reference) {
+        if (amount <= 0) {
+            throw new IllegalArgumentException(
+                    "Refund amount must be greater than zero"
+            );
+        }
+
+        User user = repository.findById(id)
+                .orElseThrow(() -> new RuntimeException("User not found"));
+
+        user.setFunds(user.getFunds() + amount);
+        user = repository.save(user);
+
+        recordTransaction(
+                user,
+                WalletTransactionType.REFUND,
+                amount,
+                reference
+        );
+
         return user.getFunds();
     }
 
@@ -430,5 +469,35 @@ public class UserService implements UserServiceManager<UserRequest,UserResponse,
 
         user.setPassword(passwordEncoder.encode(request.newPassword()));
         repository.save(user);
+    }
+
+    @Override
+    public List<WalletTransactionResponse> getWalletTransactions(Integer userId) {
+        if (!repository.existsById(userId)) {
+            throw new RuntimeException("User not found");
+        }
+
+        return walletTransactionRepository
+                .findByUserIdOrderByCreatedAtDesc(userId)
+                .stream()
+                .map(WalletTransactionResponse::from)
+                .toList();
+    }
+
+    // Saves a permanent record whenever the wallet balance changes.
+    private void recordTransaction(
+            User user,
+            WalletTransactionType type,
+            double amount,
+            String reference
+    ) {
+        WalletTransaction transaction = new WalletTransaction();
+        transaction.setUserId(user.getId());
+        transaction.setType(type);
+        transaction.setAmount(amount);
+        transaction.setBalanceAfterTransaction(user.getFunds());
+        transaction.setReference(reference);
+
+        walletTransactionRepository.save(transaction);
     }
 }
