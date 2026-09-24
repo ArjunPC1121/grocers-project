@@ -32,6 +32,16 @@ export default function AdminShellSlim() {
     setMobileOpen(false); setProfileOpen(false);
   }, [location.pathname]);
 
+  useEffect(() => {
+    if (location.pathname !== "/admin") sessionStorage.setItem("grocers_last_admin_page", location.pathname + location.search + location.hash);
+  }, [location.pathname, location.search, location.hash]);
+
+  useEffect(() => {
+    const navigation = performance.getEntriesByType("navigation")[0] as PerformanceNavigationTiming | undefined;
+    const lastPage = sessionStorage.getItem("grocers_last_admin_page");
+    if (navigation?.type === "reload" && location.pathname === "/admin" && lastPage?.startsWith("/admin/")) navigate(lastPage, { replace: true });
+  }, [location.pathname, navigate]);
+
   const go = (to: string) => { navigate(to); };
 
   return (

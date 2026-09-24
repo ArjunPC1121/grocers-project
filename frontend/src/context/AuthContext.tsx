@@ -69,7 +69,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       }
       save(next, data.accessToken);
       toast.success("Signed in successfully");
-      navigate(safePath(returnTo) || destination(next), { replace: true });
+      // Employees always begin a new session on their Overview page, rather
+      // than returning to a workspace page left open before logout.
+      navigate(next.role === "EMPLOYEE" ? destination(next) : safePath(returnTo) || destination(next), { replace: true });
     } catch (error) {
       localStorage.removeItem("grocers_access_token");
       if (role === "CUSTOMER" && axios.isAxiosError(error) && error.response?.status === 403) {
@@ -92,7 +94,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       return false;
     }
   };
-  const logout = () => { setUser(null); localStorage.removeItem("grocers_session"); localStorage.removeItem("grocers_access_token"); navigate("/auth"); };
+  const logout = () => { setUser(null); localStorage.removeItem("grocers_session"); localStorage.removeItem("grocers_access_token"); sessionStorage.removeItem("grocers_last_employee_page"); navigate("/auth"); };
   const updateUser = (value: Partial<SessionUser>) => { if (!user) return; save({ ...user, ...value }); };
   return <AuthContext.Provider value={{ user, loading, login, register, logout, updateUser }}>{children}</AuthContext.Provider>;
 }
