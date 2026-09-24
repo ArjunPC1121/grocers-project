@@ -31,12 +31,12 @@ import java.util.List;
 // Contains the business rules for user accounts, wallets, and account recovery.
 public class UserService implements UserServiceManager<UserRequest,UserResponse,UpdateUserRequest, TicketResponse,Integer> {
 
-    // BankApp endpoint used to create a bank account for a new user.
-    private static final String CREATE_BANK_ACCOUNT_URL =
-            "http://localhost:8089/grocers/api/banks/add/{userId}";
+    // BankApp endpoint used to confirm that a supplied account belongs to a phone number.
+    private static final String VALIDATE_BANK_ACCOUNT_URL =
+            "http://localhost:8089/grocers/api/banks/validate?accountNumber={accountNumber}&phoneNumber={phoneNumber}";
     // BankApp endpoint used to take funds from a bank account.
     private static final String DEDUCT_BANK_FUNDS_URL =
-            "http://localhost:8089/grocers/api/banks/{userId}/deduct";
+            "http://localhost:8089/grocers/api/banks/{accountNumber}/deduct";
     // TicketApp endpoint used to create a locked-account support ticket.
     private static final String RAISE_TICKET_URL =
             "http://localhost:8087/grocers/api/tickets";
@@ -57,8 +57,19 @@ public class UserService implements UserServiceManager<UserRequest,UserResponse,
     }
     @Override
     @Transactional
-    // Saves a new user, protects their secrets, and creates their bank account.
+    // Saves a new user after confirming the supplied bank account belongs to their phone number.
     public UserResponse add(UserRequest data) {
+        Boolean linkedBankAccount = restTemplate.getForObject(
+                VALIDATE_BANK_ACCOUNT_URL,
+                Boolean.class,
+                data.getAccountNumber(),
+                data.getPhoneNumber()
+        );
+        if (!Boolean.TRUE.equals(linkedBankAccount)) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
+                    "Bank account number does not exist or is not linked to this phone number");
+        }
+
         User user = new User();
         mapRequestToEntity(user, data);
         user.setPassword(passwordEncoder.encode(data.getPassword()));
@@ -67,21 +78,6 @@ public class UserService implements UserServiceManager<UserRequest,UserResponse,
                 passwordEncoder.encode(data.getSecretAnswer())
         );
         user = repository.save(user);
-
-        HttpHeaders headers = new HttpHeaders();
-        headers.setContentType(MediaType.APPLICATION_JSON);
-
-        HttpEntity<Map<String, String>> request = new HttpEntity<>(
-                Map.of("accountNumber", user.getAccountNumber()),
-                headers
-        );
-
-        restTemplate.postForEntity(
-                CREATE_BANK_ACCOUNT_URL,
-                request,
-                Void.class,
-                user.getId()
-        );
 
         return mapEntityToResponse(user);
 
@@ -154,14 +150,17 @@ public class UserService implements UserServiceManager<UserRequest,UserResponse,
     Makes a REST call to bank accounts app to add money to wallet.
      */
     @Override
-    public double addFunds(Integer id, double amount) throws RuntimeException
+    public double addFunds(Integer id, double amount, String pin) throws RuntimeException
     {
+        if (pin == null || pin.isBlank()) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Bank PIN is required");
+        }
         User user = repository.findById(id).orElseThrow(()-> new RuntimeException("User not found"));
         HttpHeaders headers = new HttpHeaders();
         headers.setContentType(MediaType.APPLICATION_JSON);
 
-        HttpEntity<Map<String, Double>> request = new HttpEntity<>(
-                Map.of("amount", amount),
+        HttpEntity<Map<String, Object>> request = new HttpEntity<>(
+                Map.of("amount", amount, "pin", pin),
                 headers
         );
 
@@ -170,7 +169,7 @@ public class UserService implements UserServiceManager<UserRequest,UserResponse,
                 DEDUCT_BANK_FUNDS_URL,
                 request,
                 Double.class,
-                id
+                user.getAccountNumber()
         );
 
         if (deductedAmount == null) {

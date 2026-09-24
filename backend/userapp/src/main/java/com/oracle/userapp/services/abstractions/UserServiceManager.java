@@ -20,7 +20,7 @@ public  interface UserServiceManager<TRequest,TResponse,TUpdateRequest,TTicketRe
     TResponse delete(Id id)throws RuntimeException;
     int incFailedAttempts(Id id) throws RuntimeException;
 
-    double addFunds(Id id, double amount)throws RuntimeException;
+    double addFunds(Id id, double amount, String pin)throws RuntimeException;
     double deductFunds(Id id, double amount,String reference)throws RuntimeException;
 
     TTicketResponse raiseTicket(Id id);
