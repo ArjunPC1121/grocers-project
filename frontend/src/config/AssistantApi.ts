@@ -12,6 +12,12 @@ export interface RecommendedProductResponse {
   unitPrice: number | null;
   lineTotal: number | null;
   status: RecommendationStatus;
+  availabilityReason?:
+    | "IN_STOCK"
+    | "NO_CATALOG_MATCH"
+    | "INCOMPATIBLE_UNIT"
+    | "INACTIVE_PRODUCT"
+    | "INSUFFICIENT_STOCK";
 }
 
 export interface RecipeRecommendationResponse {

@@ -1,6 +1,6 @@
 # Grocery Assistant App
 
-This service turns a customer's food request into a catalogue-backed grocery proposal. It fetches the complete live Products App catalogue before planning, gives it to Gemini, validates the selected products locally, and calculates the minimum number of packs required from `unitValue` and `unitType`.
+This service turns a customer's food request into a catalogue-backed grocery proposal. Gemini creates only a generic recipe ingredient plan; it never receives or selects a product ID. Assistant App then strictly and deterministically matches those requirements against the live Products App catalogue and calculates the minimum number of packs from `unitValue` and `unitType`.
 
 ## Run locally
 
@@ -32,4 +32,4 @@ Content-Type: application/json
 
 `budget` is optional. When omitted, `budget` and `withinBudget` in the response are `null`.
 
-Each item in `recommendedProducts` has either `IN_STOCK` or `OUT_OF_STOCK` status. `quantity` is the number of product packs required: for example, 1 kg required with a 400 g pack produces a quantity of 3, while 500 g required with a 1 kg pack produces a quantity of 1. The endpoint is intentionally for role `USER` only and does not add anything to a cart.
+Each item in `recommendedProducts` has either `IN_STOCK` or `OUT_OF_STOCK` status. Out-of-stock items include `availabilityReason`, one of `NO_CATALOG_MATCH`, `INCOMPATIBLE_UNIT`, `INACTIVE_PRODUCT`, or `INSUFFICIENT_STOCK`; unavailable optional ingredients are omitted. `quantity` is the number of product packs required: for example, 1 kg required with a 400 g pack produces a quantity of 3, while 500 g required with a 1 kg pack produces a quantity of 1. The endpoint is intentionally for role `USER` only and does not add anything to a cart.

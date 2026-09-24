@@ -1,10 +1,10 @@
 package com.oracle.assistantapp.services;
 
 import com.oracle.assistantapp.dto.*;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;
-import java.util.Comparator;
 import java.util.List;
 import java.util.Locale;
 import java.util.Objects;
@@ -13,78 +13,71 @@ import java.util.Objects;
 public class GroceryAssistantService {
     private final GeminiIngredientClient geminiIngredientClient;
     private final ProductCatalogClient productCatalogClient;
+    private final CatalogueIngredientMatcher catalogueIngredientMatcher;
 
-    public GroceryAssistantService(GeminiIngredientClient geminiIngredientClient, ProductCatalogClient productCatalogClient) {
+    @Autowired
+    public GroceryAssistantService(GeminiIngredientClient geminiIngredientClient, ProductCatalogClient productCatalogClient,
+                                  CatalogueIngredientMatcher catalogueIngredientMatcher) {
         this.geminiIngredientClient = geminiIngredientClient;
         this.productCatalogClient = productCatalogClient;
+        this.catalogueIngredientMatcher = catalogueIngredientMatcher;
+    }
+
+    GroceryAssistantService(GeminiIngredientClient geminiIngredientClient, ProductCatalogClient productCatalogClient) {
+        this(geminiIngredientClient, productCatalogClient, new CatalogueIngredientMatcher());
     }
 
     public RecommendationResponse recommend(AssistantRequest request) {
         List<ProductCatalogItem> catalogue = productCatalogClient.getProducts();
         IngredientPlan plan = geminiIngredientClient.identifyIngredients(request, catalogue);
         List<RecommendedProduct> recommendations = new ArrayList<>();
-
         for (IngredientSuggestion ingredient : plan.ingredients()) {
-            if (!isValidIngredient(ingredient)) {
+            if (!isValidIngredient(ingredient)) continue;
+            CatalogueIngredientMatcher.MatchResult match = catalogueIngredientMatcher.findBestMatch(ingredient, catalogue);
+            ProductCatalogItem product = match.product();
+            if (product == null) {
+                addUnavailableIfRequired(recommendations, ingredient, null, null, match.reason());
                 continue;
             }
-
-            ProductCatalogItem product = findProduct(ingredient, catalogue);
             Integer packagesRequired = calculatePackagesRequired(ingredient, product);
-            if (product == null || packagesRequired == null || !Boolean.TRUE.equals(product.active())
-                    || product.quantity() == null || product.quantity() < packagesRequired) {
-                if (Boolean.FALSE.equals(ingredient.mandatory()) && product == null) {
-                    continue;
-                }
-                recommendations.add(new RecommendedProduct(product == null ? null : product.id(),
-                        product == null ? null : product.name(), ingredient.name(), ingredient.requiredAmount(),
-                        ingredient.unit(), packagesRequired, null, null, "OUT_OF_STOCK"));
-                continue;
+            if (packagesRequired == null) {
+                addUnavailableIfRequired(recommendations, ingredient, product, null, "INCOMPATIBLE_UNIT");
+            } else if (!Boolean.TRUE.equals(product.active())) {
+                addUnavailableIfRequired(recommendations, ingredient, product, packagesRequired, "INACTIVE_PRODUCT");
+            } else if (product.quantity() == null || product.quantity() < packagesRequired) {
+                addUnavailableIfRequired(recommendations, ingredient, product, packagesRequired, "INSUFFICIENT_STOCK");
+            } else {
+                Double unitPrice = discountedPrice(product);
+                recommendations.add(new RecommendedProduct(product.id(), product.name(), ingredient.canonicalName(),
+                        ingredient.requiredAmount(), ingredient.unit().label(), packagesRequired, unitPrice,
+                        roundMoney(unitPrice * packagesRequired), "IN_STOCK", "IN_STOCK"));
             }
-
-            Double unitPrice = discountedPrice(product);
-            recommendations.add(new RecommendedProduct(product.id(), product.name(), ingredient.name(),
-                    ingredient.requiredAmount(), ingredient.unit(), packagesRequired, unitPrice,
-                    roundMoney(unitPrice * packagesRequired), "IN_STOCK"));
         }
-
         Double total = roundMoney(recommendations.stream().filter(product -> "IN_STOCK".equals(product.status()))
                 .map(RecommendedProduct::lineTotal).filter(Objects::nonNull).mapToDouble(Double::doubleValue).sum());
         Boolean withinBudget = request.budget() == null ? null : total <= request.budget();
         return new RecommendationResponse(plan.dish(), plan.summary(), recommendations, total, request.budget(), withinBudget);
     }
 
+    private void addUnavailableIfRequired(List<RecommendedProduct> recommendations, IngredientSuggestion ingredient,
+                                          ProductCatalogItem product, Integer packagesRequired, String reason) {
+        if (ingredient.requirement() == IngredientRequirement.OPTIONAL) return;
+        recommendations.add(new RecommendedProduct(product == null ? null : product.id(), product == null ? null : product.name(),
+                ingredient.canonicalName(), ingredient.requiredAmount(), ingredient.unit().label(), packagesRequired,
+                null, null, "OUT_OF_STOCK", reason));
+    }
+
     private boolean isValidIngredient(IngredientSuggestion ingredient) {
-        return ingredient != null && ingredient.name() != null && !ingredient.name().isBlank()
-                && ingredient.requiredAmount() != null && ingredient.requiredAmount() > 0
-                && ingredient.unit() != null && !ingredient.unit().isBlank();
-    }
-
-    private ProductCatalogItem findProduct(IngredientSuggestion ingredient, List<ProductCatalogItem> catalogue) {
-        if (ingredient.productId() != null) {
-            return catalogue.stream().filter(product -> ingredient.productId().equals(product.id())).findFirst().orElse(null);
-        }
-        String normalizedIngredient = normalize(ingredient.name());
-        return catalogue.stream()
-                .filter(product -> product.id() != null && product.name() != null && product.price() != null)
-                .filter(product -> matches(normalizedIngredient, product))
-                .min(Comparator.comparing(this::discountedPrice, Comparator.nullsLast(Double::compareTo)))
-                .orElse(null);
-    }
-
-    private boolean matches(String ingredient, ProductCatalogItem product) {
-        String searchable = String.join(" ", nullToEmpty(product.name()), nullToEmpty(product.brand()),
-                nullToEmpty(product.category()), nullToEmpty(product.subCategory()), nullToEmpty(product.description()),
-                nullToEmpty(product.tags()), nullToEmpty(product.searchAliases()));
-        return normalize(searchable).contains(ingredient);
+        return ingredient != null && ingredient.canonicalName() != null && !ingredient.canonicalName().isBlank()
+                && ingredient.requiredAmount() != null && ingredient.requiredAmount() > 0 && ingredient.unit() != null
+                && ingredient.requirement() != null && ingredient.role() != null;
     }
 
     private Integer calculatePackagesRequired(IngredientSuggestion ingredient, ProductCatalogItem product) {
-        if (product == null || product.unitValue() == null || product.unitValue() <= 0) return null;
-        String recipeUnit = normalizeUnit(ingredient.unit());
+        if (product.unitValue() == null || product.unitValue() <= 0) return null;
         String packageUnit = normalizeUnit(product.unitType());
-        if (!sameUnitFamily(recipeUnit, packageUnit)) return null;
-        Double requiredBase = toBaseUnit(ingredient.requiredAmount(), recipeUnit);
+        if (!sameUnitFamily(ingredient.unit().label(), packageUnit)) return null;
+        Double requiredBase = toBaseUnit(ingredient.requiredAmount(), ingredient.unit().label());
         Double packageBase = toBaseUnit(product.unitValue(), packageUnit);
         if (requiredBase == null || packageBase == null) return null;
         return (int) Math.ceil(requiredBase / packageBase);
@@ -115,30 +108,11 @@ public class GroceryAssistantService {
         return (isWeight(first) && isWeight(second)) || (isVolume(first) && isVolume(second))
                 || ("unit".equals(first) && "unit".equals(second));
     }
-
-    private boolean isWeight(String unit) {
-        return "g".equals(unit) || "kg".equals(unit);
-    }
-
-    private boolean isVolume(String unit) {
-        return "ml".equals(unit) || "l".equals(unit);
-    }
-
+    private boolean isWeight(String unit) { return "g".equals(unit) || "kg".equals(unit); }
+    private boolean isVolume(String unit) { return "ml".equals(unit) || "l".equals(unit); }
     private Double discountedPrice(ProductCatalogItem product) {
-        if (product == null || product.price() == null) return null;
         int discount = product.discount() == null ? 0 : Math.max(0, Math.min(100, product.discount()));
         return roundMoney(product.price() * (100 - discount) / 100);
     }
-
-    private Double roundMoney(Double amount) {
-        return Math.round(amount * 100.0) / 100.0;
-    }
-
-    private String normalize(String value) {
-        return nullToEmpty(value).toLowerCase(Locale.ROOT).replaceAll("[^a-z0-9]", "");
-    }
-
-    private String nullToEmpty(String value) {
-        return value == null ? "" : value;
-    }
+    private Double roundMoney(Double amount) { return Math.round(amount * 100.0) / 100.0; }
 }

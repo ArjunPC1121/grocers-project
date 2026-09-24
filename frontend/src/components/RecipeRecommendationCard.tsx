@@ -26,6 +26,12 @@ export default function RecipeRecommendationCard({
   const packageLabel = recommendation.quantity
     ? `${recommendation.quantity} pack${recommendation.quantity === 1 ? "" : "s"}`
     : "Unavailable";
+  const unavailableMessage = ({
+    NO_CATALOG_MATCH: "This required ingredient is not currently listed in our catalogue.",
+    INCOMPATIBLE_UNIT: "A matching product is listed, but its pack cannot satisfy this recipe quantity.",
+    INACTIVE_PRODUCT: "A matching product is temporarily unavailable.",
+    INSUFFICIENT_STOCK: "A matching product does not have enough packs in stock right now.",
+  } as Record<string, string>)[recommendation.availabilityReason || ""] || "This required ingredient cannot be added right now.";
 
   return (
     <article
@@ -116,7 +122,7 @@ export default function RecipeRecommendationCard({
           ) : (
             <p className="mt-3 inline-flex items-center gap-1.5 text-sm font-medium text-red-700">
               <CircleAlert className="size-4" />
-              This required ingredient cannot be added right now.
+              {unavailableMessage}
             </p>
           )}
         </div>
