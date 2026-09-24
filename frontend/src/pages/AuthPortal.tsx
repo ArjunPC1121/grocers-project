@@ -22,7 +22,7 @@ export default function AuthPortal() {
   const returnTo = (location.state as { returnTo?: string } | null)?.returnTo;
   const update = (key: string, value: string) => setForm({ ...form, [key]: value });
   if (!role) return <main className="min-h-screen bg-app-cream p-6 flex-center">
-    <section className="w-full max-w-4xl"><p className="text-app-orange font-semibold">GROCERS</p><h1
+    <section className="w-full max-w-4xl"><button type="button" onClick={() => navigate("/")} className="mb-6 text-sm font-semibold text-app-orange transition hover:text-orange-600">← Back to Grocers</button><p className="text-app-orange font-semibold">GROCERS</p><h1
       className="mt-2 text-4xl font-serif">Choose your workspace</h1><p className="mt-3 text-app-text-light">One
       grocery platform, tailored for every role.</p>
       <div className="mt-8 grid gap-5 md:grid-cols-3">{roles.map(({ role: value, label, detail, icon: Icon }) =>
@@ -76,11 +76,11 @@ export default function AuthPortal() {
         await login(role, form.email || "", form.password || "", returnTo);
       }
     }} className="w-full max-w-md rounded-2xl bg-white p-8 shadow-sm border">
-      <button type="button" className="text-sm text-app-orange" onClick={() => setRole(null)}>← Change role
+      <button type="button" className="text-sm text-app-orange" onClick={() => { setRole(null); setRegistering(false); setForm({}); }}>← Back to workspace selection
       </button>
       <p className="mt-6 text-app-orange font-semibold">{role}</p><h1
         className="mt-1 text-3xl font-serif">{customerRegistration ? "Create your account" : "Sign in to Grocers"}</h1>{fields.map(([key, label]) =>
-        <label key={key} className="block mt-4 text-sm font-medium">{label}<input requiredminLength={key === "password" ? 8 : undefined}
+        <label key={key} className="block mt-4 text-sm font-medium">{label}<input required minLength={key === "password" ? 8 : undefined}
                 maxLength={key === "phoneNumber" ? 10 : undefined}
                 pattern={
                     key === "email"

@@ -135,6 +135,6 @@ p.font-mono.text-lg.font-bold.tracking-tight {
 }
 
 p.font-mono.text-lg.font-bold.tracking-tight::after {
-  content: "GROCERS//NEXUS";
+  content: "GROCERS";
   font-size: 1.125rem;
 }

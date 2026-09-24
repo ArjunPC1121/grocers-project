@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { NavLink, Outlet, useLocation, useNavigate } from "react-router-dom";
 import {
   BarChart3, Bell, ChevronDown, ChevronLeft, LayoutDashboard, LogOut, Menu,
-  Package, PackageSearch, Settings2, ShieldCheck, ShoppingBag, UserCircle, Users, X,
+  Package, PackageSearch, Settings2, ShieldCheck, ShoppingBag, ShoppingBasket, UserCircle, Users, X,
 } from "lucide-react";
 import { useAuth } from "../../context/AuthContext";
 
@@ -50,8 +50,8 @@ export default function AdminShellSlim() {
 
       <aside className={`fixed inset-y-0 left-0 z-40 flex flex-col border-r border-white/10 bg-[#13251a] text-white shadow-2xl transition-[width,transform] duration-300 ease-out ${collapsed ? "w-[76px]" : "w-[248px]"} ${mobileOpen ? "translate-x-0" : "-translate-x-full lg:translate-x-0"}`}>
         <div className={`flex h-[76px] items-center gap-3 border-b border-white/10 px-4 ${collapsed ? "justify-center" : ""}`}>
-          {!collapsed && <button onClick={() => go("/admin")} className="grid size-10 shrink-0 place-items-center rounded-xl bg-gradient-to-br from-[#ffb45c] to-[#f27621] text-lg font-black text-[#13251a] shadow-lg shadow-orange-950/20">G</button>}
-          {!collapsed && <div className="min-w-0 flex-1"><p className="truncate text-lg font-bold tracking-tight">Grocers</p><p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-white/40">Operations</p></div>}
+          {!collapsed && <button onClick={() => go("/admin")} aria-label="Grocers overview" className="grid size-10 shrink-0 place-items-center rounded-xl bg-gradient-to-br from-[#ffb45c] to-[#f27621] text-[#13251a] shadow-lg shadow-orange-950/20"><ShoppingBasket size={21} /></button>}
+          {!collapsed && <div className="min-w-0 flex-1"><p className="truncate text-lg font-bold tracking-tight">GROCERS</p><p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-white/40">Operations</p></div>}
           <button onClick={() => setCollapsed((value) => !value)} className="hidden size-8 place-items-center rounded-lg text-white/50 hover:bg-white/10 hover:text-white lg:grid" aria-label={collapsed ? "Expand sidebar" : "Collapse sidebar"}><ChevronLeft className={collapsed ? "rotate-180" : ""} size={17} /></button>
           <button onClick={() => setMobileOpen(false)} className="grid size-8 place-items-center rounded-lg text-white/60 hover:bg-white/10 lg:hidden" aria-label="Close sidebar"><X size={18} /></button>
         </div>
@@ -65,7 +65,7 @@ export default function AdminShellSlim() {
               </NavLink>
             ))}
           </div>
-          {collapsed && <button onClick={() => go("/admin")} title="Grocers overview" className="mt-auto grid size-10 self-center place-items-center rounded-xl bg-gradient-to-br from-[#ffb45c] to-[#f27621] text-lg font-black text-[#13251a] shadow-lg shadow-black/20">G</button>}
+          {collapsed && <button onClick={() => go("/admin")} title="Grocers overview" className="mt-auto grid size-10 self-center place-items-center rounded-xl bg-gradient-to-br from-[#ffb45c] to-[#f27621] text-[#13251a] shadow-lg shadow-black/20"><ShoppingBasket size={21} /></button>}
         </nav>
 
         <div className="border-t border-white/10 p-3">
