@@ -24,4 +24,8 @@ Port numbers for each service:
 8087: Tickets
 8088: Funds
 8089: Bank
+8090: Authentication
+8091: API Gateway
+8092: Recipe Planner Assistant
+8093: Grocers Help Assistant
 

@@ -54,6 +54,10 @@ spring:
               uri: http://localhost:8092
               predicates:
                 - Path=/grocers/api/assistant/**
+            - id: supportassistantapp
+              uri: http://localhost:8093
+              predicates:
+                - Path=/grocers/api/support-assistant/**
 
 server:
   port: 8091
