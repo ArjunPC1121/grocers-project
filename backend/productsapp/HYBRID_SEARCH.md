@@ -5,9 +5,7 @@
 The product search endpoint combines two ranking methods:
 
 1. **Lexical search** — exact and fuzzy text matches from Oracle Text plus product-field rules.
-2. **Semantic search** — meaning-based similarity calculated in the Spring Boot application.
-
-This design does not use Oracle `VECTOR` columns. It works with the `PRODUCT` table in the Oracle `SYSTEM` tablespace.
+2. **Semantic search** — meaning-based similarity calculated by Oracle AI Vector Search.
 
 ## Search flow
 
@@ -22,10 +20,10 @@ Normalize query + build a safe Oracle Text query
         +--> Oracle Text returns lexical scores for matching products
         |
         v
-Load active products and their RAW embeddings
+Oracle vector search retrieves a bounded semantic top-K
         |
         v
-Java calculates cosine similarity and combines lexical + semantic scores
+Java combines the bounded lexical and semantic scores
         |
         v
 Return the highest-ranked products
@@ -41,7 +39,7 @@ When a product is created or updated, `ProductServiceImpl` builds `searchText` f
 - aliases and tags
 - pack size
 
-The local `all-MiniLM-L6-v2` embedding model converts this text into a 384-element `float[]`. `FloatEmbeddingConverter` serializes it as 1,536 bytes and Hibernate stores it in `PRODUCT.TEXT_EMBEDDING` as `RAW(1536)`.
+The local `all-MiniLM-L6-v2` embedding model converts this text into a 384-element `float[]`. Hibernate Vector stores it in `PRODUCT.TEXT_EMBEDDING` as `VECTOR(384, FLOAT32)`.
 
 `SEARCH_TEXT` is stored as `VARCHAR2(4000)`, and the Oracle Text index below enables `CONTAINS` and `SCORE` queries:
 
@@ -75,10 +73,10 @@ The final lexical score is the higher of the normalized Oracle Text score and th
 
 ## Semantic ranking
 
-The same embedding model converts the search query into a 384-dimensional vector. For every active product with an embedding, the application calculates cosine similarity:
+The same embedding model converts the search query into a 384-dimensional vector. Oracle uses the vector index to retrieve only the nearest semantic candidates:
 
 ```text
-cosine similarity = dot(query, product) / (|query| × |product|)
+semantic score = 1 - VECTOR_DISTANCE(product, query, COSINE)
 ```
 
 Scores are clamped to the `0–1` range. Semantic-only results below `product.search.minimum-semantic-score` (default `0.15`) are excluded to avoid returning unrelated products for a no-match query.
@@ -102,12 +100,12 @@ Results are sorted by final score, lexical score, semantic score, product name, 
 product.search.embedding-dimensions=384
 product.search.embedding-model=all-MiniLM-L6-v2
 product.search.text-candidate-limit=150
+product.search.semantic-candidate-limit=150
 product.search.max-results=50
+product.catalog.max-results=500
 product.search.minimum-semantic-score=0.15
 ```
 
 Increase `minimum-semantic-score` to reduce weak semantic matches; lower it only if valid related products are being omitted.
 
-## Limitation
-
-Oracle ranks text matches, but semantic ranking currently loads every active product embedding and calculates cosine similarity in Java. This is suitable for a small-to-medium grocery catalog. For a very large catalog, move semantic candidate retrieval to a dedicated vector database or an ASSM Oracle tablespace that supports `VECTOR` columns.
+Both lexical and semantic candidate sets are bounded before product rows are returned to the application. Catalogue projections also exclude `SEARCH_TEXT`, `TEXT_EMBEDDING`, and embedding metadata.

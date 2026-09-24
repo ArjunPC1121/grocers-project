@@ -7,10 +7,12 @@ import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 import org.springframework.util.StringUtils;
 
 import com.oracle.productsapp.dtos.ProductRequest;
+import com.oracle.productsapp.dtos.ProductResponse;
 import com.oracle.productsapp.dtos.ProductSearchResult;
 import com.oracle.productsapp.entities.Product;
 import com.oracle.productsapp.entities.ProductCategory;
@@ -38,8 +40,14 @@ public class ProductServiceImpl implements ProductService {
     @Value("${product.search.text-candidate-limit:150}")
     private int textCandidateLimit;
 
+    @Value("${product.search.semantic-candidate-limit:150}")
+    private int semanticCandidateLimit;
+
     @Value("${product.search.max-results:50}")
     private int maxSearchResults;
+
+    @Value("${product.catalog.max-results:500}")
+    private int maxCatalogResults;
 
     @Value("${product.search.minimum-semantic-score:0.15}")
     private float minimumSemanticScore;
@@ -60,13 +68,19 @@ public class ProductServiceImpl implements ProductService {
     }
 
     @Override
-    public List<Product> getAll() {
-        return productRepository.findAll();
+    public List<ProductResponse> getAll(int limit) {
+        return productRepository.findCatalog(catalogPage(limit));
     }
 
     @Override
-    public List<Product> getActiveByCategory(ProductCategory category) {
-        return productRepository.findByCategoryAndActiveTrueOrderByNameAsc(category);
+    public List<ProductResponse> getActiveByCategory(ProductCategory category, int limit) {
+        return productRepository.findActiveCatalogByCategory(category, catalogPage(limit));
+    }
+
+    @Override
+    public ProductResponse getPublicById(Integer id) {
+        return productRepository.findPublicById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Product not found: " + id));
     }
 
     @Override
@@ -175,14 +189,14 @@ public class ProductServiceImpl implements ProductService {
         return searchRepository.findActiveSearchCandidates(
                         oracleTextQuery,
                         textCandidateLimit,
-                        searchQuery.allowSemanticSearch()
+                        queryEmbedding,
+                        semanticCandidateLimit
                 )
                 .stream()
                 .map(candidate -> hybridSearchScorer.score(
                         candidate,
                         searchQuery.normalizedQuery().toLowerCase(Locale.ROOT),
                         searchQuery.tokens(),
-                        queryEmbedding,
                         searchQuery.allowFuzzySearch()
                 ))
                 .filter(result -> result.lexicalScore().signum() > 0
@@ -198,6 +212,11 @@ public class ProductServiceImpl implements ProductService {
                         .thenComparing(ProductSearchResult::id))
                 .limit(safeLimit)
                 .toList();
+    }
+
+    private PageRequest catalogPage(int requestedLimit) {
+        int safeLimit = Math.max(1, Math.min(requestedLimit, maxCatalogResults));
+        return PageRequest.of(0, safeLimit);
     }
 
     private void populateEmbedding(Product product) {

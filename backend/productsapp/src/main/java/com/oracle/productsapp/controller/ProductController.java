@@ -4,6 +4,7 @@ import java.util.List;
 import java.util.Map;
 
 import com.oracle.productsapp.dtos.ImageUploadResponse;
+import com.oracle.productsapp.dtos.ProductResponse;
 import com.oracle.productsapp.dtos.UploadedImageResponse;
 import com.oracle.productsapp.dtos.ProductSearchResult;
 import com.oracle.productsapp.dtos.QuantityRequest;
@@ -36,12 +37,13 @@ public class ProductController {
     }
 
     @GetMapping
-    public List<Product> getAll(
-            @RequestParam(required = false) String category
+    public List<ProductResponse> getAll(
+            @RequestParam(required = false) String category,
+            @RequestParam(defaultValue = "200") int limit
     ) {
         return category == null || category.isBlank()
-                ? productService.getAll()
-                : productService.getActiveByCategory(ProductCategory.from(category));
+                ? productService.getAll(limit)
+                : productService.getActiveByCategory(ProductCategory.from(category), limit);
     }
 
     /*
@@ -56,8 +58,8 @@ public class ProductController {
     }
 
     @GetMapping("/{id}")
-    public Product getById(@PathVariable Integer id) {
-        return productService.getById(id);
+    public ProductResponse getById(@PathVariable Integer id) {
+        return productService.getPublicById(id);
     }
     @PutMapping("/{id}")
     public Product update(@PathVariable Integer id, @Valid @RequestBody ProductRequest request) {

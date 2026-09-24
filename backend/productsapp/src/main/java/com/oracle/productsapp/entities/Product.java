@@ -2,12 +2,11 @@ package com.oracle.productsapp.entities;
 
 import java.time.LocalDateTime;
 
+import org.hibernate.annotations.Array;
 import org.hibernate.annotations.JdbcTypeCode;
 import org.hibernate.type.SqlTypes;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
-import com.oracle.productsapp.converters.FloatEmbeddingConverter;
-
 import jakarta.persistence.Column;
 import jakarta.persistence.Convert;
 import jakarta.persistence.Entity;
@@ -96,12 +95,12 @@ public class Product {
     @Column(name = "search_text", length = 4000)
     private String searchText;
 
-    // 384 FLOAT32 values consume 1,536 bytes. RAW avoids both VECTOR and LOB
-    // storage restrictions in the SYSTEM tablespace.
+    // Native Oracle vector storage allows the database to perform bounded
+    // nearest-neighbour search instead of returning every embedding to Java.
     @JsonIgnore
-    @Convert(converter = FloatEmbeddingConverter.class)
-    @JdbcTypeCode(SqlTypes.VARBINARY)
-    @Column(name = "text_embedding", length = 1536)
+    @JdbcTypeCode(SqlTypes.VECTOR_FLOAT32)
+    @Array(length = 384)
+    @Column(name = "text_embedding")
     private float[] textEmbedding;
 
     @JsonIgnore

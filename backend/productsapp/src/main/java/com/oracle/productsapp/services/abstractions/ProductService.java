@@ -3,6 +3,7 @@ package com.oracle.productsapp.services.abstractions;
 import java.util.List;
 
 import com.oracle.productsapp.dtos.ProductRequest;
+import com.oracle.productsapp.dtos.ProductResponse;
 import com.oracle.productsapp.dtos.ProductSearchResult;
 import com.oracle.productsapp.entities.Product;
 import com.oracle.productsapp.entities.ProductCategory;
@@ -12,9 +13,11 @@ public interface ProductService {
 
     Product create(ProductRequest request);
 
-    List<Product> getAll();
+    List<ProductResponse> getAll(int limit);
 
-    List<Product> getActiveByCategory(ProductCategory category);
+    List<ProductResponse> getActiveByCategory(ProductCategory category, int limit);
+
+    ProductResponse getPublicById(Integer id);
 
     Product getById(Integer id);
 

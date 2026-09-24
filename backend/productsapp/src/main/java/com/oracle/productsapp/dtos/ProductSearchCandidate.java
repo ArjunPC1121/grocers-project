@@ -2,7 +2,7 @@ package com.oracle.productsapp.dtos;
 
 import java.math.BigDecimal;
 
-/** Internal projection used for application-side semantic ranking. */
+/** Internal projection combining Oracle Text and database vector scores. */
 public record ProductSearchCandidate(
         Integer id,
         String name,
@@ -16,6 +16,6 @@ public record ProductSearchCandidate(
         Integer quantity,
         String searchAliases,
         String tags,
-        float[] embedding,
-        BigDecimal oracleTextScore
+        BigDecimal oracleTextScore,
+        BigDecimal oracleSemanticScore
 ) {}

@@ -26,12 +26,12 @@ class ProductSearchQueryAnalyzerTest {
     void doesNotTreatAnUnrelatedFuzzyCandidateAsALexicalMatch() {
         ProductSearchCandidate milk = new ProductSearchCandidate(
                 1, "Milk", null, "Dairy", null, null, null, 1D, 0, 1,
-                null, null, new float[] { 1F }, BigDecimal.valueOf(90)
+                null, null, BigDecimal.valueOf(90), null
         );
 
         assertTrue(analyzer.analyze("jislwl").allowFuzzySearch());
         assertTrue(new HybridProductSearchScorer()
-                .score(milk, "jislwl", java.util.List.of("jislwl"), null, true)
+                .score(milk, "jislwl", java.util.List.of("jislwl"), true)
                 .lexicalScore().signum() == 0);
     }
 

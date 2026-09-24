@@ -16,12 +16,11 @@ public class HybridProductSearchScorer {
             ProductSearchCandidate candidate,
             String normalizedQuery,
             List<String> queryTokens,
-            float[] queryEmbedding,
             boolean fuzzySearchEnabled
     ) {
-        float semanticScore = queryEmbedding == null
+        float semanticScore = candidate.oracleSemanticScore() == null
                 ? 0
-                : cosineSimilarity(queryEmbedding, candidate.embedding());
+                : clamp(candidate.oracleSemanticScore().floatValue());
         float structuredScore = structuredLexicalScore(candidate, normalizedQuery);
         structuredScore = Math.max(
                 structuredScore,
@@ -155,27 +154,6 @@ public class HybridProductSearchScorer {
             current = new int[right.length() + 1];
         }
         return previous[right.length()];
-    }
-
-    private float cosineSimilarity(float[] query, float[] candidate) {
-        if (candidate == null || query.length != candidate.length) {
-            return 0;
-        }
-
-        double dotProduct = 0;
-        double queryMagnitude = 0;
-        double candidateMagnitude = 0;
-        for (int index = 0; index < query.length; index++) {
-            dotProduct += query[index] * candidate[index];
-            queryMagnitude += query[index] * query[index];
-            candidateMagnitude += candidate[index] * candidate[index];
-        }
-
-        if (queryMagnitude == 0 || candidateMagnitude == 0) {
-            return 0;
-        }
-
-        return clamp((float) (dotProduct / Math.sqrt(queryMagnitude * candidateMagnitude)));
     }
 
     private boolean containsCommaSeparated(String value, String query) {
