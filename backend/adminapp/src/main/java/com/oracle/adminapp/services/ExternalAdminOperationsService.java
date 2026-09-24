@@ -203,6 +203,8 @@ public class ExternalAdminOperationsService {
         requestRows.forEach(request -> requestStatuses.merge(text(request.get("status")).toUpperCase(), 1, Integer::sum));
         Map<Integer, Map<String, Object>> usersById = new java.util.HashMap<>();
         userRows.forEach(user -> usersById.put(number(user.get("id")).intValue(), user));
+        Map<Integer, Map<String, Object>> employeesById = new java.util.HashMap<>();
+        employeeRows.forEach(employee -> employeesById.put(number(employee.get("id")).intValue(), employee));
         List<Map<String, Object>> recentOrders = orderRows.stream()
                 .sorted(Comparator.comparing(order -> text(order.get("orderedAt")), Comparator.reverseOrder()))
                 .limit(5)
@@ -211,6 +213,8 @@ public class ExternalAdminOperationsService {
         List<Map<String, Object>> recentRequests = requestRows.stream()
                 .sorted(Comparator.comparing(request -> requestSortValue(request), Comparator.reverseOrder()))
                 .limit(4)
+                .map(request -> enrichRequest(request,
+                        employeesById.get(number(request.get("employeeId")).intValue())))
                 .toList();
 
         return new DashboardResponse(productRows.size(), userRows.size(), inventoryUnits, inventoryValue,
@@ -225,6 +229,15 @@ public class ExternalAdminOperationsService {
             String name = (text(user.get("firstName")) + " " + text(user.get("lastName"))).trim();
             enriched.put("customerName", name.isBlank() ? "Customer" : name);
             enriched.put("customerEmail", text(user.get("email")));
+        }
+        return enriched;
+    }
+
+    private Map<String, Object> enrichRequest(Map<String, Object> request, Map<String, Object> employee) {
+        Map<String, Object> enriched = new LinkedHashMap<>(request);
+        if (employee != null) {
+            String name = (text(employee.get("firstName")) + " " + text(employee.get("lastName"))).trim();
+            enriched.put("employeeName", name.isBlank() ? "Employee" : name);
         }
         return enriched;
     }
