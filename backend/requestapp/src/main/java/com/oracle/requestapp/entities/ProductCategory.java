@@ -1,11 +1,11 @@
 package com.oracle.requestapp.entities;
 
-import com.fasterxml.jackson.annotation.JsonCreator;
-import com.fasterxml.jackson.annotation.JsonValue;
-
 import java.util.Arrays;
 import java.util.Locale;
 import java.util.Map;
+
+import com.fasterxml.jackson.annotation.JsonCreator;
+import com.fasterxml.jackson.annotation.JsonValue;
 
 /** Mirrors the fixed catalogue categories accepted by productsapp. */
 public enum ProductCategory {
