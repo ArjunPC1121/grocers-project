@@ -72,6 +72,20 @@ class GroceryAssistantServiceTests {
         assertNull(recommendation.lineTotal());
     }
 
+    @Test
+    void listsAvailableProductsBeforeRequiredOutOfStockProducts() {
+        GeminiIngredientClient gemini = (request, catalogue) -> plan("paneer curry",
+                ingredient("tomato puree", List.of("tomato paste"), 200.0, IngredientUnit.G, IngredientRequirement.REQUIRED, IngredientRole.SAUCE),
+                ingredient("paneer", List.of("cottage cheese"), 400.0, IngredientUnit.G, IngredientRequirement.REQUIRED, IngredientRole.DAIRY));
+        ProductCatalogClient catalogue = () -> List.of(product(1, "Fresh Paneer", 400.0, "g", 100.0, 0, 3, true));
+
+        List<RecommendedProduct> recommendations = service(gemini, catalogue)
+                .recommend(new AssistantRequest("Paneer curry", null, 2)).recommendedProducts();
+
+        assertEquals(List.of("paneer", "tomato puree"), recommendations.stream().map(RecommendedProduct::ingredient).toList());
+        assertEquals(List.of("IN_STOCK", "OUT_OF_STOCK"), recommendations.stream().map(RecommendedProduct::status).toList());
+    }
+
     private GroceryAssistantService service(GeminiIngredientClient gemini, ProductCatalogClient catalogue) {
         return new GroceryAssistantService(gemini, catalogue, new CatalogueIngredientMatcher());
     }

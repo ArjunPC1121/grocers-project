@@ -336,21 +336,6 @@ All routes require `ADMIN`.
 | POST | `/banks/{userId}/deduct` | Auth | Deduct bank funds; body `{ "amount" }`. |
 | POST | `/assistant/recommendations` | USER | Create grocery recommendation. |
 
-```json
-// assistant request
-{ "message": "vegetable pasta", "servings": 4, "budget": 500.0 }
-
-// response, abridged
-{
-  "dish": "...", "summary": "...", "total": 0, "budget": 500.0,
-  "withinBudget": true,
-  "recommendedProducts": [{
-    "productId": 1, "productName": "...", "ingredient": "...",
-    "requiredAmount": 1, "requiredUnit": "kg", "quantity": 1,
-    "unitPrice": 0, "lineTotal": 0, "status": "IN_STOCK"
-  }]
-}
-```
 
 The gateway exposes `/funds/**` at port 8088. No HTTP controller was found for FundsApp in the current source tree, so no implemented Funds API contract is documented here.
 
@@ -420,7 +405,3 @@ Tests exist for selected services, including assistant and request flows plus ap
 - Keep secrets out of documentation, commits, logs, and examples.
 - Prefer gateway URLs in frontend code and user-facing documentation.
 - Record role requirements and public/internal status for every new route.
-
-## License
-
-No project license file is currently present. Add a `LICENSE` file before publishing or redistributing the project.

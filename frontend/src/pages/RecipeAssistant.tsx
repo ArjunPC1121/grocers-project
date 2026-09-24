@@ -39,16 +39,25 @@ export default function RecipeAssistant() {
     }
   }, [prefilledRecipe]);
 
+  // Do not mutate the API response. This protects the display order if a user is
+  // temporarily using an older Assistant App deployment without backend sorting.
+  const displayedItems = useMemo(
+    () => [...(recommendation?.recommendedProducts || [])].sort(
+      (left, right) => Number(left.status !== "IN_STOCK") - Number(right.status !== "IN_STOCK"),
+    ),
+    [recommendation],
+  );
+
   const availableItems = useMemo(
     () =>
-      (recommendation?.recommendedProducts || []).filter(
+      displayedItems.filter(
         (item): item is RecommendedProductResponse & { productId: number; quantity: number } =>
           item.status === "IN_STOCK"
           && item.productId !== null
           && item.quantity !== null
           && productsById.has(String(item.productId)),
       ),
-    [productsById, recommendation],
+    [displayedItems, productsById],
   );
 
   const submit = async (event: FormEvent<HTMLFormElement>) => {
@@ -235,7 +244,7 @@ export default function RecipeAssistant() {
             </div>
 
             <div className="mt-5 space-y-3">
-              {recommendation.recommendedProducts.map((item, index) => (
+              {displayedItems.map((item, index) => (
                 <RecipeRecommendationCard
                   key={`${item.productId ?? item.ingredient}-${index}`}
                   recommendation={item}

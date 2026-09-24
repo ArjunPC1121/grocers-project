@@ -5,6 +5,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.List;
 import java.util.Locale;
 import java.util.Objects;
@@ -53,6 +54,8 @@ public class GroceryAssistantService {
                         roundMoney(unitPrice * packagesRequired), "IN_STOCK", "IN_STOCK"));
             }
         }
+        // List.sort is stable, so recipe order is retained within each availability group.
+        recommendations.sort(Comparator.comparing(product -> "IN_STOCK".equals(product.status()) ? 0 : 1));
         Double total = roundMoney(recommendations.stream().filter(product -> "IN_STOCK".equals(product.status()))
                 .map(RecommendedProduct::lineTotal).filter(Objects::nonNull).mapToDouble(Double::doubleValue).sum());
         Boolean withinBudget = request.budget() == null ? null : total <= request.budget();
