@@ -9,7 +9,7 @@ import ProductCard from "../components/ProductCard";
 import Loading from "../components/Loading";
 import FilterPanel from "../components/FilterPanel";
 import { errorMessage } from "../config/api";
-import { getProducts, normalizedCategorySlug } from "../config/ProductApi";
+import { normalizedCategorySlug, preloadProductsByCategory } from "../config/ProductApi";
 
 const Products = () => {
   const [searchParams, setSearchParams] = useSearchParams();
@@ -27,7 +27,7 @@ const Products = () => {
   const fetchProducts = async () => {
     setLoading(true);
     try {
-      setProducts(await getProducts());
+      setProducts(await preloadProductsByCategory(categoriesData.map(({ name }) => name)));
     } catch (error) {
       setProducts([]);
       toast.error(errorMessage(error, "Unable to load products."));

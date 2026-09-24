@@ -1,5 +1,6 @@
 package com.oracle.productsapp.dtos;
 
+import com.oracle.productsapp.entities.ProductCategory;
 import jakarta.validation.constraints.Max;
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotBlank;
@@ -17,8 +18,8 @@ public record ProductRequest(
         @Size(max = 100)
         String brand,
 
-        @Size(max = 100)
-        String category,
+        @NotNull
+        ProductCategory category,
 
         @Size(max = 100)
         String subCategory,

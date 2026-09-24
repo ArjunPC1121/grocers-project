@@ -38,6 +38,7 @@ public class ProductSearchRepository {
         LEFT JOIN text_ranked tr ON tr.id = p.id
         WHERE p.active = TRUE
           AND p.text_embedding IS NOT NULL
+          AND (:includeSemanticCandidates = TRUE OR tr.id IS NOT NULL)
         """;
 
     private static final RowMapper<ProductSearchCandidate> ROW_MAPPER =
@@ -56,11 +57,13 @@ public class ProductSearchRepository {
 
     public List<ProductSearchCandidate> findActiveSearchCandidates(
             String oracleTextQuery,
-            int textCandidateLimit
+            int textCandidateLimit,
+            boolean includeSemanticCandidates
     ) {
         MapSqlParameterSource parameters = new MapSqlParameterSource()
                 .addValue("oracleTextQuery", oracleTextQuery)
-                .addValue("textCandidateLimit", textCandidateLimit);
+                .addValue("textCandidateLimit", textCandidateLimit)
+                .addValue("includeSemanticCandidates", includeSemanticCandidates);
 
         return jdbcTemplate.query(CANDIDATES_SQL, parameters, ROW_MAPPER);
     }

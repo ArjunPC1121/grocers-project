@@ -1,0 +1,105 @@
+package com.oracle.productsapp.entities;
+
+import com.fasterxml.jackson.annotation.JsonCreator;
+import com.fasterxml.jackson.annotation.JsonValue;
+
+import java.util.Arrays;
+import java.util.Locale;
+import java.util.Map;
+
+/**
+ * The catalogue's fixed top-level categories.  The display names deliberately
+ * match the category navigation in the web client.
+ */
+public enum ProductCategory {
+    FRUITS_AND_VEGETABLES("Fruits & Vegetables"),
+    PERSONAL_CARE("Personal Care"),
+    PANTRY_STAPLES("Pantry Staples"),
+    BAKERY("Bakery"),
+    BEVERAGES("Beverages"),
+    MEAT_AND_SEAFOOD("Meat & Seafood"),
+    SNACKS("Snacks"),
+    FROZEN_FOODS("Frozen Foods"),
+    BABY_CARE("Baby Care"),
+    DAIRY_AND_EGGS("Dairy & Eggs");
+
+    private final String displayName;
+
+    /* Categories used by the catalogue before the fixed category enum. */
+    private static final Map<String, ProductCategory> LEGACY_ALIASES = Map.ofEntries(
+            Map.entry("fruit", FRUITS_AND_VEGETABLES),
+            Map.entry("fruits", FRUITS_AND_VEGETABLES),
+            Map.entry("vegetable", FRUITS_AND_VEGETABLES),
+            Map.entry("vegetables", FRUITS_AND_VEGETABLES),
+            Map.entry("produce", FRUITS_AND_VEGETABLES),
+            Map.entry("dairy", DAIRY_AND_EGGS),
+            Map.entry("eggs", DAIRY_AND_EGGS),
+            Map.entry("meat", MEAT_AND_SEAFOOD),
+            Map.entry("seafood", MEAT_AND_SEAFOOD),
+            Map.entry("drinks", BEVERAGES),
+            Map.entry("beverage", BEVERAGES),
+            Map.entry("frozen", FROZEN_FOODS),
+            Map.entry("pantry", PANTRY_STAPLES),
+            Map.entry("oil", PANTRY_STAPLES),
+            Map.entry("oils", PANTRY_STAPLES),
+            Map.entry("cooking oil", PANTRY_STAPLES),
+            Map.entry("cooking oils", PANTRY_STAPLES),
+            Map.entry("sauce", PANTRY_STAPLES),
+            Map.entry("sauces", PANTRY_STAPLES),
+            Map.entry("condiment", PANTRY_STAPLES),
+            Map.entry("condiments", PANTRY_STAPLES),
+            Map.entry("personal", PERSONAL_CARE),
+            Map.entry("baby", BABY_CARE)
+    );
+
+    ProductCategory(String displayName) {
+        this.displayName = displayName;
+    }
+
+    @JsonValue
+    public String getDisplayName() {
+        return displayName;
+    }
+
+    @JsonCreator
+    public static ProductCategory from(String value) {
+        if (value == null || value.isBlank()) {
+            return null;
+        }
+
+        String normalized = normalize(value);
+        ProductCategory legacyCategory = LEGACY_ALIASES.get(normalized);
+        if (legacyCategory != null) {
+            return legacyCategory;
+        }
+
+        return Arrays.stream(values())
+                .filter(category -> normalize(category.name()).equals(normalized)
+                        || normalize(category.displayName).equals(normalized)
+                        || normalize(category.name()).replace("and", "").equals(normalized)
+                        || normalize(category.displayName).replace("and", "").equals(normalized))
+                .findFirst()
+                .orElseThrow(() -> new IllegalArgumentException(
+                        "Unsupported category: " + value));
+    }
+
+    static ProductCategory fromDatabaseValue(String value) {
+        if (value == null || value.isBlank()) {
+            return null;
+        }
+        try {
+            return from(value);
+        } catch (IllegalArgumentException exception) {
+            // A historic free-text value must not prevent the entire catalogue
+            // from loading. New API input remains strictly validated by from().
+            return PANTRY_STAPLES;
+        }
+    }
+
+    private static String normalize(String value) {
+        return value.toLowerCase(Locale.ROOT)
+                .replace("&", "and")
+                .replaceAll("[^a-z0-9]+", "")
+                .trim();
+    }
+}

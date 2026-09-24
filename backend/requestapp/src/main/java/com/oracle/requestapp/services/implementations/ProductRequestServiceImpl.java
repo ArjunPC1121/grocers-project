@@ -37,7 +37,7 @@ public class ProductRequestServiceImpl implements ProductRequestService {
     public ProductRequestResponse create(Integer employeeId, CreateProductRequest request) {
         validateCreateRequest(request);
         ProductRequest productRequest = new ProductRequest(employeeId, request.productId(), request.action(),
-                request.name(), request.brand(), request.category(), request.subCategory(), request.price(),
+                request.name(), request.brand(), request.category() == null ? null : request.category().getDisplayName(), request.subCategory(), request.price(),
                 request.quantity(), request.discount(), request.description(), request.tags(), request.searchAliases(),
                 request.unitValue(), request.unitType(), request.active(), request.imageUrl(), request.imageFileName(),
                 request.reason(), request.previousValues());
@@ -167,9 +167,9 @@ public class ProductRequestServiceImpl implements ProductRequestService {
 
     private void requireProductDetails(CreateProductRequest request) {
         if (request.name() == null || request.name().isBlank() || request.price() == null
-                || request.quantity() == null || request.discount() == null || request.imageUrl() == null
+                || request.category() == null || request.quantity() == null || request.discount() == null || request.imageUrl() == null
                 || request.imageUrl().isBlank()) {
-            throw new IllegalArgumentException("CREATE requires name, price, quantity, discount, and an image");
+            throw new IllegalArgumentException("CREATE requires name, category, price, quantity, discount, and an image");
         }
     }
 

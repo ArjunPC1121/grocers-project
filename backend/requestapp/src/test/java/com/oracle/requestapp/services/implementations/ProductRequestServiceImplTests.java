@@ -3,6 +3,7 @@ package com.oracle.requestapp.services.implementations;
 import com.oracle.requestapp.dto.CreateProductRequest;
 import com.oracle.requestapp.dto.UpdateRequestStatus;
 import com.oracle.requestapp.entities.ProductRequest;
+import com.oracle.requestapp.entities.ProductCategory;
 import com.oracle.requestapp.entities.RequestAction;
 import com.oracle.requestapp.entities.RequestStatus;
 import com.oracle.requestapp.exceptions.InvalidRequestStateException;
@@ -26,7 +27,7 @@ class ProductRequestServiceImplTests {
         when(repository.save(any(ProductRequest.class))).thenAnswer(invocation -> invocation.getArgument(0));
 
         var response = service.create(7, new CreateProductRequest(
-                RequestAction.CREATE, null, "Rice", "Seed Brand", "Grains", "Rice",
+                RequestAction.CREATE, null, "Rice", "Seed Brand", ProductCategory.PANTRY_STAPLES, "Rice",
                 new BigDecimal("250.00"), 20, 5, "New item", "rice, grain", "basmati rice",
                 1.0, "kg", true, "data:image/png;base64,aGVsbG8=", "rice.png",
                 "New product request", null));

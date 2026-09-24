@@ -13,6 +13,7 @@ import org.springframework.util.StringUtils;
 import com.oracle.productsapp.dtos.ProductRequest;
 import com.oracle.productsapp.dtos.ProductSearchResult;
 import com.oracle.productsapp.entities.Product;
+import com.oracle.productsapp.entities.ProductCategory;
 import com.oracle.productsapp.exceptions.ResourceNotFoundException;
 import com.oracle.productsapp.repository.ProductRepository;
 import com.oracle.productsapp.repository.ProductSearchRepository;
@@ -32,15 +33,7 @@ public class ProductServiceImpl implements ProductService {
     private final ProductEmbeddingService productEmbeddingService;
     private final ProductSearchRepository searchRepository;
     private final HybridProductSearchScorer hybridSearchScorer;
-    private static final Pattern SEARCH_TOKEN_PATTERN =
-        Pattern.compile("[\\p{L}\\p{N}]+");
-
-    /* Oracle Text parses these words as operators, not searchable terms. */
-    private static final Set<String> ORACLE_TEXT_OPERATORS = Set.of(
-            "and", "or", "not", "about", "accum", "minus", "near",
-            "fuzzy", "within", "sentence", "paragraph", "section",
-            "zone", "path", "inpath", "haspath", "equiv", "stem", "thes"
-    );
+    private final ProductSearchQueryAnalyzer searchQueryAnalyzer;
 
     @Value("${product.search.text-candidate-limit:150}")
     private int textCandidateLimit;
@@ -69,6 +62,11 @@ public class ProductServiceImpl implements ProductService {
     @Override
     public List<Product> getAll() {
         return productRepository.findAll();
+    }
+
+    @Override
+    public List<Product> getActiveByCategory(ProductCategory category) {
+        return productRepository.findByCategoryAndActiveTrueOrderByNameAsc(category);
     }
 
     @Override
@@ -164,27 +162,34 @@ public class ProductServiceImpl implements ProductService {
                 Math.min(limit, maxSearchResults)
         );
 
-        String oracleTextQuery =
-        buildOracleTextQuery(cleanedQuery);
+        ProductSearchQuery searchQuery = searchQueryAnalyzer.analyze(cleanedQuery);
+        String oracleTextQuery = buildOracleTextQuery(searchQuery);
+        if (searchQuery.tokens().isEmpty()) {
+            throw new IllegalArgumentException("Search query must contain letters or numbers");
+        }
 
-        float[] queryEmbedding =
-                productEmbeddingService.embed(cleanedQuery);
-
-        String normalizedQuery = cleanedQuery.toLowerCase(Locale.ROOT);
+        float[] queryEmbedding = searchQuery.allowSemanticSearch()
+                ? productEmbeddingService.embed(searchQuery.normalizedQuery())
+                : null;
 
         return searchRepository.findActiveSearchCandidates(
                         oracleTextQuery,
-                        textCandidateLimit
+                        textCandidateLimit,
+                        searchQuery.allowSemanticSearch()
                 )
                 .stream()
                 .map(candidate -> hybridSearchScorer.score(
                         candidate,
-                        normalizedQuery,
-                        queryEmbedding
+                        searchQuery.normalizedQuery().toLowerCase(Locale.ROOT),
+                        searchQuery.tokens(),
+                        queryEmbedding,
+                        searchQuery.allowFuzzySearch()
                 ))
                 .filter(result -> result.lexicalScore().signum() > 0
-                        || result.semanticScore().floatValue()
+                        || (searchQuery.allowSemanticSearch()
+                                && result.semanticScore().floatValue()
                                 >= minimumSemanticScore)
+                        )
                 .sorted(Comparator
                         .comparing(ProductSearchResult::finalScore).reversed()
                         .thenComparing(ProductSearchResult::lexicalScore, Comparator.reverseOrder())
@@ -209,7 +214,7 @@ public class ProductServiceImpl implements ProductService {
     ) {
         product.setName(request.name().trim());
         product.setBrand(trimToNull(request.brand()));
-        product.setCategory(trimToNull(request.category()));
+        product.setCategory(request.category());
         product.setSubCategory(
                 trimToNull(request.subCategory())
         );
@@ -241,36 +246,15 @@ public class ProductServiceImpl implements ProductService {
         );
     }
 
-    private String buildOracleTextQuery(String query) {
-        Matcher matcher =
-                SEARCH_TOKEN_PATTERN.matcher(
-                        query.toLowerCase(Locale.ROOT)
-                );
+    private String buildOracleTextQuery(ProductSearchQuery query) {
+        List<String> tokens = query.tokens();
+        String exactTerms = tokens.stream()
+                .map(this::termWithSimplePluralVariant)
+                .collect(Collectors.joining(" AND "));
 
-        List<String> tokens = new ArrayList<>();
-
-        while (matcher.find()) {
-                String token = matcher.group();
-
-                if (token.length() >= 2
-                        && !ORACLE_TEXT_OPERATORS.contains(token)) {
-                    tokens.add(token);
-                }
+        if (!query.allowFuzzySearch()) {
+            return exactTerms;
         }
-
-        tokens = tokens.stream()
-                .distinct()
-                .limit(12)
-                .toList();
-
-        if (tokens.isEmpty()) {
-                throw new IllegalArgumentException(
-                        "Search query must contain letters or numbers"
-                );
-        }
-
-        String exactTerms =
-                String.join(" AND ", tokens);
 
         String fuzzyTerms = tokens.stream()
                 .map(token ->
@@ -287,12 +271,22 @@ public class ProductServiceImpl implements ProductService {
                 + ")";
         }
 
+    private String termWithSimplePluralVariant(String token) {
+        if (!token.chars().allMatch(Character::isLetter) || token.length() < 3) {
+            return token;
+        }
+        String alternate = token.endsWith("s")
+                ? token.substring(0, token.length() - 1)
+                : token + "s";
+        return "(" + token + " OR " + alternate + ")";
+    }
+
     private String buildSearchText(Product product) {
         StringBuilder text = new StringBuilder();
 
         append(text, "Product", product.getName());
         append(text, "Brand", product.getBrand());
-        append(text, "Category", product.getCategory());
+        append(text, "Category", product.getCategory().getDisplayName());
         append(
                 text,
                 "Subcategory",

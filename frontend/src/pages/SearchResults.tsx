@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Link, useSearchParams } from "react-router-dom";
+import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { Home, Search } from "lucide-react";
 import toast from "react-hot-toast";
 
@@ -7,12 +7,13 @@ import type { Product } from "../types";
 import Loading from "../components/Loading";
 import ProductCard from "../components/ProductCard";
 import { errorMessage } from "../config/api";
-import { searchProducts } from "../config/ProductApi";
+import { categorySlugForExactSearch, searchProducts } from "../config/ProductApi";
 
 const SearchResults = () => {
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchParams] = useSearchParams();
+  const navigate = useNavigate();
   const query = searchParams.get("q") || "";
 
   useEffect(() => {
@@ -20,6 +21,14 @@ const SearchResults = () => {
 
     const runSearch = async () => {
       const normalizedQuery = query.trim();
+
+      const categorySlug = categorySlugForExactSearch(normalizedQuery);
+      if (categorySlug) {
+        navigate(`/products?category=${encodeURIComponent(categorySlug)}`, {
+          replace: true,
+        });
+        return;
+      }
 
       if (!normalizedQuery) {
         setProducts([]);
@@ -45,7 +54,7 @@ const SearchResults = () => {
     return () => {
       cancelled = true;
     };
-  }, [query]);
+  }, [navigate, query]);
 
   return (
     <div className="min-h-screen bg-app-cream">

@@ -26,7 +26,12 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 @AllArgsConstructor
 @Entity
-@Table(name = "product")
+@Table(name = "product", indexes = {
+        @jakarta.persistence.Index(
+                name = "product_category_active_name_idx",
+                columnList = "category, active, name"
+        )
+})
 public class Product {
 
     @Id
@@ -40,8 +45,10 @@ public class Product {
     @Column(length = 100)
     private String brand;
 
-    @Column(length = 100)
-    private String category;
+    @jakarta.validation.constraints.NotNull(message = "Category is required")
+    @Convert(converter = ProductCategoryConverter.class)
+    @Column(nullable = false, length = 100)
+    private ProductCategory category;
 
     @Column(name = "sub_category", length = 100)
     private String subCategory;

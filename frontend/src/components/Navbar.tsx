@@ -8,6 +8,7 @@ import {Link, useNavigate} from "react-router-dom";
 import {useState, type FormEvent} from "react";
 import {useAuth} from "../context/AuthContext";
 import {useCart} from "../context/CartContext";
+import {categorySlugForExactSearch} from "../config/ProductApi";
 
 export default function Navbar() {
     const {user, logout} = useAuth();
@@ -19,7 +20,10 @@ export default function Navbar() {
         event.preventDefault();
         const normalizedQuery = query.trim();
         if (normalizedQuery) {
-            navigate(`/search?q=${encodeURIComponent(normalizedQuery)}`);
+            const categorySlug = categorySlugForExactSearch(normalizedQuery);
+            navigate(categorySlug
+                ? `/products?category=${encodeURIComponent(categorySlug)}`
+                : `/search?q=${encodeURIComponent(normalizedQuery)}`);
         }
     };
 

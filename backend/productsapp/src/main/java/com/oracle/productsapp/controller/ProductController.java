@@ -14,6 +14,7 @@ import org.springframework.web.bind.annotation.*;
 
 import com.oracle.productsapp.dtos.ProductRequest;
 import com.oracle.productsapp.entities.Product;
+import com.oracle.productsapp.entities.ProductCategory;
 import com.oracle.productsapp.services.abstractions.ProductService;
 import com.oracle.productsapp.services.implementations.CloudinaryImageService;
 
@@ -35,8 +36,12 @@ public class ProductController {
     }
 
     @GetMapping
-    public List<Product> getAll() {
-        return productService.getAll();
+    public List<Product> getAll(
+            @RequestParam(required = false) String category
+    ) {
+        return category == null || category.isBlank()
+                ? productService.getAll()
+                : productService.getActiveByCategory(ProductCategory.from(category));
     }
 
     /*
