@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState, type FormEvent } from "react";
-import { useNavigate } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
 import { BellRing, CheckCircle2, CircleUserRound, Headphones, MessageCircle, Send, ShieldCheck, UserRound, X } from "lucide-react";
 import toast from "react-hot-toast";
 import api, { errorMessage } from "../../config/api";
@@ -8,6 +8,14 @@ import { useAuth } from "../../context/AuthContext";
 type Chat = { id: number; userId: number; employeeId?: number; employeeName?: string; status: "QUEUED" | "ACTIVE" | "ENDED" | "CANCELLED"; createdAt: string; assignedAt?: string; endedAt?: string; endedBy?: string };
 type Message = { id: number; senderId: number; senderRole: "CUSTOMER" | "EMPLOYEE"; content: string; sentAt: string };
 type Availability = "AVAILABLE" | "BUSY" | "OFFLINE";
+const CUSTOMER_CHAT_RETURN_KEY = "grocers_customer_chat_return_to";
+const CUSTOMER_CHAT_EVENT = "grocers:customer-chat-state";
+
+function customerReturnPath() {
+  const saved = sessionStorage.getItem(CUSTOMER_CHAT_RETURN_KEY);
+  sessionStorage.removeItem(CUSTOMER_CHAT_RETURN_KEY);
+  return saved?.startsWith("/") && !saved.startsWith("//") && !saved.startsWith("/support") ? saved : "/";
+}
 
 function formatTime(value: string) { return new Date(value).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }); }
 function useMessages(chat?: Chat) {
@@ -28,25 +36,74 @@ function Conversation({ chat, mine, onEnd, readOnly = false }: { chat: Chat; min
 
 export function CustomerSupportChat() {
   const [chat, setChat] = useState<Chat>(); const [starting, setStarting] = useState(false);
+  const navigate = useNavigate();
+  const leaveSupport = () => { setChat(undefined); navigate(customerReturnPath(), { replace: true }); };
   const load = () => api.get<Chat[]>("/chats/mine").then(({ data }) => setChat(data.find(item => item.status === "QUEUED" || item.status === "ACTIVE"))).catch(() => undefined);
-  useEffect(() => { void load(); if (!chat) return; const timer = window.setInterval(load, 2000); return () => window.clearInterval(timer); }, [chat?.id]);
+  useEffect(() => { const receive=(event:Event)=>setChat((event as CustomEvent<Chat|undefined>).detail);window.addEventListener(CUSTOMER_CHAT_EVENT,receive);void load();return()=>window.removeEventListener(CUSTOMER_CHAT_EVENT,receive); }, []);
   const start = async () => { setStarting(true); try { const { data } = await api.post<Chat>("/chats"); setChat(data); } catch (e) { toast.error(errorMessage(e, "We could not start your support chat.")); } finally { setStarting(false); } };
   return <section className="mx-auto max-w-4xl p-5 sm:p-8"><div className="overflow-hidden rounded-[2rem] bg-gradient-to-br from-emerald-800 via-emerald-700 to-teal-700 px-6 py-9 text-white shadow-xl shadow-emerald-200 sm:px-10"><div className="max-w-xl"><span className="inline-flex items-center gap-2 rounded-full border border-white/20 bg-white/10 px-3 py-1 text-xs font-bold uppercase tracking-widest"><Headphones size={14}/> Customer care</span><h1 className="mt-5 font-serif text-4xl sm:text-5xl">We’re here to help.</h1><p className="mt-4 text-sm leading-6 text-emerald-50 sm:text-base">Connect with a Grocers support specialist for help with orders, products, delivery, or your account.</p></div></div>
-    {!chat ? <section className="mt-6 rounded-3xl border border-emerald-100 bg-white p-6 shadow-sm sm:p-8"><div className="grid gap-6 sm:grid-cols-[1fr_auto] sm:items-center"><div><h2 className="text-xl font-bold text-slate-900">Start a live support chat</h2><p className="mt-2 text-sm leading-6 text-slate-500">An available employee will be notified. You can keep shopping while we connect you.</p><div className="mt-4 flex items-center gap-2 text-xs font-semibold text-emerald-700"><ShieldCheck size={16}/> Private, account-protected support</div></div><button disabled={starting} onClick={start} className="inline-flex items-center justify-center gap-2 rounded-xl bg-emerald-600 px-5 py-3.5 text-sm font-bold text-white shadow-lg shadow-emerald-200 transition hover:bg-emerald-700 disabled:opacity-60"><MessageCircle size={18}/>{starting ? "Starting…" : "Chat with customer care"}</button></div></section> : chat.status === "QUEUED" ? <section className="mt-6 rounded-3xl border border-amber-200 bg-amber-50 p-8 text-center"><span className="mx-auto grid h-14 w-14 place-items-center rounded-2xl bg-amber-100 text-amber-700"><BellRing size={25}/></span><h2 className="mt-4 text-xl font-bold text-slate-900">Finding your support specialist</h2><p className="mx-auto mt-2 max-w-md text-sm leading-6 text-slate-600">Your request has been sent to available employees. This page will connect automatically when someone accepts.</p><button onClick={async()=>{await api.post(`/chats/${chat.id}/end`);setChat(undefined);}} className="mt-5 text-sm font-bold text-amber-800 underline">Cancel request</button></section> : <div className="fixed inset-0 z-[90] grid overflow-y-auto bg-slate-950/70 p-3 backdrop-blur-sm sm:p-8"><div className="m-auto w-full max-w-3xl"><div className="rounded-t-3xl bg-emerald-50 px-6 py-4 text-center"><p className="text-sm font-bold text-emerald-800">{chat.employeeName || "Your Grocers support specialist"} is here to help you.</p><p className="mt-1 text-xs text-emerald-700">You are now connected to secure customer care.</p></div><Conversation chat={chat} mine="CUSTOMER" onEnd={() => setChat(undefined)}/></div></div>}
+    {!chat ? <section className="mt-6 rounded-3xl border border-emerald-100 bg-white p-6 shadow-sm sm:p-8"><div className="grid gap-6 sm:grid-cols-[1fr_auto] sm:items-center"><div><h2 className="text-xl font-bold text-slate-900">Start a live support chat</h2><p className="mt-2 text-sm leading-6 text-slate-500">An available employee will be notified. You can keep shopping while we connect you.</p><div className="mt-4 flex items-center gap-2 text-xs font-semibold text-emerald-700"><ShieldCheck size={16}/> Private, account-protected support</div></div><button disabled={starting} onClick={start} className="inline-flex items-center justify-center gap-2 rounded-xl bg-emerald-600 px-5 py-3.5 text-sm font-bold text-white shadow-lg shadow-emerald-200 transition hover:bg-emerald-700 disabled:opacity-60"><MessageCircle size={18}/>{starting ? "Starting…" : "Chat with customer care"}</button></div></section> : chat.status === "QUEUED" ? <section className="mt-6 rounded-3xl border border-amber-200 bg-amber-50 p-8 text-center"><span className="mx-auto grid h-14 w-14 place-items-center rounded-2xl bg-amber-100 text-amber-700"><BellRing size={25}/></span><h2 className="mt-4 text-xl font-bold text-slate-900">Finding your support specialist</h2><p className="mx-auto mt-2 max-w-md text-sm leading-6 text-slate-600">Your request has been sent to available employees. You can continue using Grocers and we will bring you back here when someone accepts.</p><button onClick={async()=>{await api.post(`/chats/${chat.id}/end`);leaveSupport();}} className="mt-5 text-sm font-bold text-amber-800 underline">Cancel request</button></section> : <div className="fixed inset-0 z-[90] grid overflow-y-auto bg-slate-950/70 p-3 backdrop-blur-sm sm:p-8"><div className="m-auto w-full max-w-3xl"><div className="rounded-t-3xl bg-emerald-50 px-6 py-4 text-center"><p className="text-sm font-bold text-emerald-800">{chat.employeeName || "Your Grocers support specialist"} is here to help you.</p><p className="mt-1 text-xs text-emerald-700">You are now connected to secure customer care. The chat closes after one minute without a customer message.</p></div><Conversation chat={chat} mine="CUSTOMER" onEnd={leaveSupport}/></div></div>}
   </section>;
+}
+
+/** Watches customer chat state across the whole storefront, even while the customer is shopping. */
+export function CustomerChatCoordinator() {
+  const { user } = useAuth();
+  const location = useLocation();
+  const navigate = useNavigate();
+  const tracked = useRef<Chat>();
+  const locationRef = useRef(location);
+  locationRef.current = location;
+
+  useEffect(() => {
+    if (user?.role !== "CUSTOMER") { tracked.current = undefined; return; }
+    let stopped = false;
+    const load = async () => {
+      try {
+        const { data } = await api.get<Chat[]>("/chats/mine");
+        if (stopped) return;
+        const current = data.find(item => item.status === "QUEUED" || item.status === "ACTIVE");
+        const previous = tracked.current;
+        if (current?.status === "ACTIVE") {
+          if (previous?.status !== "ACTIVE" || previous.id !== current.id) {
+            toast.success(`${current.employeeName || "A support specialist"} accepted your chat.`);
+          }
+          const here = locationRef.current;
+          if (here.pathname !== "/support") {
+            sessionStorage.setItem(CUSTOMER_CHAT_RETURN_KEY, `${here.pathname}${here.search}${here.hash}`);
+            navigate("/support");
+          }
+        } else if (previous?.status === "ACTIVE") {
+          const ended = data.find(item => item.id === previous.id);
+          if (ended?.status === "ENDED") {
+            if (ended.endedBy === "INACTIVITY") toast.error("Chat ended due to one minute of customer inactivity.", { duration: 5000 });
+            else if (ended.endedBy === "EMPLOYEE") toast("The support employee ended the chat.", { duration: 4000 });
+            if (locationRef.current.pathname === "/support") navigate(customerReturnPath(), { replace: true });
+          }
+        }
+        tracked.current = current;
+        window.dispatchEvent(new CustomEvent<Chat|undefined>(CUSTOMER_CHAT_EVENT, { detail: current }));
+      } catch { /* Chat availability must not interrupt normal storefront work. */ }
+    };
+    void load();
+    const timer = window.setInterval(load, 1500);
+    return () => { stopped = true; window.clearInterval(timer); };
+  }, [navigate, user?.role, user?.id]);
+  return null;
 }
 
 export function EmployeeChatAlert() {
   const navigate = useNavigate(); const { user } = useAuth(); const [incoming, setIncoming] = useState<Chat>(); const dismissed = useRef<number>();
   useEffect(() => { const load = () => api.get<Chat[]>("/chats/employee/incoming").then(({data}) => { const next=data[0]; if(next && dismissed.current!==next.id)setIncoming(next); else if(!next)setIncoming(undefined); }).catch(()=>undefined); void load(); const timer=window.setInterval(load,1800); return()=>window.clearInterval(timer); }, []);
   if (!incoming) return null; const accept = async () => { try { await api.post(`/chats/${incoming.id}/accept`, { employeeName: user?.name || "Grocers support" }); setIncoming(undefined); toast.success("Customer support chat assigned to you."); navigate("/employee/support"); } catch(e) { toast.error(errorMessage(e)); setIncoming(undefined); } };
-  return <div className="fixed bottom-5 right-5 z-[80] w-[min(25rem,calc(100vw-2.5rem))] overflow-hidden rounded-2xl border border-cyan-300/40 bg-[#10243b] text-white shadow-2xl shadow-slate-950/40"><div className="h-1 bg-cyan-400"/><div className="p-5"><div className="flex gap-3"><span className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-cyan-400 text-[#10243b]"><BellRing size={20}/></span><div><p className="font-mono text-[10px] font-bold uppercase tracking-[.18em] text-cyan-300">Incoming support request</p><h2 className="mt-1 text-base font-bold">Customer #{incoming.userId} needs assistance</h2><p className="mt-1 text-sm leading-5 text-slate-300">Accept to open a secure, live customer-care conversation.</p></div></div><div className="mt-5 flex justify-end gap-2"><button onClick={()=>{dismissed.current=incoming.id;setIncoming(undefined);}} className="rounded-xl border border-white/15 px-3 py-2 text-xs font-bold text-slate-200">Dismiss</button><button onClick={accept} className="inline-flex items-center gap-1.5 rounded-xl bg-cyan-400 px-3 py-2 text-xs font-bold text-[#10243b]"><CheckCircle2 size={15}/>Accept chat</button></div></div></div>;
+  return <div className="fixed bottom-24 right-5 z-[85] w-[min(25rem,calc(100vw-2.5rem))] overflow-hidden rounded-2xl border border-cyan-300/40 bg-[#10243b] text-white shadow-2xl shadow-slate-950/40"><div className="h-1 bg-cyan-400"/><div className="p-5"><div className="flex gap-3"><span className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-cyan-400 text-[#10243b]"><BellRing size={20}/></span><div><p className="font-mono text-[10px] font-bold uppercase tracking-[.18em] text-cyan-300">Incoming support request</p><h2 className="mt-1 text-base font-bold">Customer #{incoming.userId} needs assistance</h2><p className="mt-1 text-sm leading-5 text-slate-300">Accept to open a secure, live customer-care conversation.</p></div></div><div className="mt-5 flex justify-end gap-2"><button onClick={()=>{dismissed.current=incoming.id;setIncoming(undefined);}} className="rounded-xl border border-white/15 px-3 py-2 text-xs font-bold text-slate-200">Dismiss</button><button onClick={accept} className="inline-flex items-center gap-1.5 rounded-xl bg-cyan-400 px-3 py-2 text-xs font-bold text-[#10243b]"><CheckCircle2 size={15}/>Accept chat</button></div></div></div>;
 }
 
 /** A full-screen guard: an accepted customer chat takes priority over all employee work. */
 export function EmployeeChatLock() {
   const [active, setActive] = useState<Chat>();
-  useEffect(() => { const load = () => api.get<Chat[]>("/chats/mine").then(({ data }) => setActive(data.find(chat => chat.status === "ACTIVE"))).catch(() => undefined); void load(); const timer = window.setInterval(load, 1600); return () => window.clearInterval(timer); }, []);
+  const tracked = useRef<Chat>();
+  useEffect(() => { const load = () => api.get<Chat[]>("/chats/mine").then(({ data }) => { const next=data.find(chat => chat.status === "ACTIVE");const previous=tracked.current;if(previous&&!next){const ended=data.find(chat=>chat.id===previous.id);if(ended?.endedBy==="INACTIVITY")toast.error("Chat ended due to one minute of customer inactivity.",{duration:5000});else if(ended?.endedBy==="CUSTOMER")toast("The customer ended the chat.",{duration:4000});}tracked.current=next;setActive(next); }).catch(() => undefined); void load(); const timer = window.setInterval(load, 1600); return () => window.clearInterval(timer); }, []);
   if (!active) return null;
   return <div className="fixed inset-0 z-[90] grid overflow-y-auto bg-[#06111f]/85 p-3 backdrop-blur-sm sm:p-8"><div className="m-auto w-full max-w-4xl"><div className="rounded-t-3xl border border-cyan-300/20 border-b-0 bg-[#10243b] px-6 py-4 text-center text-white"><p className="font-mono text-[10px] font-bold uppercase tracking-[.18em] text-cyan-300">Active customer-care session</p><p className="mt-1 text-sm text-slate-200">You are assisting Customer #{active.userId}. End the chat to return to the employee workspace.</p></div><Conversation chat={active} mine="EMPLOYEE" onEnd={() => setActive(undefined)}/></div></div>;
 }

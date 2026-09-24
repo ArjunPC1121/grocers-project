@@ -65,7 +65,14 @@ export default function SupportAssistant() {
   };
 
   const submit = (event: FormEvent) => { event.preventDefault(); void ask(message); };
-  const go = (path?: string) => { if (!path) return; setOpen(false); navigate(path); };
+  const go = (path?: string) => {
+    if (!path) return;
+    if (path === "/support" && location.pathname !== "/support") {
+      sessionStorage.setItem("grocers_customer_chat_return_to", `${location.pathname}${location.search}${location.hash}`);
+    }
+    setOpen(false);
+    navigate(path);
+  };
 
   return <>
     <button type="button" onClick={() => setOpen(value => !value)} aria-label={open ? "Close Grocers Help" : "Open Grocers Help"}
