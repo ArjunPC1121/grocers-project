@@ -14,7 +14,7 @@ import OrderTracking from "./pages/OrderTracking";
 import Addresses from "./pages/Addresses";
 import AuthPortal from "./pages/AuthPortal";
 import RoleGuard from "./components/RoleGuard";
-import { FundsPage, ProfilePage, SupportPage, WishlistPage } from "./pages/customer/CustomerTools";
+import { FundsPage, ProfilePage, WishlistPage } from "./pages/customer/CustomerTools";
 import { EmployeeAccessGuard, EmployeeDashboard, EmployeeHistory, EmployeeOrders, EmployeeProfile } from "./pages/employee/EmployeeWorkspace";
 import { default as UnlockTickets } from "./pages/employee/LiveUnlockTickets";
 import EmployeePasswordChange from "./pages/employee/EmployeePasswordChange";

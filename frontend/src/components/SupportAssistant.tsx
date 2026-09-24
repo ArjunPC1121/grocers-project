@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState, type FormEvent } from "react";
-import { Bot, ExternalLink, Loader2, MessageCircle, Package, Send, ShoppingBag, Sparkles, UserRound, X } from "lucide-react";
+import { Bot, ExternalLink, Headphones, Loader2, MessageCircle, Package, Send, ShoppingBag, Sparkles, UserRound, X } from "lucide-react";
 import { useLocation, useNavigate } from "react-router-dom";
 
 import { sendSupportMessage, type SupportAssistantResponse } from "../config/SupportAssistantApi";
@@ -93,6 +93,10 @@ export default function SupportAssistant() {
         </div><div ref={endRef}/>
       </div>
 
+      {role === "customer" && <button type="button" onClick={() => go("/support")} className="mx-3 mb-2 flex items-center justify-between rounded-2xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-left transition hover:border-emerald-300 hover:bg-emerald-100">
+        <span className="flex items-center gap-3"><span className="grid size-9 place-items-center rounded-xl bg-white text-emerald-700 shadow-sm"><Headphones size={17}/></span><span><b className="block text-xs text-emerald-950">Not satisfied with AI?</b><span className="text-[11px] text-emerald-700">Chat with an employee</span></span></span><ExternalLink size={14} className="text-emerald-700"/>
+      </button>}
+
       <form onSubmit={submit} className="border-t border-[#e1e8e2] bg-white p-3"><div className="flex items-end gap-2 rounded-2xl border border-[#dce5de] bg-[#f8faf8] p-2 focus-within:border-emerald-400 focus-within:ring-2 focus-within:ring-emerald-100"><textarea rows={1} maxLength={1000} value={message} onChange={event => setMessage(event.target.value)} onKeyDown={event => { if (event.key === "Enter" && !event.shiftKey) { event.preventDefault(); if (message.trim()) void ask(message); } }} placeholder="Ask about Grocers…" className="max-h-28 min-h-10 flex-1 resize-none bg-transparent px-2 py-2 text-sm text-[#24362a] outline-none"/><button disabled={working || !message.trim()} className="grid size-10 shrink-0 place-items-center rounded-xl bg-[#ef7622] text-white transition hover:bg-[#da6417] disabled:cursor-not-allowed disabled:opacity-40" aria-label="Send message"><Send size={17}/></button></div><p className="mt-2 text-center text-[10px] text-[#8a968e]">Grocers Help can make mistakes. Confirm important details on the linked page.</p></form>
     </section>}
   </>;
@@ -101,9 +105,14 @@ export default function SupportAssistant() {
 function AssistantResult({ result, go }: { result: SupportAssistantResponse; go: (path?: string) => void }) {
   return <div className="mt-2 space-y-2">
     {result.cards.map((card, index) => <article key={`${card.type}-${card.title}-${index}`} className="overflow-hidden rounded-2xl border border-[#dfe7e0] bg-white shadow-sm">
-      <div className="flex gap-3 p-3">{card.imageUrl ? <img src={card.imageUrl} alt="" className="size-16 shrink-0 rounded-xl bg-[#f3f5f2] object-cover"/> : <span className="grid size-12 shrink-0 place-items-center rounded-xl bg-[#eef4ef] text-[#35704c]">{card.type === "ORDER" ? <ShoppingBag size={19}/> : card.type === "ACCOUNT" ? <UserRound size={19}/> : <Package size={19}/>}</span>}<div className="min-w-0 flex-1"><b className="block truncate text-sm text-[#1c3023]">{card.title || "Grocers information"}</b>{card.subtitle && <p className="mt-0.5 line-clamp-2 text-xs leading-5 text-[#7b887f]">{card.subtitle}</p>}<dl className="mt-2 grid grid-cols-2 gap-x-3 gap-y-1">{Object.entries(card.details || {}).slice(0, 6).map(([label, value]) => <div key={label} className="min-w-0"><dt className="truncate text-[9px] font-bold uppercase tracking-wider text-[#9aa49d]">{label}</dt><dd className="truncate text-xs font-semibold text-[#3c5043]">{value || "—"}</dd></div>)}</dl></div></div>{card.link && <button onClick={() => go(card.link)} className="flex w-full items-center justify-between border-t border-[#edf1ed] px-3 py-2.5 text-xs font-bold text-[#28623f] hover:bg-emerald-50"><span>{card.linkLabel || "Open"}</span><ExternalLink size={13}/></button>}
+      <div className="flex gap-3 p-3">{card.imageUrl ? <img src={card.imageUrl} alt="" className="size-16 shrink-0 rounded-xl bg-[#f3f5f2] object-cover"/> : <span className="grid size-12 shrink-0 place-items-center rounded-xl bg-[#eef4ef] text-[#35704c]">{card.type === "ORDER" ? <ShoppingBag size={19}/> : card.type === "ACCOUNT" ? <UserRound size={19}/> : <Package size={19}/>}</span>}<div className="min-w-0 flex-1"><b className="block truncate text-sm text-[#1c3023]">{card.title || "Grocers information"}</b>{card.subtitle && <p className="mt-0.5 line-clamp-2 text-xs leading-5 text-[#7b887f]">{card.subtitle}</p>}<dl className="mt-2 grid grid-cols-2 gap-x-3 gap-y-1">{Object.entries(card.details || {}).filter(([label]) => !isInternalIdentifier(label)).slice(0, 6).map(([label, value]) => <div key={label} className="min-w-0"><dt className="truncate text-[9px] font-bold uppercase tracking-wider text-[#9aa49d]">{label}</dt><dd className="truncate text-xs font-semibold text-[#3c5043]">{value || "—"}</dd></div>)}</dl></div></div>{card.link && <button onClick={() => go(card.link)} className="flex w-full items-center justify-between border-t border-[#edf1ed] px-3 py-2.5 text-xs font-bold text-[#28623f] hover:bg-emerald-50"><span>{card.linkLabel || "Open"}</span><ExternalLink size={13}/></button>}
     </article>)}
     {!!result.actions.length && <div className="flex flex-wrap gap-2">{result.actions.map(action => <button key={`${action.link}-${action.label}`} onClick={() => go(action.link)} className={action.style === "primary" ? "rounded-xl bg-[#24583b] px-3 py-2 text-xs font-bold text-white" : "rounded-xl border border-[#dce5de] bg-white px-3 py-2 text-xs font-bold text-[#365240]"}>{action.label}</button>)}</div>}
     {!!result.sources.length && <p className="px-1 text-[9px] font-semibold uppercase tracking-wider text-[#9aa49d]">Source: {result.sources.join(" · ")}</p>}
   </div>;
+}
+
+function isInternalIdentifier(label: string) {
+  const normalized = label.replaceAll(/[_\s-]/g, "").toLowerCase();
+  return normalized === "id" || normalized.endsWith("id") || normalized === "version";
 }

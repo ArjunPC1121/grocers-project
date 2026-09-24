@@ -1,5 +1,6 @@
 package com.oracle.supportassistantapp.services;
 
+import com.oracle.supportassistantapp.dto.AssistantCard;
 import org.springframework.stereotype.Service;
 
 import java.util.ArrayDeque;
@@ -16,16 +17,30 @@ public class ConversationMemoryService {
 
     public List<Turn> history(String conversationId) {
         Deque<Turn> turns = conversations.get(conversationId);
-        return turns == null ? List.of() : new ArrayList<>(turns);
+        if (turns == null) return List.of();
+        synchronized (turns) {
+            return new ArrayList<>(turns);
+        }
     }
 
-    public void remember(String conversationId, String userMessage, String assistantMessage) {
+    public void remember(String conversationId, String userMessage, String assistantMessage, List<AssistantCard> cards) {
         Deque<Turn> turns = conversations.computeIfAbsent(conversationId, ignored -> new ArrayDeque<>());
+        List<EntityReference> references = cards.stream()
+                .filter(card -> "PRODUCT".equals(card.type()))
+                .map(card -> new EntityReference(card.type(), productId(card.link()), card.title()))
+                .filter(reference -> reference.internalId() != null)
+                .toList();
         synchronized (turns) {
-            turns.addLast(new Turn(userMessage, assistantMessage));
+            turns.addLast(new Turn(userMessage, assistantMessage, references));
             while (turns.size() > MAX_TURNS) turns.removeFirst();
         }
     }
 
-    public record Turn(String user, String assistant) {}
+    private Integer productId(String link) {
+        if (link == null || !link.matches("/products/\\d+")) return null;
+        return Integer.valueOf(link.substring(link.lastIndexOf('/') + 1));
+    }
+
+    public record Turn(String user, String assistant, List<EntityReference> references) {}
+    public record EntityReference(String type, Integer internalId, String label) {}
 }

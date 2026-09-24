@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { NavLink, Outlet, useLocation, useNavigate } from "react-router-dom";
 import {
   BarChart3, Bell, ChevronDown, ChevronLeft, LayoutDashboard, LogOut, Menu,
@@ -25,6 +25,7 @@ export default function AdminShellSlim() {
   const location = useLocation();
   const navigate = useNavigate();
   const { logout, user } = useAuth();
+  const checkedReloadRestore = useRef(false);
 
   const links = navigation.filter((item) => !("superAdmin" in item) || user?.role === "SUPER_ADMIN");
   const activePage = links.find((item) => item.to === location.pathname)?.label ?? "Admin workspace";
@@ -37,6 +38,8 @@ export default function AdminShellSlim() {
   }, [location.pathname, location.search, location.hash]);
 
   useEffect(() => {
+    if (checkedReloadRestore.current) return;
+    checkedReloadRestore.current = true;
     const navigation = performance.getEntriesByType("navigation")[0] as PerformanceNavigationTiming | undefined;
     const lastPage = sessionStorage.getItem("grocers_last_admin_page");
     if (navigation?.type === "reload" && location.pathname === "/admin" && lastPage?.startsWith("/admin/")) navigate(lastPage, { replace: true });

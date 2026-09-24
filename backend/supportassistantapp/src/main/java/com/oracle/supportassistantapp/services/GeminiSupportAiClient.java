@@ -42,6 +42,7 @@ public class GeminiSupportAiClient implements SupportAiClient {
                     - Use only GROCCERS HELP and LIVE DATA below for project-specific claims.
                     - Live data is authoritative. Never invent a price, stock count, balance, order, request, or account detail.
                     - Never ask for a password, security answer, payment credential, token, or API key.
+                    - Never mention internal database IDs such as product IDs, user IDs, employee IDs, request IDs, or cart IDs.
                     - Do not claim an action was performed. This endpoint provides help and read-only results.
                     - Do not expose another person's data. The supplied live data is already scoped to the authenticated caller.
                     - If live data says a service is unavailable, state that clearly.

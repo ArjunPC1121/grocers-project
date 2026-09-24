@@ -17,15 +17,17 @@ public class SupportAssistantService {
     private final PlatformKnowledgeService knowledgeService;
     private final GrocersContextService contextService;
     private final ConversationMemoryService memoryService;
+    private final AssistantActionExecutionService actionExecutionService;
     private final SupportAiClient aiClient;
 
     public SupportAssistantService(IntentClassifier classifier, PlatformKnowledgeService knowledgeService,
                                    GrocersContextService contextService, ConversationMemoryService memoryService,
-                                   SupportAiClient aiClient) {
+                                   AssistantActionExecutionService actionExecutionService, SupportAiClient aiClient) {
         this.classifier = classifier;
         this.knowledgeService = knowledgeService;
         this.contextService = contextService;
         this.memoryService = memoryService;
+        this.actionExecutionService = actionExecutionService;
         this.aiClient = aiClient;
     }
 
@@ -33,15 +35,24 @@ public class SupportAssistantService {
         String conversationId = request.conversationId() == null || request.conversationId().isBlank()
                 ? UUID.randomUUID().toString() : request.conversationId().trim();
         String memoryKey = identity.role() + ":" + identity.userId() + ":" + conversationId;
+        List<ConversationMemoryService.Turn> history = memoryService.history(memoryKey);
+        AssistantActionExecutionService.Execution action = actionExecutionService.execute(request.message(), identity, history);
+        if (action != null) {
+            memoryService.remember(memoryKey, request.message(), action.reply(), action.context().cards());
+            return response(conversationId, action.reply(), action.context());
+        }
         AssistantIntent intent = classifier.classify(request.message());
         List<String> knowledge = knowledgeService.retrieve(request.message(), identity.role());
         GrocersContextService.LiveContext live = contextService.load(intent, request.message(), identity);
-        String reply = aiClient.answer(request.message(), intent, identity, knowledge, live, memoryService.history(memoryKey));
+        String reply = aiClient.answer(request.message(), intent, identity, knowledge, live, history);
         if (reply == null || reply.isBlank()) reply = fallback(intent, knowledge, live);
-        memoryService.remember(memoryKey, request.message(), reply);
+        memoryService.remember(memoryKey, request.message(), reply, live.cards());
 
+        return response(conversationId, reply, live);
+    }
+
+    private SupportChatResponse response(String conversationId, String reply, GrocersContextService.LiveContext live) {
         LinkedHashSet<String> sources = new LinkedHashSet<>();
-        if (!knowledge.isEmpty()) sources.add("Grocers help");
         sources.addAll(live.sources());
         return new SupportChatResponse(conversationId, reply, live.cards(), uniqueActions(live.actions()), List.copyOf(sources));
     }

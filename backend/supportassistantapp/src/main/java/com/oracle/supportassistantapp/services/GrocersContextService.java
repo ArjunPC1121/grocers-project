@@ -85,8 +85,10 @@ public class GrocersContextService {
                 .limit(4).toList();
         List<AssistantCard> cards = matches.stream().map(this::productCard).toList();
         String evidence = json(Map.of("matchingProducts", matches));
+        String productPage = "ADMIN".equals(identity.role()) ? "/admin/products" : "/products";
+        String productPageLabel = "ADMIN".equals(identity.role()) ? "Open Product Management" : "Browse all products";
         return new LiveContext(evidence, cards,
-                List.of(new AssistantAction("Browse all products", "/products", "secondary")), List.of("Live product catalogue"));
+                List.of(new AssistantAction(productPageLabel, productPage, "secondary")), List.of("Live product catalogue"));
     }
 
     private LiveContext orderContext(AssistantIdentity identity) {
@@ -203,13 +205,15 @@ public class GrocersContextService {
         if (!date.isBlank()) details.put("Placed", date);
         Object id = order.get("id");
         String link = "/orders".equals(baseLink) && id != null ? "/orders/" + id : baseLink;
-        return new AssistantCard("ORDER", firstText(order, "orderNumber", "reference", "id"),
+        String title = firstText(order, "orderNumber", "reference");
+        if (title.isBlank()) title = "Recent order";
+        return new AssistantCard("ORDER", title,
                 firstText(order, "deliveryAddress", "status"), null, details, link, "View order");
     }
 
     private Map<String, Object> safeAccount(Map<String, Object> source) {
         Map<String, Object> safe = new LinkedHashMap<>();
-        for (String key : List.of("id", "firstName", "lastName", "email", "status", "funds", "address")) if (source.containsKey(key)) safe.put(key, source.get(key));
+        for (String key : List.of("firstName", "lastName", "email", "status", "funds", "address")) if (source.containsKey(key)) safe.put(key, source.get(key));
         return safe;
     }
 
@@ -261,9 +265,23 @@ public class GrocersContextService {
     private String name(Map<String, Object> account) { String value = (firstText(account, "firstName") + " " + firstText(account, "lastName")).trim(); return value.isBlank() ? firstText(account, "name", "email") : value; }
     private void putMoney(Map<String, String> details, String label, Object value) { if (value != null) details.put(label, "₹" + String.format(Locale.ROOT, "%.2f", number(value))); }
     private Double maximumPrice(String message) { java.util.regex.Matcher matcher = java.util.regex.Pattern.compile("(?:under|below|less than)\\s*(?:₹|rs\\.?|inr)?\\s*(\\d+(?:\\.\\d+)?)", java.util.regex.Pattern.CASE_INSENSITIVE).matcher(message); return matcher.find() ? Double.valueOf(matcher.group(1)) : null; }
-    private Map<String, String> scalarDetails(Map<String, Object> row, int limit) { Map<String, String> details = new LinkedHashMap<>(); row.forEach((key, value) -> { if (details.size() < limit && value != null && !(value instanceof Map) && !(value instanceof List)) details.put(label(key), text(value)); }); return details; }
+    private Map<String, String> scalarDetails(Map<String, Object> row, int limit) { Map<String, String> details = new LinkedHashMap<>(); row.forEach((key, value) -> { if (details.size() < limit && visibleField(key) && value != null && !(value instanceof Map) && !(value instanceof List)) details.put(label(key), text(value)); }); return details; }
     private String label(String key) { return key.replaceAll("([A-Z])", " $1").replace('_', ' ').trim(); }
-    private String json(Object value) { try { return objectMapper.writeValueAsString(value); } catch (JsonProcessingException ignored) { return String.valueOf(value); } }
+    private boolean visibleField(String key) {
+        String normalized = key.replace("_", "").toLowerCase(Locale.ROOT);
+        return !(normalized.equals("id") || normalized.endsWith("id") || normalized.equals("version")
+                || normalized.contains("password") || normalized.contains("securityanswer"));
+    }
+    private Object publicValue(Object value) {
+        if (value instanceof Map<?, ?> map) {
+            Map<String, Object> safe = new LinkedHashMap<>();
+            map.forEach((key, item) -> { if (visibleField(String.valueOf(key))) safe.put(String.valueOf(key), publicValue(item)); });
+            return safe;
+        }
+        if (value instanceof List<?> list) return list.stream().map(this::publicValue).toList();
+        return value;
+    }
+    private String json(Object value) { try { return objectMapper.writeValueAsString(publicValue(value)); } catch (JsonProcessingException ignored) { return "Live information is available in the cards below."; } }
 
     public record LiveContext(String evidence, List<AssistantCard> cards, List<AssistantAction> actions, List<String> sources) {}
 }
