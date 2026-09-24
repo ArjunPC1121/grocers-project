@@ -30,3 +30,7 @@ hs_err_pid*
 # Local tool-generated folders
 .build-grocers/
 .codex-finalizer/
+
+
+settings.json
+tasks.json
