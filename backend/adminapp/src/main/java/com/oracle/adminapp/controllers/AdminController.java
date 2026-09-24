@@ -12,6 +12,8 @@ import com.oracle.adminapp.dto.ReportPeriod;
 import com.oracle.adminapp.dto.ReportResponse;
 import com.oracle.adminapp.dto.UserCreateRequest;
 import com.oracle.adminapp.dto.UserUpdateRequest;
+import com.oracle.adminapp.entities.AdminNotification;
+import com.oracle.adminapp.repositories.AdminNotificationRepository;
 import com.oracle.adminapp.services.AdminService;
 import com.oracle.adminapp.services.ExternalAdminOperationsService;
 import jakarta.validation.Valid;
@@ -37,12 +39,18 @@ import java.util.Map;
 @RestController
 @RequestMapping("/grocers/api/admin")
 public class AdminController {
+    private final AdminNotificationRepository notificationRepository;
     private final AdminService adminService;
     private final ExternalAdminOperationsService operations;
 
-    public AdminController(AdminService adminService, ExternalAdminOperationsService operations) {
+    public AdminController(
+            AdminService adminService,
+            ExternalAdminOperationsService operations,
+            AdminNotificationRepository notificationRepository
+    ) {
         this.adminService = adminService;
         this.operations = operations;
+        this.notificationRepository = notificationRepository;
     }
 
     @GetMapping("/me")
@@ -177,5 +185,21 @@ public class AdminController {
             @RequestParam(required = false) Integer productId,
             @RequestParam(required = false) Integer customerId) {
         return operations.report(period, referenceDate, productId, customerId);
+    }
+    @GetMapping("/notifications")
+    public List<AdminNotification> notifications() {
+        return notificationRepository.findAllByOrderByCreatedAtDesc();
+    }
+
+    @PatchMapping("/notifications/{id}/read")
+    public AdminNotification markNotificationAsRead(
+            @PathVariable Integer id
+    ) {
+        AdminNotification notification = notificationRepository.findById(id)
+                .orElseThrow(() -> new IllegalArgumentException("Notification not found"));
+
+        notification.setRead(true);
+
+        return notificationRepository.save(notification);
     }
 }

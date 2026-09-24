@@ -11,7 +11,15 @@ const money=(v?:number)=>v===undefined||v===null?"Not set":`₹${Number(v).toLoc
 export default function RequestManagementFinal(){
  const[rows,setRows]=useState<Req[]>([]),[products,setProducts]=useState<Product[]>([]),[staff,setStaff]=useState<Emp[]>([]),[filter,setFilter]=useState("PENDING"),[query,setQuery]=useState(""),[selected,setSelected]=useState<Req|null>(null),[rejecting,setRejecting]=useState<Req|null>(null),[reason,setReason]=useState(""),[error,setError]=useState("");
  const load=()=>Promise.all([api.get("/admin/requests"),api.get("/admin/employees"),api.get("/products")]).then(([r,e,p])=>{setRows(Array.isArray(r.data)?r.data:[]);setStaff(Array.isArray(e.data)?e.data:[]);setProducts(Array.isArray(p.data)?p.data:[])}).catch(e=>setError(errorMessage(e,"Unable to load requests.")));
- useEffect(()=>{load()},[]);
+ useEffect(() => {
+  load();
+
+  const timer = window.setInterval(() => {
+   load();
+  }, 10000);
+
+  return () => window.clearInterval(timer);
+ }, []);
  const employee=(id:number)=>{const e=staff.find(x=>x.id===id);return e?`${e.firstName} ${e.lastName}`:`Employee #${id}`};
  const product=(r:Req)=>products.find(x=>x.id===r.productId), productName=(r:Req)=>r.name||product(r)?.name||`Product #${r.productId||"new"}`, pending=rows.filter(r=>r.status==="PENDING");
  useEffect(()=>{const heading=[...document.querySelectorAll("h2")].find(node=>node.textContent?.startsWith("Product requests")),badge=heading?.parentElement?.parentElement?.querySelector(":scope > span.bg-app-orange");if(heading&&badge){badge.classList.add("ml-3","inline-block","align-middle");heading.appendChild(badge)}},[pending.length]);
