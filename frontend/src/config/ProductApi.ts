@@ -35,7 +35,7 @@ export interface ProductSearchResponse {
   finalScore: number;
 }
 
-const fallbackImage = "/favicon.svg";
+const fallbackImage = "/main_logo.png";
 
 export const categorySlug = (value = "") =>
   value

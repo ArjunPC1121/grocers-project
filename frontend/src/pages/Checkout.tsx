@@ -10,7 +10,6 @@ import {
 import toast from "react-hot-toast";
 
 import { useCart } from "../context/CartContext";
-import type { Address } from "../types";
 import CheckoutAddress from "../components/Checkout/CheckoutAddress";
 import CheckoutPayment from "../components/Checkout/CheckoutPayment";
 import CheckoutReview from "../components/Checkout/CheckoutReview";
@@ -29,17 +28,8 @@ const Checkout = () => {
   const [step, setStep] = useState("address");
   const [loading, setLoading] = useState(false);
 
-  const [address, setAddress] = useState<Address>({
-    id: "",
-    label: "Home",
-    address: "",
-    city: "",
-    state: "",
-    zip: "",
-    isDefault: false,
-    lat: 0,
-    lng: 0,
-  });
+  const [deliveryAddress, setDeliveryAddress] = useState("");
+  const [previousAddresses, setPreviousAddresses] = useState<string[]>([]);
 
   const [paymentMethod, setPaymentMethod] = useState("FUNDS");
 
@@ -53,13 +43,16 @@ const Checkout = () => {
     { key: "review", label: "Review", icon: CheckIcon },
   ];
   useEffect(() => {
-    if (user?.address) {
-      setAddress((previous) => ({
-        ...previous,
-        address: user.address,
-      }));
-    }
-  }, [user?.address]);
+    if (!user?.id) return;
+
+    if (user.address) setDeliveryAddress((current) => current || user.address!);
+
+    api.get<{ deliveryAddress?: string }[]>(`/orders/customers/${user.id}`)
+      .then(({ data }) => setPreviousAddresses([...new Set(
+        data.map((order) => order.deliveryAddress?.trim()).filter(Boolean) as string[],
+      )]))
+      .catch(() => setPreviousAddresses([]));
+  }, [user?.id, user?.address]);
 
   const handlePlaceOrder = async () => {
     if (!user) {
@@ -78,9 +71,7 @@ const Checkout = () => {
       const orderData = {
         customerId: Number(user.id),
         cartId: cartId,
-        deliveryAddress:
-            `${address.address}, ${address.city}, ` +
-            `${address.state} - ${address.zip}`,
+        deliveryAddress: deliveryAddress.trim(),
         paymentMethod,
         items: items.map((item) => ({
           productId: Number(item.product.id),
@@ -118,25 +109,6 @@ const Checkout = () => {
       scrollTo(0, 0);
     }
   };
-
-  // Populate address from user's default address
-  useState(() => {
-    if (user?.addresses?.length) {
-      const defaultAddr =
-        user.addresses.find((a) => a.isDefault) || user.addresses[0];
-      setAddress({
-        id: defaultAddr?.id,
-        label: defaultAddr?.label,
-        address: defaultAddr?.address,
-        city: defaultAddr?.city,
-        state: defaultAddr?.state,
-        zip: defaultAddr?.zip,
-        isDefault: defaultAddr?.isDefault,
-        lat: defaultAddr?.lat,
-        lng: defaultAddr?.lng,
-      });
-    }
-  });
 
   if (items.length === 0) {
     return (
@@ -194,10 +166,11 @@ const Checkout = () => {
           <div className="md:col-span-2">
             {step === "address" && (
               <CheckoutAddress
-                address={address}
-                setAddress={setAddress}
+                deliveryAddress={deliveryAddress}
+                setDeliveryAddress={setDeliveryAddress}
+                profileAddress={user?.address}
+                previousAddresses={previousAddresses}
                 setStep={setStep}
-                user={user}
               />
             )}
 
@@ -211,7 +184,7 @@ const Checkout = () => {
 
             {step === "review" && (
               <CheckoutReview
-                address={address}
+                deliveryAddress={deliveryAddress}
                 items={items}
                 handlePlaceOrder={handlePlaceOrder}
                 loading={loading}
