@@ -27,6 +27,7 @@ const Checkout = () => {
 
   const [step, setStep] = useState("address");
   const [loading, setLoading] = useState(false);
+  const [fundsError, setFundsError] = useState<string | null>(null);
 
   const [deliveryAddress, setDeliveryAddress] = useState("");
   const [previousAddresses, setPreviousAddresses] = useState<string[]>([]);
@@ -88,7 +89,18 @@ const Checkout = () => {
       );
 
       if (checkedOutOrder.status !== "PLACED") {
-        toast.error(`Order could not be placed: ${checkedOutOrder.status}`);
+        if (
+            checkedOutOrder.status === "PAYMENT_FAILED" &&
+            paymentMethod === "FUNDS"
+        ) {
+          setFundsError(
+              "You do not have enough funds to complete this order. Add funds and try again.",
+          );
+          setStep("payment");
+        } else {
+          toast.error(`Order could not be placed: ${checkedOutOrder.status}`);
+        }
+
         return;
       }
 
@@ -99,11 +111,21 @@ const Checkout = () => {
       toast.success("Order placed successfully!");
       navigate(`/orders/${checkedOutOrder.id}`);
     } catch (error: any) {
-      toast.error(
-          error.response?.data?.message ||
-          error.message ||
-          "Could not place order.",
-      );
+    const message =
+        error.response?.data?.message ||
+        error.message ||
+        "Could not place order.";
+
+    const isInsufficientFunds =
+        paymentMethod === "FUNDS" &&
+        /insufficient|not enough|low balance/i.test(message);
+
+    if (isInsufficientFunds) {
+      setFundsError(message);
+      setStep("payment");
+    } else {
+      toast.error(message);
+    }
     } finally {
       setLoading(false);
       scrollTo(0, 0);
@@ -175,11 +197,13 @@ const Checkout = () => {
             )}
 
             {step === "payment" && (
-              <CheckoutPayment
-                paymentMethod={paymentMethod}
-                setPaymentMethod={setPaymentMethod}
-                setStep={setStep}
-              />
+                <CheckoutPayment
+                    paymentMethod={paymentMethod}
+                    setPaymentMethod={setPaymentMethod}
+                    setStep={setStep}
+                    fundsError={fundsError}
+                    onAddFunds={() => navigate("/funds")}
+                />
             )}
 
             {step === "review" && (

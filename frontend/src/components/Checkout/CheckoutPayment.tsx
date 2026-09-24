@@ -1,17 +1,27 @@
-import { ChevronRightIcon, CreditCardIcon } from "lucide-react";
+
 import type { Dispatch, SetStateAction } from "react";
+import {
+    AlertCircleIcon,
+    ChevronRightIcon,
+    CreditCardIcon,
+    WalletCardsIcon,
+} from "lucide-react";
 
 interface CheckoutPaymentProps {
-  setStep: Dispatch<SetStateAction<string>>;
-  paymentMethod: string;
-  setPaymentMethod: Dispatch<SetStateAction<string>>;
+    setStep: Dispatch<SetStateAction<string>>;
+    paymentMethod: string;
+    setPaymentMethod: Dispatch<SetStateAction<string>>;
+    fundsError: string | null;
+    onAddFunds: () => void;
 }
 
 export default function CheckoutPayment({
-  setStep,
-  paymentMethod,
-  setPaymentMethod,
-}: CheckoutPaymentProps) {
+                                            setStep,
+                                            paymentMethod,
+                                            setPaymentMethod,
+                                            fundsError,
+                                            onAddFunds,
+                                        }: CheckoutPaymentProps)  {
   return (
     <div className="bg-white rounded-2xl p-6 animate-fade-in">
       <h2 className="text-lg font-semibold text-app-green mb-5 flex items-center gap-2">
@@ -56,6 +66,40 @@ export default function CheckoutPayment({
           </label>
         ))}
       </div>
+        {paymentMethod === "FUNDS" && fundsError && (
+            <div
+                role="alert"
+                className="mt-5 rounded-xl border border-orange-200 bg-orange-50 p-4"
+            >
+                <div className="flex gap-3">
+                    <AlertCircleIcon className="mt-0.5 size-5 shrink-0 text-app-orange" />
+
+                    <div>
+                        <h3 className="font-semibold text-app-green">
+                            Your funds are insufficient
+                        </h3>
+
+                        <p className="mt-1 text-sm text-app-text-light">
+                            {fundsError}
+                        </p>
+
+                        <p className="mt-2 text-sm text-app-text-light">
+                            Add money to your funds wallet, then return to checkout to place
+                            this order.
+                        </p>
+
+                        <button
+                            type="button"
+                            onClick={onAddFunds}
+                            className="mt-4 inline-flex items-center gap-2 rounded-xl bg-app-orange px-4 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-orange-600"
+                        >
+                            <WalletCardsIcon className="size-4" />
+                            Add Funds
+                        </button>
+                    </div>
+                </div>
+            </div>
+        )}
       <button
         onClick={() => {
           setStep("review");
