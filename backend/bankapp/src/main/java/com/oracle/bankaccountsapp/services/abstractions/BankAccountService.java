@@ -1,6 +1,9 @@
 package com.oracle.bankaccountsapp.services.abstractions;
 
+import com.oracle.bankaccountsapp.dtos.BankAccountRequest;
+
 public interface BankAccountService {
-    void createAccount(int userId, String accountNumber);
-    Double deduct(int userId, Double amount);
+    void add(BankAccountRequest request);
+    boolean isAccountLinkedToPhone(String accountNumber, String phoneNumber);
+    Double deduct(String accountNumber, String pin, Double amount);
 }

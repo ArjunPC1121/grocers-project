@@ -51,7 +51,7 @@ public class User {
     private String address;
 
     @NotBlank(message="Can't be blank")
-    @Column(nullable = false)
+    @Column(nullable = false, unique = true)
     private String accountNumber;
 
     @Column(nullable = false)

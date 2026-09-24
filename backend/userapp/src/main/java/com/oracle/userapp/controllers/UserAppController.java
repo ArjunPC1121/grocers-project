@@ -92,8 +92,13 @@ public class UserAppController {
     // Moves money from the user's bank account into their app wallet.
     public ResponseEntity<Double> addFunds(
             @PathVariable Integer id,
+            @RequestHeader("X-Authenticated-User-Id") Integer authenticatedUserId,
             @RequestBody AddFundsRequest request) {
-        return ResponseEntity.ok(userService.addFunds(id, request.amount()));
+        if (!id.equals(authenticatedUserId)) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN,
+                    "You can only add funds to your own wallet");
+        }
+        return ResponseEntity.ok(userService.addFunds(id, request.amount(), request.pin()));
     }
 
     /*

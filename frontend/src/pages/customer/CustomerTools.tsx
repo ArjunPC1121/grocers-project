@@ -186,6 +186,7 @@ export function FundsPage() {
     const { user } = useAuth();
     const [balance, setBalance] = useState<number | null>(null);
     const [amount, setAmount] = useState("");
+    const [pin, setPin] = useState("");
     const [error, setError] = useState("");
     const [transactions, setTransactions] = useState<WalletTransaction[]>([]);
     const [transactionsLoading, setTransactionsLoading] = useState(true);
@@ -250,10 +251,12 @@ export function FundsPage() {
         try {
             await api.post(`/users/${user.id}/funds`, {
                 amount: Number(amount),
+                pin,
             });
 
             toast.success("Funds added.");
             setAmount("");
+            setPin("");
             await Promise.all([
                 loadFunds(),
                 loadTransactions(),
@@ -311,6 +314,16 @@ export function FundsPage() {
                     placeholder="Amount"
                     value={amount}
                     onChange={(event) => setAmount(event.target.value)}
+                    className="mt-4 w-full rounded-lg border p-3"
+                />
+
+                <input
+                    required
+                    type="password"
+                    inputMode="numeric"
+                    placeholder="Bank PIN"
+                    value={pin}
+                    onChange={(event) => setPin(event.target.value)}
                     className="mt-4 w-full rounded-lg border p-3"
                 />
 

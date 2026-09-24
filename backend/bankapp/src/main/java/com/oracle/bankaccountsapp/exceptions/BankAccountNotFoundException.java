@@ -1,7 +1,7 @@
 package com.oracle.bankaccountsapp.exceptions;
 
 public class BankAccountNotFoundException extends RuntimeException {
-    public BankAccountNotFoundException(int userId) {
-        super("No bank account found for user id: " + userId);
+    public BankAccountNotFoundException(String accountNumber) {
+        super("No bank account found for account number: " + accountNumber);
     }
 }
