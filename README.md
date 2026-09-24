@@ -70,6 +70,7 @@ Spring Cloud Gateway (8091) ── validates JWT / applies CORS / routes request
           +-- Employee (8082)   +-- Products (8083)  +-- Cart (8084)
           +-- Orders (8085)     +-- Requests (8086)  +-- Tickets (8087)
           +-- Funds (8088)      +-- Bank (8089)      +-- Assistant (8092)
+          +-- Grocers Help (8093)                   +-- Customer Chat (8094)
                    |                    |                    |
                    +----------- Oracle Database ------------+
                                         |
@@ -152,6 +153,8 @@ $env:GEMINI_MODEL = "gemini-3.5-flash-lite"
 | Funds | `backend/FundsApp` | 8088 | `/funds` |
 | Bank | `backend/bankapp` | 8089 | `/banks` |
 | Assistant | `backend/assistantapp` | 8092 | `/assistant` |
+| Grocers Help Assistant | `backend/supportassistantapp` | 8093 | `/support-assistant` |
+| Customer Care Chat | `backend/chatapp` | 8094 | `/chats` |
 
 ## API documentation
 
@@ -363,7 +366,9 @@ grocers-user-test/
 │   ├── ticketapp/             Ticket lifecycle
 │   ├── bankapp/               Bank operations
 │   ├── FundsApp/              Funds module
-│   └── assistantapp/          Recipe recommendation service
+│   ├── assistantapp/          Recipe recommendation service
+│   ├── supportassistantapp/   Grocers platform and account help assistant
+│   └── chatapp/               Live customer and employee support chat
 └── Project-Grocers.pdf         Existing reference artifact
 ```
 

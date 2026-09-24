@@ -12,7 +12,9 @@ import java.util.List;
 public interface ProductRequestRepository
         extends JpaRepository<ProductRequest, Integer > {
     List<ProductRequest> findByEmployeeId(Integer employeeId);
+    List<ProductRequest> findByEmployeeIdOrderByRequestIdDesc(Integer employeeId);
     List<ProductRequest> findByStatus(RequestStatus status);
     List<ProductRequest> findByAction(RequestAction action);
     List<ProductRequest> findByEmployeeIdAndStatus(Integer employeeId, RequestStatus status);
+    List<ProductRequest> findByEmployeeIdAndStatusOrderByRequestIdDesc(Integer employeeId, RequestStatus status);
 }

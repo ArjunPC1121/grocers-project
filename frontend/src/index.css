@@ -138,3 +138,8 @@ p.font-mono.text-lg.font-bold.tracking-tight::after {
   content: "GROCERS";
   font-size: 1.125rem;
 }
+
+/* Customer Care dashboard title. */
+h1.mt-2.font-mono.text-3xl.font-bold {
+  text-transform: capitalize;
+}
