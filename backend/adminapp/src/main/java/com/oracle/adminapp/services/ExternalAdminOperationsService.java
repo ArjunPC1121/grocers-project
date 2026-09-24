@@ -123,24 +123,9 @@ public class ExternalAdminOperationsService {
             throw new ResourceNotFoundException("Employee request was not found");
         }
 
-        updateRequestStatus(id, adminId, "PROCESSING", null);
-        boolean productOperationCompleted = false;
-        try {
-            executeProductRequest(request);
-            productOperationCompleted = true;
-            updateRequestStatus(id, adminId, "APPROVED", null);
-        } catch (RuntimeException exception) {
-            // Only return to PENDING when no ProductApp mutation completed. If final approval
-            // persistence fails after the mutation, PROCESSING prevents an unsafe duplicate retry.
-            if (!productOperationCompleted) {
-                try {
-                    updateRequestStatus(id, adminId, "PENDING", null);
-                } catch (RuntimeException ignored) {
-                    // Preserve the original ProductApp failure for the caller.
-                }
-            }
-            throw exception;
-        }
+        // RequestApp owns approval and applies the requested product change exactly once.
+        // Calling executeProductRequest here as well would create duplicate products.
+        updateRequestStatus(id, adminId, "APPROVED", null);
         return Map.of("requestId", id, "status", "APPROVED");
     }
 

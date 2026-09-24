@@ -1,5 +1,6 @@
 import { CookingPot, Heart,
     LogIn,
+    MessageCircle,
     Package,
     Search,
     ShoppingBasket,
@@ -72,6 +73,14 @@ export default function Navbar() {
                             </Link>
                             <Link to="/funds" title="Funds">
                                 <Wallet size={19}/>
+                            </Link>
+                            <Link
+                                to="/support"
+                                title="Customer Care Support"
+                                className="inline-flex items-center gap-1.5 rounded-full border border-emerald-200 bg-emerald-50 px-3 py-2 text-xs font-bold text-emerald-800 transition hover:bg-emerald-600 hover:text-white"
+                            >
+                                <MessageCircle size={16}/>
+                                <span className="hidden md:inline">Customer Care Support</span>
                             </Link>
                             <button
                                 onClick={() => setIsCartOpen(true)}

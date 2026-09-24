@@ -58,6 +58,10 @@ spring:
               uri: http://localhost:8093
               predicates:
                 - Path=/grocers/api/support-assistant/**
+            - id: chatapp
+              uri: http://localhost:8094
+              predicates:
+                - Path=/grocers/api/chats/**
 
 server:
   port: 8091

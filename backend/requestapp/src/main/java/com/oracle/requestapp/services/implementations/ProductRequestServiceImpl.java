@@ -55,8 +55,8 @@ public class ProductRequestServiceImpl implements ProductRequestService {
 
     @Override
     public List<ProductRequestResponse> mine(Integer employeeId, RequestStatus status) {
-        List<ProductRequest> requests = status == null ? repository.findByEmployeeId(employeeId)
-                : repository.findByEmployeeIdAndStatus(employeeId, status);
+        List<ProductRequest> requests = status == null ? repository.findByEmployeeIdOrderByRequestIdDesc(employeeId)
+                : repository.findByEmployeeIdAndStatusOrderByRequestIdDesc(employeeId, status);
         return requests.stream().map(ProductRequestResponse::from).toList();
     }
 
