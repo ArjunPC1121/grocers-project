@@ -17,6 +17,7 @@ import lombok.RequiredArgsConstructor;
 @Service
 @RequiredArgsConstructor
 @Transactional
+// Manages the products a user has saved to their wishlist.
 public class WishlistService {
 
     private final WishlistItemRepository wishlistItemRepository;
@@ -44,6 +45,7 @@ public class WishlistService {
     }
 
     @Transactional(readOnly = true)
+    // Gets one user's wishlist with their most recently saved products first.
     public List<WishlistItemResponse> getItems(Integer userId) {
         ensureUserExists(userId);
 
@@ -55,6 +57,7 @@ public class WishlistService {
     }
 
     public void removeItem(Integer userId, Integer productId) {
+        // Reports a missing item instead of silently treating the delete as successful.
         ensureUserExists(userId);
 
         long deletedRows = wishlistItemRepository
@@ -69,6 +72,7 @@ public class WishlistService {
     }
 
     private void ensureUserExists(Integer userId) {
+        // Stops wishlist records from being read or created for an unknown user.
         if (!userRepository.existsById(userId)) {
             throw new ResponseStatusException(
                     HttpStatus.NOT_FOUND,
@@ -78,6 +82,7 @@ public class WishlistService {
     }
 
     private WishlistItemResponse toResponse(WishlistItem item) {
+        // Converts the database record into the data returned by the API.
         return new WishlistItemResponse(
                 item.getId(),
                 item.getUserId(),

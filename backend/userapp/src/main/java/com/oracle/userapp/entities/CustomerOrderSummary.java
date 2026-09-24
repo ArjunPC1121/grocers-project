@@ -16,10 +16,12 @@ import java.time.LocalDateTime;
 @AllArgsConstructor
 @Entity
 @Table(name = "customer_order_summaries")
+// Stores a compact copy of an order so users can view their order history.
 public class CustomerOrderSummary {
 
     @Id
     @Column(name = "order_id")
+    // Uses the order-service ID so the same checkout event is not stored twice.
     private Integer orderId;
 
     @Column(name = "customer_id", nullable = false)

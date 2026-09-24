@@ -24,6 +24,7 @@ import lombok.NoArgsConstructor;
                 columnNames = { "user_id", "product_id" }
         )
 )
+// Represents one product saved by one user in their wishlist.
 public class WishlistItem {
 
     @Id
@@ -40,6 +41,7 @@ public class WishlistItem {
     private LocalDateTime createdAt;
 
     @PrePersist
+    // Sets the save time just before this wishlist item is inserted.
     private void onCreate() {
         createdAt = LocalDateTime.now();
     }

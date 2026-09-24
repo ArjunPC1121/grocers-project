@@ -22,12 +22,16 @@ import java.util.Map;
 import java.util.UUID;
 
 @Service
+// Contains the business rules for user accounts, wallets, and account recovery.
 public class UserService implements UserServiceManager<UserRequest,UserResponse,UpdateUserRequest, TicketResponse,Integer> {
 
+    // BankApp endpoint used to create a bank account for a new user.
     private static final String CREATE_BANK_ACCOUNT_URL =
             "http://localhost:8089/grocers/api/banks/add/{userId}";
+    // BankApp endpoint used to take funds from a bank account.
     private static final String DEDUCT_BANK_FUNDS_URL =
             "http://localhost:8089/grocers/api/banks/{userId}/deduct";
+    // TicketApp endpoint used to create a locked-account support ticket.
     private static final String RAISE_TICKET_URL =
             "http://localhost:8087/grocers/api/tickets";
 
@@ -44,6 +48,7 @@ public class UserService implements UserServiceManager<UserRequest,UserResponse,
     }
     @Override
     @Transactional
+    // Saves a new user, protects their secrets, and creates their bank account.
     public UserResponse add(UserRequest data) {
         User user = new User();
         mapRequestToEntity(user, data);
@@ -83,6 +88,7 @@ public class UserService implements UserServiceManager<UserRequest,UserResponse,
     }
 
     @Override
+    // Returns all users without exposing passwords or security answers.
     public Collection<UserResponse> getAll() {
         Collection<User> allUsers = repository.findAll();
 
@@ -96,6 +102,7 @@ public class UserService implements UserServiceManager<UserRequest,UserResponse,
     }
 
     @Override
+    // Updates only the profile fields that have a value in the request.
     public UserResponse update(Integer id, UpdateUserRequest data)throws RuntimeException {
         User user = repository.findById(id).orElseThrow(()-> new RuntimeException("User not found"));
         mapUpdateRequestToEntity(user, data);
@@ -110,6 +117,10 @@ public class UserService implements UserServiceManager<UserRequest,UserResponse,
         return mapEntityToResponse(user);
     }
 
+    /*
+    Triggered upon a failed login by auth app.
+    Check authservice - loginUser()
+     */
     @Override
     public int incFailedAttempts(Integer id) throws RuntimeException{
         User user = repository.findById(id).orElseThrow(()->new RuntimeException("User not found"));
@@ -129,6 +140,10 @@ public class UserService implements UserServiceManager<UserRequest,UserResponse,
         repository.save(user);
         return failedAttempts;
     }
+
+    /*
+    Makes a REST call to bank accounts app to add money to wallet.
+     */
     @Override
     public double addFunds(Integer id, double amount) throws RuntimeException
     {
@@ -159,6 +174,7 @@ public class UserService implements UserServiceManager<UserRequest,UserResponse,
     }
 
     @Override
+    // Deducts an order amount only when the wallet has enough money.
     public double deductFunds(Integer id, double amount) throws RuntimeException {
         if (amount <= 0) {
             throw new IllegalArgumentException("Debit amount must be greater than zero");
@@ -209,6 +225,7 @@ public class UserService implements UserServiceManager<UserRequest,UserResponse,
     }
 
     private TicketResponse createLockedAccountTicket(User user, String note) {
+        // Builds the request sent to TicketApp with the user's lock reason.
         TicketRequest ticketRequest = new TicketRequest();
         ticketRequest.setUserId(user.getId());
         ticketRequest.setLockedReason(user.getLockedReason());
@@ -237,6 +254,7 @@ public class UserService implements UserServiceManager<UserRequest,UserResponse,
     }
 
     @Override
+    // Adds a cancelled order's amount back to the user's wallet.
     public Double refund(Integer id, double amount)
     {
         User user = repository.findById(id).orElseThrow(()-> new RuntimeException("User not found"));
@@ -246,6 +264,7 @@ public class UserService implements UserServiceManager<UserRequest,UserResponse,
     }
 
     @Override
+    // Removes the lock and clears all failed-login and reset-token data.
     public Integer unlock(Integer id)
     {
         User user = repository.findById(id).orElseThrow(()-> new RuntimeException("User not found"));
@@ -259,6 +278,7 @@ public class UserService implements UserServiceManager<UserRequest,UserResponse,
     }
 
     @Override
+    // Checks a recovery answer and creates a short-lived password reset token.
     public String verifySecretAnswer(Integer id, SecretAnswerRequest request)
     {
         User user = repository.findById(id).orElseThrow(()-> new RuntimeException("User not found"));
@@ -296,6 +316,7 @@ public class UserService implements UserServiceManager<UserRequest,UserResponse,
     }
 
     @Override
+    // Replaces the password when the supplied reset token is valid and unexpired.
     public void resetPassword(Integer id, ResetPasswordRequest request)
     {
         User user = repository.findById(id).orElseThrow(()-> new RuntimeException("User not found"));
@@ -346,6 +367,7 @@ public class UserService implements UserServiceManager<UserRequest,UserResponse,
 
     private static void mapRequestToEntity(User user, UserRequest data)
     {
+        // Copies registration fields that can be stored directly on the user.
         user.setFirstName(data.getFirstName());
         user.setLastName(data.getLastName());
         user.setAccountNumber(data.getAccountNumber());
@@ -357,6 +379,7 @@ public class UserService implements UserServiceManager<UserRequest,UserResponse,
 
     private static UserResponse mapEntityToResponse(User user)
     {
+        // Creates a safe response that intentionally leaves out passwords and secrets.
         UserResponse response = new UserResponse();
         response.setId(user.getId());
         response.setFirstName(user.getFirstName());
@@ -373,6 +396,7 @@ public class UserService implements UserServiceManager<UserRequest,UserResponse,
 
     private static void mapUpdateRequestToEntity(User user, UpdateUserRequest data)
     {
+        // Leaves existing values unchanged when a field was not sent by the client.
         if (data.getFirstName() != null) {
             user.setFirstName(data.getFirstName());
         }
@@ -396,6 +420,7 @@ public class UserService implements UserServiceManager<UserRequest,UserResponse,
         }
     }
     @Transactional
+    // Hashes and saves a user's new password.
     public void changePassword(Integer userId, ChangePasswordRequest request) {
         User user = repository.findById(userId)
                 .orElseThrow(() -> new ResponseStatusException(

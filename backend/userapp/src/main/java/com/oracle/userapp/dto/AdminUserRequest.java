@@ -6,6 +6,7 @@ import jakarta.validation.constraints.NotNull;
 
 import java.sql.Date;
 
+//Not in use
 public record AdminUserRequest(
         @NotBlank String firstName,
         @NotBlank String lastName,

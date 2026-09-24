@@ -18,8 +18,15 @@ import java.util.Map;
 
 @RestController
 @RequestMapping("/grocers/api/users")
+// Defines the HTTP endpoints used to manage users, wallets, orders, and wishlists.
 public class UserAppController {
 
+    /*
+    Required dependency injections.
+    userService for accessing user CRUD operations and other utilities
+    wishlistService to enable wishlist feature for users
+    customerOrderSummaryRepository to track orders using kafka
+     */
     private final UserService userService;
     private final WishlistService wishlistService;
     private final CustomerOrderSummaryRepository customerOrderSummaryRepository;
@@ -33,6 +40,8 @@ public class UserAppController {
         this.wishlistService = wishlistService;
         this.customerOrderSummaryRepository = customerOrderSummaryRepository;
     }
+
+    //Used during registration - made public in gateway
     @PostMapping
     public ResponseEntity<UserResponse> add(@Valid @RequestBody UserRequest request) {
         UserResponse response = userService.add(request);
@@ -46,16 +55,19 @@ public class UserAppController {
     }
 
     @GetMapping
+    // Returns the public details of every user.
     public ResponseEntity<Collection<UserResponse>> getAll() {
         return ResponseEntity.ok(userService.getAll());
     }
 
     @GetMapping("/{id}")
+    // Returns one user's public details by ID.
     public ResponseEntity<UserResponse> get(@PathVariable Integer id) {
         return ResponseEntity.ok(userService.get(id));
     }
 
     @PatchMapping("/{id}")
+    // Changes only the user details supplied in the request.
     public ResponseEntity<UserResponse> update(
             @PathVariable Integer id,
             @Valid @RequestBody UpdateUserRequest request) {
@@ -63,23 +75,33 @@ public class UserAppController {
     }
 
     @DeleteMapping("/{id}")
+    // Deletes a user and returns the details that were removed.
     public ResponseEntity<UserResponse> delete(@PathVariable Integer id) {
         return ResponseEntity.ok(userService.delete(id));
     }
 
+    /*
+    Called by Auth app in AuthService -> userLogin()
+     */
     @PostMapping("/{id}/failed-attempts")
     public ResponseEntity<Integer> incrementFailedAttempts(@PathVariable Integer id) {
         return ResponseEntity.ok(userService.incFailedAttempts(id));
     }
 
     @PostMapping("/{id}/funds")
+    // Moves money from the user's bank account into their app wallet.
     public ResponseEntity<Double> addFunds(
             @PathVariable Integer id,
             @RequestBody AddFundsRequest request) {
         return ResponseEntity.ok(userService.addFunds(id, request.amount()));
     }
 
+    /*
+    Called by OrderApp upon checkout in UserService-> checkout() -> userClient.debit()
+     */
+
     @PostMapping("/{id}/debit")
+    // Removes money from the user's wallet when an order is paid for.
     public ResponseEntity<Double> deductFunds(
             @PathVariable Integer id,
             @RequestBody AddFundsRequest request) {
@@ -98,23 +120,35 @@ public class UserAppController {
         return ResponseEntity.status(HttpStatus.CREATED).body(userService.raiseTicketByEmail(request));
     }
 
+    /*
+    Called by Employee app in EmplpoyeeService -> withCustomerDetails()
+     */
     @GetMapping("/{id}/ticket-details")
     public ResponseEntity<TicketUserDetails> ticketDetails(@PathVariable Integer id) {
         return ResponseEntity.ok(userService.ticketDetails(id));
     }
 
+    /*
+    Called by Order app in service -> cancelOrder()
+     */
     @PostMapping("/{id}/refund")
     public ResponseEntity<String> refund(@PathVariable Integer id, @RequestBody OrderCancelRequest request)
     {
         return ResponseEntity.ok("Order "+request.reference()+" cancelled :(\nNew fund balance : "+userService.refund(id, request.amount()));
     }
 
+    /*
+    Called by Ticket app -> unlockUser() function
+     */
     @PostMapping("/{id}/unlock")
     public ResponseEntity<String> unlockUser(@PathVariable Integer id)
     {
         return ResponseEntity.ok("User "+userService.unlock(id)+" unlocked!");
     }
 
+    /*
+    Called by auth app
+     */
     @PostMapping("/{id}/secret-answer")
     public ResponseEntity<String> verifySecretAnswer(
             @PathVariable Integer id,
@@ -169,6 +203,7 @@ public class UserAppController {
     }
 
     @GetMapping("/{userId}/orders")
+    // Returns this user's saved order history, newest order first.
     public ResponseEntity<List<CustomerOrderSummaryResponse>> getOrders(
             @PathVariable Integer userId
     ) {
@@ -182,6 +217,7 @@ public class UserAppController {
         return ResponseEntity.ok(orders);
     }
     @PatchMapping("/{id}/password")
+    // Lets an authenticated user change only their own password.
     public ResponseEntity<Void> changePassword(
             @PathVariable Integer id,
             @RequestHeader("X-Authenticated-User-Id") Integer authenticatedUserId,

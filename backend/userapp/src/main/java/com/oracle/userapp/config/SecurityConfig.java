@@ -1,3 +1,7 @@
+/*
+Used to store hashed passwords in database.
+ */
+
 package com.oracle.userapp.config;
 
 import org.springframework.context.annotation.Bean;
@@ -9,6 +13,7 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 public class SecurityConfig {
 
     @Bean
+    // Provides BCrypt password hashing wherever the application needs it.
     public PasswordEncoder passwordEncoder()
     {
         return new BCryptPasswordEncoder();
