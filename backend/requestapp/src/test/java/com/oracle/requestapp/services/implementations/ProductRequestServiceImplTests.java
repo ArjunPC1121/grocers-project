@@ -6,6 +6,7 @@ import com.oracle.requestapp.entities.ProductRequest;
 import com.oracle.requestapp.entities.ProductCategory;
 import com.oracle.requestapp.entities.RequestAction;
 import com.oracle.requestapp.entities.RequestStatus;
+import com.oracle.requestapp.events.ProductRequestEventPublisher;
 import com.oracle.requestapp.exceptions.InvalidRequestStateException;
 import com.oracle.requestapp.repositories.ProductRequestRepository;
 import org.junit.jupiter.api.Test;
@@ -18,9 +19,19 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
 
 class ProductRequestServiceImplTests {
-    private final ProductRequestRepository repository = mock(ProductRequestRepository.class);
-    private final ProductRequestServiceImpl service = new ProductRequestServiceImpl(
-            repository, "http://example.test/products");
+    
+
+    private final ProductRequestRepository repository =
+            mock(ProductRequestRepository.class);
+    private final ProductRequestEventPublisher eventPublisher =
+            mock(ProductRequestEventPublisher.class);
+
+    private final ProductRequestServiceImpl service =
+            new ProductRequestServiceImpl(
+                    repository,
+                    eventPublisher,
+                    "http://example.test/products"
+            );
 
     @Test
     void createProductRequestDoesNotRequireProductId() {

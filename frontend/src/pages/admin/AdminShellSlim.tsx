@@ -5,6 +5,7 @@ import {
   Package, PackageSearch, Settings2, ShieldCheck, ShoppingBag, UserCircle, Users, X,
 } from "lucide-react";
 import { useAuth } from "../../context/AuthContext";
+import api from "../../config/api";
 
 const navigation = [
   { to: "/admin", label: "Overview", icon: LayoutDashboard },
@@ -17,6 +18,15 @@ const navigation = [
   { to: "/admin/admins", label: "Admin accounts", icon: Settings2, superAdmin: true },
   { to: "/admin/profile", label: "My profile", icon: UserCircle },
 ] as const;
+type AdminNotification = {
+  id: number;
+  requestId: number;
+  employeeId: number;
+  title: string;
+  message: string;
+  read: boolean;
+  createdAt: string;
+};
 
 export default function AdminShellSlim() {
   const [mobileOpen, setMobileOpen] = useState(false);
@@ -28,6 +38,8 @@ export default function AdminShellSlim() {
 
   const links = navigation.filter((item) => !("superAdmin" in item) || user?.role === "SUPER_ADMIN");
   const activePage = links.find((item) => item.to === location.pathname)?.label ?? "Admin workspace";
+  const [notifications, setNotifications] = useState<AdminNotification[]>([]);
+  const [notificationOpen, setNotificationOpen] = useState(false);
   useEffect(() => {
     setMobileOpen(false); setProfileOpen(false);
   }, [location.pathname]);
@@ -43,7 +55,52 @@ export default function AdminShellSlim() {
   }, [location.pathname, navigate]);
 
   const go = (to: string) => { navigate(to); };
+  useEffect(() => {
+    const loadNotifications = async () => {
+      try {
+        const { data } = await api.get<AdminNotification[]>(
+            "/admin/notifications",
+        );
 
+        setNotifications(Array.isArray(data) ? data : []);
+      } catch {
+        // Notifications are optional UI data; do not break the admin layout.
+      }
+    };
+
+    void loadNotifications();
+
+    const timer = window.setInterval(() => {
+      void loadNotifications();
+    }, 10000);
+
+    return () => window.clearInterval(timer);
+  }, []);
+  const unreadCount = notifications.filter(
+      (notification) => !notification.read,
+  ).length;
+
+  const openNotification = async (notification: AdminNotification) => {
+    setNotificationOpen(false);
+
+    if (!notification.read) {
+      try {
+        await api.patch(`/admin/notifications/${notification.id}/read`);
+
+        setNotifications((current) =>
+            current.map((item) =>
+                item.id === notification.id
+                    ? { ...item, read: true }
+                    : item,
+            ),
+        );
+      } catch {
+        // The request page can still be opened if marking read fails.
+      }
+    }
+
+    navigate("/admin/requests");
+  };
   return (
     <div className="min-h-screen bg-[#f5f7f4] text-[#17231b]">
       {mobileOpen && <button onClick={() => setMobileOpen(false)} className="fixed inset-0 z-30 bg-[#101b14]/40 backdrop-blur-[2px] lg:hidden" aria-label="Close navigation" />}
@@ -81,7 +138,82 @@ export default function AdminShellSlim() {
           <button onClick={() => setMobileOpen(true)} className="grid size-10 place-items-center rounded-xl border border-[#dfe5df] bg-white text-[#34483a] lg:hidden" aria-label="Open navigation"><Menu size={19} /></button>
           <div className="min-w-0"><p className="truncate text-[11px] font-bold uppercase tracking-[0.16em] text-[#8a978d]">Admin / {activePage}</p><h1 className="truncate text-lg font-bold tracking-tight sm:text-xl">{activePage}</h1></div>
 
-          <button onClick={() => go("/admin/requests")} className="relative ml-auto grid size-10 place-items-center rounded-xl border border-[#dfe5df] bg-white text-[#536258] shadow-sm hover:-translate-y-0.5" aria-label="View pending requests"><Bell size={18} /><span className="absolute right-2 top-2 size-2 rounded-full border-2 border-white bg-[#f27621]" /></button>
+          <div className="relative ml-auto">
+            <button
+                onClick={() => setNotificationOpen((value) => !value)}
+                className="relative grid size-10 place-items-center rounded-xl border border-[#dfe5df] bg-white text-[#536258] shadow-sm transition hover:-translate-y-0.5"
+                aria-label="Open notifications"
+            >
+              <Bell size={18} />
+
+              {unreadCount > 0 && (
+                  <span className="absolute -right-1 -top-1 grid min-w-5 h-5 place-items-center rounded-full border-2 border-white bg-[#f27621] px-1 text-[10px] font-bold text-white">
+        {unreadCount > 9 ? "9+" : unreadCount}
+      </span>
+              )}
+            </button>
+
+            {notificationOpen && (
+                <div className="absolute right-0 top-12 z-50 w-80 overflow-hidden rounded-2xl border border-[#dfe5df] bg-white shadow-xl">
+                  <div className="flex items-center justify-between border-b border-[#edf0ed] px-4 py-3">
+                    <div>
+                      <h3 className="font-semibold text-[#284331]">Notifications</h3>
+                      <p className="text-xs text-[#829087]">
+                        {unreadCount} unread request{unreadCount === 1 ? "" : "s"}
+                      </p>
+                    </div>
+
+                    <button
+                        onClick={() => {
+                          setNotificationOpen(false);
+                          go("/admin/requests");
+                        }}
+                        className="text-xs font-semibold text-app-orange hover:underline"
+                    >
+                      View all
+                    </button>
+                  </div>
+
+                  <div className="max-h-96 overflow-y-auto">
+                    {notifications.length === 0 ? (
+                        <p className="p-5 text-center text-sm text-[#829087]">
+                          No notifications yet.
+                        </p>
+                    ) : (
+                        notifications.slice(0, 6).map((notification) => (
+                            <button
+                                key={notification.id}
+                                onClick={() => void openNotification(notification)}
+                                className={`w-full border-b border-[#edf0ed] px-4 py-3 text-left transition hover:bg-[#f7faf7] ${
+                                    notification.read ? "bg-white" : "bg-orange-50/60"
+                                }`}
+                            >
+                              <div className="flex items-start gap-3">
+                                {!notification.read && (
+                                    <span className="mt-1.5 size-2 shrink-0 rounded-full bg-app-orange" />
+                                )}
+
+                                <div className={notification.read ? "ml-5" : ""}>
+                                  <p className="text-sm font-semibold text-[#284331]">
+                                    {notification.title}
+                                  </p>
+
+                                  <p className="mt-1 text-xs leading-5 text-[#657269]">
+                                    {notification.message}
+                                  </p>
+
+                                  <p className="mt-1 text-[11px] text-[#98a39b]">
+                                    Request #{notification.requestId}
+                                  </p>
+                                </div>
+                              </div>
+                            </button>
+                        ))
+                    )}
+                  </div>
+                </div>
+            )}
+          </div>
 
           <div className="relative">
             <button onClick={() => setProfileOpen((value) => !value)} className="flex h-10 items-center gap-2 rounded-xl border border-[#dfe5df] bg-white px-1.5 pr-2.5 text-left shadow-sm"><span className="grid size-7 place-items-center rounded-lg bg-[#e8efe9] text-xs font-bold text-[#284331]">{(user?.firstName?.[0] || "A").toUpperCase()}</span><span className="hidden max-w-28 truncate text-sm font-semibold sm:block">{user?.firstName || "Admin"}</span><ChevronDown size={14} className="text-[#819087]" /></button>

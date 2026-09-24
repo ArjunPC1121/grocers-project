@@ -1,11 +1,13 @@
 package com.oracle.requestapp.services.implementations;
 
 import com.oracle.requestapp.dto.CreateProductRequest;
+import com.oracle.requestapp.dto.ProductRequestCreatedEvent;
 import com.oracle.requestapp.dto.ProductRequestResponse;
 import com.oracle.requestapp.dto.UpdateRequestStatus;
 import com.oracle.requestapp.entities.ProductRequest;
 import com.oracle.requestapp.entities.RequestAction;
 import com.oracle.requestapp.entities.RequestStatus;
+import com.oracle.requestapp.events.ProductRequestEventPublisher;
 import com.oracle.requestapp.exceptions.ForbiddenOperationException;
 import com.oracle.requestapp.exceptions.InvalidRequestStateException;
 import com.oracle.requestapp.exceptions.ResourceNotFoundException;
@@ -17,6 +19,7 @@ import org.springframework.http.HttpEntity;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.client.RestTemplate;
 
+import java.time.Instant;
 import java.util.List;
 import java.util.HashMap;
 import java.util.Map;
@@ -26,10 +29,15 @@ public class ProductRequestServiceImpl implements ProductRequestService {
     private final ProductRequestRepository repository;
     private final RestTemplate restTemplate = new RestTemplate();
     private final String productsUrl;
+    private final ProductRequestEventPublisher eventPublisher;
 
-    public ProductRequestServiceImpl(ProductRequestRepository repository,
-                                     @Value("${services.products-url}") String productsUrl) {
+    public ProductRequestServiceImpl(
+            ProductRequestRepository repository,
+            ProductRequestEventPublisher eventPublisher,
+            @Value("${services.products-url}") String productsUrl
+    ) {
         this.repository = repository;
+        this.eventPublisher = eventPublisher;
         this.productsUrl = productsUrl;
     }
 
@@ -41,7 +49,19 @@ public class ProductRequestServiceImpl implements ProductRequestService {
                 request.quantity(), request.discount(), request.description(), request.tags(), request.searchAliases(),
                 request.unitValue(), request.unitType(), request.active(), request.imageUrl(), request.imageFileName(),
                 request.reason(), request.previousValues());
-        return ProductRequestResponse.from(repository.save(productRequest));
+        ProductRequest savedRequest = repository.save(productRequest);
+
+        eventPublisher.publish(new ProductRequestCreatedEvent(
+                savedRequest.getRequestId(),
+                savedRequest.getEmployeeId(),
+                savedRequest.getAction().name(),
+                savedRequest.getName(),
+                savedRequest.getQuantity(),
+                savedRequest.getReason(),
+                Instant.now()
+        ));
+
+        return ProductRequestResponse.from(savedRequest);
     }
 
     @Override
