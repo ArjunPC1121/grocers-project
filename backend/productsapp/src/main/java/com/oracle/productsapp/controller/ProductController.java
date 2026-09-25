@@ -35,6 +35,18 @@ public class ProductController {
         return ResponseEntity.status(HttpStatus.CREATED).body(productService.create(request));
     }
 
+    /**
+     * Temporary catalogue-entry endpoint for Insomnia: submit the product JSON
+     * and its local image together as multipart/form-data.
+     */
+    @PostMapping(value = "/with-image", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    public ResponseEntity<Product> createWithImage(
+            @Valid @RequestPart("product") ProductRequest request,
+            @RequestPart("image") MultipartFile image) {
+        return ResponseEntity.status(HttpStatus.CREATED)
+                .body(productService.createWithImage(request, image));
+    }
+
     @GetMapping
     public List<Product> getAll(
             @RequestParam(required = false) String category

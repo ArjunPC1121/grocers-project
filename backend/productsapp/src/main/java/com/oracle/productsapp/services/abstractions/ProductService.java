@@ -12,6 +12,12 @@ public interface ProductService {
 
     Product create(ProductRequest request);
 
+    /**
+     * Creates a fully searchable product and stores the supplied product image
+     * in the same request. Intended for catalogue administration/imports.
+     */
+    Product createWithImage(ProductRequest request, MultipartFile image);
+
     List<Product> getAll();
 
     List<Product> getActiveByCategory(ProductCategory category);

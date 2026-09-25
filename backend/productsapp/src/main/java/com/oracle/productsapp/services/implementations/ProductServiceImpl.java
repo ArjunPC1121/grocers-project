@@ -60,6 +60,21 @@ public class ProductServiceImpl implements ProductService {
     }
 
     @Override
+    @Transactional
+    public Product createWithImage(ProductRequest request, MultipartFile image) {
+        Map uploadResult = cloudinaryImageService.upload(image);
+
+        Product product = new Product();
+        applyRequest(product, request);
+        product.setImageUrl((String) uploadResult.get("secure_url"));
+        product.setImagePublicId((String) uploadResult.get("public_id"));
+        product.setSearchText(buildSearchText(product));
+
+        populateEmbedding(product);
+        return productRepository.save(product);
+    }
+
+    @Override
     public List<Product> getAll() {
         return productRepository.findAll();
     }
