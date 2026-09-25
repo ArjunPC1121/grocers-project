@@ -5,27 +5,39 @@ import com.oracle.userapp.entities.LockedReason;
 import com.oracle.userapp.entities.SecretQuestion;
 import com.oracle.userapp.entities.User;
 import com.oracle.userapp.repositories.UserRepository;
+import com.oracle.userapp.repositories.WalletTransactionRepository;
 import com.oracle.userapp.services.abstractions.UserServiceManager;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.client.RestTemplate;
+import org.springframework.web.server.ResponseStatusException;
 
 import java.time.LocalDateTime;
 import java.util.Collection;
 import java.util.Map;
 import java.util.UUID;
 
+import com.oracle.userapp.dto.WalletTransactionResponse;
+import com.oracle.userapp.entities.WalletTransaction;
+import com.oracle.userapp.entities.WalletTransactionType;
+import java.util.List;
+
 @Service
+// Contains the business rules for user accounts, wallets, and account recovery.
 public class UserService implements UserServiceManager<UserRequest,UserResponse,UpdateUserRequest, TicketResponse,Integer> {
 
-    private static final String CREATE_BANK_ACCOUNT_URL =
-            "http://localhost:8089/grocers/api/banks/add/{userId}";
+    // BankApp endpoint used to confirm that a supplied account belongs to a phone number.
+    private static final String VALIDATE_BANK_ACCOUNT_URL =
+            "http://localhost:8089/grocers/api/banks/validate?accountNumber={accountNumber}&phoneNumber={phoneNumber}";
+    // BankApp endpoint used to take funds from a bank account.
     private static final String DEDUCT_BANK_FUNDS_URL =
-            "http://localhost:8089/grocers/api/banks/{userId}/deduct";
+            "http://localhost:8089/grocers/api/banks/{accountNumber}/deduct";
+    // TicketApp endpoint used to create a locked-account support ticket.
     private static final String RAISE_TICKET_URL =
             "http://localhost:8087/grocers/api/tickets";
 
@@ -33,16 +45,31 @@ public class UserService implements UserServiceManager<UserRequest,UserResponse,
     private final UserRepository repository;
     private final PasswordEncoder passwordEncoder;
     private final RestTemplate restTemplate;
+    private final WalletTransactionRepository walletTransactionRepository;
 
-    public UserService(UserRepository repository, PasswordEncoder passwordEncoder, RestTemplate restTemplate)
+    public UserService(UserRepository repository, PasswordEncoder passwordEncoder,
+                       RestTemplate restTemplate, WalletTransactionRepository walletTransactionRepository)
     {
         this.repository = repository;
         this.passwordEncoder=passwordEncoder;
         this.restTemplate = restTemplate;
+        this.walletTransactionRepository = walletTransactionRepository;
     }
     @Override
     @Transactional
+    // Saves a new user after confirming the supplied bank account belongs to their phone number.
     public UserResponse add(UserRequest data) {
+        Boolean linkedBankAccount = restTemplate.getForObject(
+                VALIDATE_BANK_ACCOUNT_URL,
+                Boolean.class,
+                data.getAccountNumber(),
+                data.getPhoneNumber()
+        );
+        if (!Boolean.TRUE.equals(linkedBankAccount)) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
+                    "Bank account number does not exist or is not linked to this phone number");
+        }
+
         User user = new User();
         mapRequestToEntity(user, data);
         user.setPassword(passwordEncoder.encode(data.getPassword()));
@@ -52,26 +79,21 @@ public class UserService implements UserServiceManager<UserRequest,UserResponse,
         );
         user = repository.save(user);
 
-        HttpHeaders headers = new HttpHeaders();
-        headers.setContentType(MediaType.APPLICATION_JSON);
-
-        HttpEntity<Map<String, String>> request = new HttpEntity<>(
-                Map.of("accountNumber", user.getAccountNumber()),
-                headers
-        );
-
-        restTemplate.postForEntity(
-                CREATE_BANK_ACCOUNT_URL,
-                request,
-                Void.class,
-                user.getId()
-        );
-
         return mapEntityToResponse(user);
 
     }
 
+    /** Creates a user for an administrator and exposes the generated password only in this response. */
+    @Transactional
+    public AdminCreatedUserResponse addByAdmin(AdminUserRequest data) {
+        String temporaryPassword = UUID.randomUUID().toString().replace("-", "").substring(0, 12);
+        UserRequest request = new UserRequest(data.firstName(), data.lastName(), data.email(), temporaryPassword,
+                data.dob(), data.phoneNumber(), data.address(), data.accountNumber(), data.secretQuestion(), data.secretAnswer());
+        return new AdminCreatedUserResponse(add(request), temporaryPassword);
+    }
+
     @Override
+    // Returns all users without exposing passwords or security answers.
     public Collection<UserResponse> getAll() {
         Collection<User> allUsers = repository.findAll();
 
@@ -85,6 +107,7 @@ public class UserService implements UserServiceManager<UserRequest,UserResponse,
     }
 
     @Override
+    // Updates only the profile fields that have a value in the request.
     public UserResponse update(Integer id, UpdateUserRequest data)throws RuntimeException {
         User user = repository.findById(id).orElseThrow(()-> new RuntimeException("User not found"));
         mapUpdateRequestToEntity(user, data);
@@ -99,6 +122,10 @@ public class UserService implements UserServiceManager<UserRequest,UserResponse,
         return mapEntityToResponse(user);
     }
 
+    /*
+    Triggered upon a failed login by auth app.
+    Check authservice - loginUser()
+     */
     @Override
     public int incFailedAttempts(Integer id) throws RuntimeException{
         User user = repository.findById(id).orElseThrow(()->new RuntimeException("User not found"));
@@ -118,15 +145,22 @@ public class UserService implements UserServiceManager<UserRequest,UserResponse,
         repository.save(user);
         return failedAttempts;
     }
+
+    /*
+    Makes a REST call to bank accounts app to add money to wallet.
+     */
     @Override
-    public double addFunds(Integer id, double amount) throws RuntimeException
+    public double addFunds(Integer id, double amount, String pin) throws RuntimeException
     {
+        if (pin == null || pin.isBlank()) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Bank PIN is required");
+        }
         User user = repository.findById(id).orElseThrow(()-> new RuntimeException("User not found"));
         HttpHeaders headers = new HttpHeaders();
         headers.setContentType(MediaType.APPLICATION_JSON);
 
-        HttpEntity<Map<String, Double>> request = new HttpEntity<>(
-                Map.of("amount", amount),
+        HttpEntity<Map<String, Object>> request = new HttpEntity<>(
+                Map.of("amount", amount, "pin", pin),
                 headers
         );
 
@@ -135,7 +169,7 @@ public class UserService implements UserServiceManager<UserRequest,UserResponse,
                 DEDUCT_BANK_FUNDS_URL,
                 request,
                 Double.class,
-                id
+                user.getAccountNumber()
         );
 
         if (deductedAmount == null) {
@@ -144,15 +178,43 @@ public class UserService implements UserServiceManager<UserRequest,UserResponse,
 
         user.setFunds(user.getFunds() + deductedAmount);
         user = repository.save(user);
+        recordTransaction(
+                user,
+                WalletTransactionType.ADD_FUNDS,
+                deductedAmount,
+                "Bank wallet top-up"
+        );
         return user.getFunds();
     }
 
     @Override
-    public double deductFunds(Integer id, double amount) throws RuntimeException
-    {
-        User user = repository.findById(id).orElseThrow(()-> new RuntimeException("User not found"));
-        user.setFunds(user.getFunds()-amount);
-        repository.save(user);
+    @Transactional
+    public double deductFunds(Integer id, double amount, String reference) {
+        if (amount <= 0) {
+            throw new IllegalArgumentException(
+                    "Debit amount must be greater than zero"
+            );
+        }
+
+        User user = repository.findById(id)
+                .orElseThrow(() -> new RuntimeException("User not found"));
+
+        if (user.getFunds() < amount) {
+            throw new IllegalStateException(
+                    "Insufficient funds. Available balance: " + user.getFunds()
+            );
+        }
+
+        user.setFunds(user.getFunds() - amount);
+        user = repository.save(user);
+
+        recordTransaction(
+                user,
+                WalletTransactionType.ORDER_PAYMENT,
+                amount,
+                reference
+        );
+
         return user.getFunds();
     }
 
@@ -165,7 +227,32 @@ public class UserService implements UserServiceManager<UserRequest,UserResponse,
             throw new RuntimeException("User account is not locked");
         }
 
-        TicketRequest ticketRequest = new TicketRequest(user.getId(), user.getLockedReason());
+        return createLockedAccountTicket(user, null);
+    }
+
+    /** Lets a locked customer request help before they can authenticate again. */
+    public TicketResponse raiseTicketByEmail(PublicTicketRequest request) {
+        User user = repository.findByEmail(request.email())
+                .orElseThrow(() -> new RuntimeException("No account exists for this email"));
+        if (!user.isAccountLocked() || user.getLockedReason() == null) {
+            throw new RuntimeException("This account is not locked");
+        }
+        return createLockedAccountTicket(user, request.note());
+    }
+
+    public TicketUserDetails ticketDetails(Integer id) {
+        User user = repository.findById(id).orElseThrow(() -> new RuntimeException("User not found"));
+        return new TicketUserDetails(user.getId(), user.getFirstName(), user.getLastName(), user.getEmail(),
+                user.isAccountLocked(), user.getFailedLoginAttempts(),
+                user.getLockedReason() == null ? null : user.getLockedReason().name());
+    }
+
+    private TicketResponse createLockedAccountTicket(User user, String note) {
+        // Builds the request sent to TicketApp with the user's lock reason.
+        TicketRequest ticketRequest = new TicketRequest();
+        ticketRequest.setUserId(user.getId());
+        ticketRequest.setLockedReason(user.getLockedReason());
+        ticketRequest.setRequestNote(note);
 
         HttpHeaders headers = new HttpHeaders();
         headers.setContentType(MediaType.APPLICATION_JSON);
@@ -185,20 +272,37 @@ public class UserService implements UserServiceManager<UserRequest,UserResponse,
         }
 
         int ticketId = ticketServiceResponse.ticketId();
-        return new TicketResponse(ticketId,id);
+        return new TicketResponse(ticketId, user.getId());
 
     }
 
     @Override
-    public Double refund(Integer id, double amount)
-    {
-        User user = repository.findById(id).orElseThrow(()-> new RuntimeException("User not found"));
-        user.setFunds(user.getFunds()+amount);
-        repository.save(user);
+    @Transactional
+    public Double refund(Integer id, double amount, String reference) {
+        if (amount <= 0) {
+            throw new IllegalArgumentException(
+                    "Refund amount must be greater than zero"
+            );
+        }
+
+        User user = repository.findById(id)
+                .orElseThrow(() -> new RuntimeException("User not found"));
+
+        user.setFunds(user.getFunds() + amount);
+        user = repository.save(user);
+
+        recordTransaction(
+                user,
+                WalletTransactionType.REFUND,
+                amount,
+                reference
+        );
+
         return user.getFunds();
     }
 
     @Override
+    // Removes the lock and clears all failed-login and reset-token data.
     public Integer unlock(Integer id)
     {
         User user = repository.findById(id).orElseThrow(()-> new RuntimeException("User not found"));
@@ -212,6 +316,7 @@ public class UserService implements UserServiceManager<UserRequest,UserResponse,
     }
 
     @Override
+    // Checks a recovery answer and creates a short-lived password reset token.
     public String verifySecretAnswer(Integer id, SecretAnswerRequest request)
     {
         User user = repository.findById(id).orElseThrow(()-> new RuntimeException("User not found"));
@@ -249,6 +354,7 @@ public class UserService implements UserServiceManager<UserRequest,UserResponse,
     }
 
     @Override
+    // Replaces the password when the supplied reset token is valid and unexpired.
     public void resetPassword(Integer id, ResetPasswordRequest request)
     {
         User user = repository.findById(id).orElseThrow(()-> new RuntimeException("User not found"));
@@ -299,6 +405,7 @@ public class UserService implements UserServiceManager<UserRequest,UserResponse,
 
     private static void mapRequestToEntity(User user, UserRequest data)
     {
+        // Copies registration fields that can be stored directly on the user.
         user.setFirstName(data.getFirstName());
         user.setLastName(data.getLastName());
         user.setAccountNumber(data.getAccountNumber());
@@ -310,6 +417,7 @@ public class UserService implements UserServiceManager<UserRequest,UserResponse,
 
     private static UserResponse mapEntityToResponse(User user)
     {
+        // Creates a safe response that intentionally leaves out passwords and secrets.
         UserResponse response = new UserResponse();
         response.setId(user.getId());
         response.setFirstName(user.getFirstName());
@@ -326,6 +434,7 @@ public class UserService implements UserServiceManager<UserRequest,UserResponse,
 
     private static void mapUpdateRequestToEntity(User user, UpdateUserRequest data)
     {
+        // Leaves existing values unchanged when a field was not sent by the client.
         if (data.getFirstName() != null) {
             user.setFirstName(data.getFirstName());
         }
@@ -347,5 +456,47 @@ public class UserService implements UserServiceManager<UserRequest,UserResponse,
         if (data.getAccountNumber() != null) {
             user.setAccountNumber(data.getAccountNumber());
         }
+    }
+    @Transactional
+    // Hashes and saves a user's new password.
+    public void changePassword(Integer userId, ChangePasswordRequest request) {
+        User user = repository.findById(userId)
+                .orElseThrow(() -> new ResponseStatusException(
+                        HttpStatus.NOT_FOUND,
+                        "User not found"
+                ));
+
+        user.setPassword(passwordEncoder.encode(request.newPassword()));
+        repository.save(user);
+    }
+
+    @Override
+    public List<WalletTransactionResponse> getWalletTransactions(Integer userId) {
+        if (!repository.existsById(userId)) {
+            throw new RuntimeException("User not found");
+        }
+
+        return walletTransactionRepository
+                .findByUserIdOrderByCreatedAtDesc(userId)
+                .stream()
+                .map(WalletTransactionResponse::from)
+                .toList();
+    }
+
+    // Saves a permanent record whenever the wallet balance changes.
+    private void recordTransaction(
+            User user,
+            WalletTransactionType type,
+            double amount,
+            String reference
+    ) {
+        WalletTransaction transaction = new WalletTransaction();
+        transaction.setUserId(user.getId());
+        transaction.setType(type);
+        transaction.setAmount(amount);
+        transaction.setBalanceAfterTransaction(user.getFunds());
+        transaction.setReference(reference);
+
+        walletTransactionRepository.save(transaction);
     }
 }

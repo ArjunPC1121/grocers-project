@@ -12,6 +12,7 @@ import jakarta.persistence.Id;
 import jakarta.persistence.OneToMany;
 import jakarta.persistence.PrePersist;
 import jakarta.persistence.PreUpdate;
+import jakarta.persistence.SequenceGenerator;
 import jakarta.persistence.Table;
 import jakarta.persistence.Version;
 import jakarta.validation.constraints.DecimalMin;
@@ -22,6 +23,8 @@ import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
 import lombok.ToString;
+
+import com.oracle.orderapp.entities.PaymentMethod;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
@@ -36,7 +39,8 @@ import java.util.List;
 public class Order {
 
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @SequenceGenerator(name = "orders_sequence", sequenceName = "ORDERS_SEQ", allocationSize = 1)
+    @GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "orders_sequence")
     private Integer id;
 
     @Version
@@ -57,6 +61,11 @@ public class Order {
     @Enumerated(EnumType.STRING)
     @Column(nullable = false, length = 30)
     private OrderStatus status = OrderStatus.CREATED;
+
+    @NotNull(message = "Payment method is required")
+    @Enumerated(EnumType.STRING)
+    @Column(name = "payment_method", nullable = false, length = 30)
+    private PaymentMethod paymentMethod;
 
     @NotNull(message = "Total amount is required")
     @DecimalMin(value = "0.00", inclusive = true, message = "Total amount cannot be negative")

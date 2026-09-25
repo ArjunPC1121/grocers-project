@@ -20,9 +20,12 @@ public class BankAccount {
     @Column(name = "account_number", nullable = false, length = 30)
     private String accountNumber; // PK; String preserves leading zeroes
 
+    @Column(name = "phone_number", nullable = false, length = 15)
+    private String phoneNumber;
+
+    @Column(name = "pin", nullable = false, length = 20)
+    private String pin;
+
     @Column(name = "balance", nullable = false)
     private Double balance;
-
-    @Column(name = "user_id", nullable = false)
-    private int userId; // FK to the user record
 }

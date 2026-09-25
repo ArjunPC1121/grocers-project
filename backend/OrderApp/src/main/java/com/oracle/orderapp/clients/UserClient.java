@@ -7,6 +7,7 @@ import org.springframework.stereotype.Component;
 import org.springframework.web.client.RestClient;
 
 import com.oracle.orderapp.dtos.PaymentRequest;
+import com.oracle.orderapp.dtos.OrderCustomerDetails;
 
 @Component
 public class UserClient {
@@ -39,5 +40,12 @@ public class UserClient {
                 .uri("/{userId}", userId)
                 .retrieve()
                 .toBodilessEntity();
+    }
+
+    public OrderCustomerDetails getCustomer(Integer userId) {
+        return restClient.get()
+                .uri("/{userId}", userId)
+                .retrieve()
+                .body(OrderCustomerDetails.class);
     }
 }

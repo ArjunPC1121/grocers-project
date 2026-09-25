@@ -11,6 +11,7 @@ import java.util.UUID;
 import com.oracle.orderapp.clients.CartClient;
 import com.oracle.orderapp.clients.EmployeeClient;
 import com.oracle.orderapp.dtos.*;
+import com.oracle.orderapp.entities.PaymentMethod;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -22,6 +23,7 @@ import com.oracle.orderapp.entities.OrderStatus;
 import com.oracle.orderapp.exceptions.ResourceNotFoundException;
 import com.oracle.orderapp.repository.OrderRepository;
 import com.oracle.orderapp.services.abstractions.OrderService;
+import com.oracle.orderapp.events.OrderCheckoutEventPublisher;
 
 import lombok.RequiredArgsConstructor;
 
@@ -34,6 +36,8 @@ public class OrderServiceImpl implements OrderService {
     private final UserClient userClient;
     private final CartClient cartClient;
     private final EmployeeClient employeeClient;
+    private final OrderCheckoutEventPublisher orderCheckoutEventPublisher;
+
     private boolean isValidEmployeeStatusChange(
             OrderStatus currentStatus,
             OrderStatus newStatus) {
@@ -70,7 +74,8 @@ public class OrderServiceImpl implements OrderService {
         order.setCartId(request.cartId());
         order.setDeliveryAddress(request.deliveryAddress());
         order.setStatus(OrderStatus.CREATED);
-
+        order.setPaymentMethod(request.paymentMethod());
+        
         BigDecimal totalAmount = BigDecimal.ZERO;
 
         for (OrderItemRequest requestItem : request.items()) {
@@ -110,6 +115,15 @@ public class OrderServiceImpl implements OrderService {
     }
 
     @Override
+    @Transactional(readOnly = true)
+    public List<EmployeeOrderDetails> getAllEmployeeDetails(Integer employeeId) {
+        return orderRepository.findAll().stream()
+                .filter(order -> order.getUpdatedByEmployeeId() == null
+                        || employeeId.equals(order.getUpdatedByEmployeeId()))
+                .map(this::employeeDetails).toList();
+    }
+
+    @Override
     public Order getById(Integer orderId) {
         return orderRepository.findById(orderId)
                 .orElseThrow(() ->
@@ -124,13 +138,24 @@ public class OrderServiceImpl implements OrderService {
 
 
 
+    
     @Override
     @Transactional
     public Order checkout(Integer orderId) {
         Order order = getById(orderId);
+
+        if (order.getPaymentMethod() == null) {
+            throw new IllegalStateException("Order has no payment method");
+        }
+
+        if (order.getPaymentMethod() == PaymentMethod.CARD) {
+            throw new IllegalStateException(
+                    "Card payments are not available yet. Choose Funds or Cash on Delivery."
+            );
+        }
+
         if (order.getStatus() != OrderStatus.CREATED
                 && order.getStatus() != OrderStatus.PAYMENT_FAILED) {
-
             throw new IllegalStateException(
                     "Only CREATED or PAYMENT_FAILED orders can be checked out"
             );
@@ -148,27 +173,51 @@ public class OrderServiceImpl implements OrderService {
                 reducedItems.add(item);
             }
         } catch (Exception exception) {
+            // Temporary: check Order-app console for the real Product-service error.
+            exception.printStackTrace();
+
             releaseReducedStock(reducedItems);
 
             order.setStatus(OrderStatus.STOCK_REJECTED);
             return orderRepository.save(order);
         }
 
-        try {
-            userClient.debit(
-                    order.getCustomerId(),
-                    order.getTotalAmount(),
-                    order.getOrderNumber()
-            );
-        } catch (Exception exception) {
-            releaseReducedStock(order.getItems());
+        if (order.getPaymentMethod() == PaymentMethod.FUNDS) {
+            try {
+                userClient.debit(
+                        order.getCustomerId(),
+                        order.getTotalAmount(),
+                        order.getOrderNumber()
+                );
+            } catch (Exception exception) {
+                exception.printStackTrace();
 
-            order.setStatus(OrderStatus.PAYMENT_FAILED);
-            return orderRepository.save(order);
+                releaseReducedStock(order.getItems());
+
+                order.setStatus(OrderStatus.PAYMENT_FAILED);
+                return orderRepository.save(order);
+            }
         }
 
+        // Requires cartClient.checkoutCart(Integer cartId).
+        // Cart status should change from ACTIVE to CHECKED_OUT.
+        cartClient.checkoutCart(order.getCartId());
+
         order.setStatus(OrderStatus.PLACED);
-        return orderRepository.save(order);
+        Order checkedOutOrder = orderRepository.save(order);
+
+        orderCheckoutEventPublisher.publish(
+                new OrderCheckedOutEvent(
+                        checkedOutOrder.getId(),
+                        checkedOutOrder.getCustomerId(),
+                        checkedOutOrder.getOrderNumber(),
+                        checkedOutOrder.getTotalAmount(),
+                        checkedOutOrder.getStatus().name(),
+                        checkedOutOrder.getUpdatedAt()
+                )
+        );
+
+        return checkedOutOrder;
     }
 
     @Override
@@ -176,17 +225,33 @@ public class OrderServiceImpl implements OrderService {
     public Order cancel(Integer orderId, String cancellationReason) {
         Order order = getById(orderId);
 
+        return cancelOrder(order, cancellationReason, null);
+    }
+
+    @Override
+    @Transactional
+    public Order cancelByEmployee(Integer orderId, String cancellationReason, Integer employeeId) {
+        employeeClient.checkEmployeeExists(employeeId);
+        Order order = getById(orderId);
+        claimableBy(order, employeeId);
+        return cancelOrder(order, cancellationReason, employeeId);
+    }
+
+    private Order cancelOrder(Order order, String cancellationReason, Integer employeeId) {
+
         if (order.getStatus() != OrderStatus.PLACED) {
             throw new IllegalStateException(
                     "Only PLACED orders can be cancelled"
             );
         }
 
-        userClient.refund(
-                order.getCustomerId(),
-                order.getTotalAmount(),
-                order.getOrderNumber()
-        );
+        if (order.getPaymentMethod() == PaymentMethod.FUNDS) {
+            userClient.refund(
+                    order.getCustomerId(),
+                    order.getTotalAmount(),
+                    order.getOrderNumber()
+            );
+        }
 
         for (OrderItem item : order.getItems()) {
             productClient.increaseQuantity(
@@ -196,9 +261,23 @@ public class OrderServiceImpl implements OrderService {
         }
 
         order.setStatus(OrderStatus.CANCELLED);
+        if (employeeId != null) order.setUpdatedByEmployeeId(employeeId);
         order.setCancellationReason(cancellationReason);
 
-        return orderRepository.save(order);
+        Order cancelledOrder = orderRepository.save(order);
+
+        orderCheckoutEventPublisher.publish(
+                new OrderCheckedOutEvent(
+                        cancelledOrder.getId(),
+                        cancelledOrder.getCustomerId(),
+                        cancelledOrder.getOrderNumber(),
+                        cancelledOrder.getTotalAmount(),
+                        cancelledOrder.getStatus().name(),
+                        cancelledOrder.getUpdatedAt()
+                )
+        );
+
+        return cancelledOrder;
     }
 
     @Override
@@ -233,6 +312,12 @@ public class OrderServiceImpl implements OrderService {
         return orderRepository.save(order);
     }
 
+    private void claimableBy(Order order, Integer employeeId) {
+        if (order.getUpdatedByEmployeeId() != null && !employeeId.equals(order.getUpdatedByEmployeeId())) {
+            throw new IllegalStateException("This order is already being handled by another employee");
+        }
+    }
+
     private void releaseReducedStock(List<OrderItem> items) {
         for (OrderItem item : items) {
             productClient.increaseQuantity(
@@ -260,6 +345,17 @@ public class OrderServiceImpl implements OrderService {
                 .substring(0, 8)
                 .toUpperCase(Locale.ROOT);
     }
+
+    private EmployeeOrderDetails employeeDetails(Order order) {
+        List<OrderItemDetails> items = order.getItems().stream()
+                .map(item -> new OrderItemDetails(item.getProductId(), item.getProductName(),
+                        item.getQuantity(), item.getUnitPrice(), item.getSubtotal()))
+                .toList();
+        return new EmployeeOrderDetails(order.getId(), order.getOrderNumber(), order.getCustomerId(),
+                userClient.getCustomer(order.getCustomerId()), order.getStatus().name(), order.getTotalAmount(),
+                order.getDeliveryAddress(), items, order.getCancellationReason(), order.getOrderedAt(), order.getUpdatedAt(),
+                order.getUpdatedByEmployeeId());
+    }
     @Override
     @Transactional
     public Order updateStatus(
@@ -269,6 +365,8 @@ public class OrderServiceImpl implements OrderService {
         employeeClient.checkEmployeeExists(request.employeeId());
 
         Order order = getById(orderId);
+
+        claimableBy(order, request.employeeId());
 
         if (!isValidEmployeeStatusChange(
                 order.getStatus(),

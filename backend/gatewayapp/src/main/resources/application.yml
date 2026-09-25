@@ -49,7 +49,19 @@ spring:
             - id: bankapp
               uri: http://localhost:8089
               predicates:
-                - Path=/grocers/api/bank-accounts/**
+                - Path=/grocers/api/banks/**
+            - id: assistantapp
+              uri: http://localhost:8092
+              predicates:
+                - Path=/grocers/api/assistant/**
+            - id: supportassistantapp
+              uri: http://localhost:8093
+              predicates:
+                - Path=/grocers/api/support-assistant/**
+            - id: chatapp
+              uri: http://localhost:8094
+              predicates:
+                - Path=/grocers/api/chats/**
 
 server:
   port: 8091
@@ -60,4 +72,4 @@ app:
   jwt:
     secret: arjun_akash_abhiram_pragathi_pranav
   cors:
-    allowed-origin: ${FRONTEND_ORIGIN:http://localhost:3000}
+    allowed-origin: ${FRONTEND_ORIGIN:http://localhost:5173}

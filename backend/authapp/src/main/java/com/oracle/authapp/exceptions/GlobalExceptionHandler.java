@@ -20,6 +20,16 @@ public class GlobalExceptionHandler {
         return ResponseEntity.status(HttpStatus.FORBIDDEN).body(Map.of("message", "This user account is locked"));
     }
 
+    @ExceptionHandler(EmployeeInactiveException.class)
+    ResponseEntity<Map<String, String>> employeeInactive(EmployeeInactiveException ignored) {
+        return ResponseEntity.status(HttpStatus.FORBIDDEN).body(Map.of("message", "This employee account is inactive"));
+    }
+
+    @ExceptionHandler(SecurityRecoveryEscalatedException.class)
+    ResponseEntity<Map<String, String>> securityRecoveryEscalated(SecurityRecoveryEscalatedException ignored) {
+        return ResponseEntity.status(HttpStatus.CONFLICT).body(Map.of("message", "Security recovery needs employee review"));
+    }
+
     @ExceptionHandler(MethodArgumentNotValidException.class)
     ResponseEntity<Map<String, String>> validation(MethodArgumentNotValidException exception) {
         String message = exception.getBindingResult().getFieldErrors().stream()

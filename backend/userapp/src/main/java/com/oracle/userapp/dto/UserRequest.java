@@ -13,6 +13,10 @@ import java.sql.Date;
 @Data
 @AllArgsConstructor
 @NoArgsConstructor
+
+/*
+User registration DTO
+ */
 public class UserRequest {
 
     @NotBlank

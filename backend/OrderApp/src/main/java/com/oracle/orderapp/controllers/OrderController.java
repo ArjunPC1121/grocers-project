@@ -2,6 +2,8 @@ package com.oracle.orderapp.controllers;
 
 import com.oracle.orderapp.dtos.CancelOrderRequest;
 import com.oracle.orderapp.dtos.CreateOrderRequest;
+import com.oracle.orderapp.dtos.EmployeeCancelOrderRequest;
+import com.oracle.orderapp.dtos.EmployeeOrderDetails;
 import com.oracle.orderapp.dtos.UpdateOrderAddressRequest;
 import com.oracle.orderapp.dtos.UpdateOrderStatusRequest;
 import com.oracle.orderapp.entities.Order;
@@ -33,6 +35,13 @@ public class OrderController {
         return orderService.getAll();
     }
 
+    /** Used by EmployeeApp to show fulfilment details without exposing them to customer order views. */
+    @GetMapping("/employee-details")
+    public List<EmployeeOrderDetails> getAllEmployeeDetails(
+            @RequestHeader("X-Authenticated-User-Id") Integer employeeId) {
+        return orderService.getAllEmployeeDetails(employeeId);
+    }
+
     @GetMapping("/{orderId}")
     public Order getById(@PathVariable Integer orderId) {
         return orderService.getById(orderId);
@@ -61,6 +70,12 @@ public class OrderController {
             @Valid @RequestBody CancelOrderRequest request) {
 
         return orderService.cancel(orderId, request.reason());
+    }
+    @PostMapping("/{orderId}/employee-cancel")
+    public Order cancelByEmployee(
+            @PathVariable Integer orderId,
+            @Valid @RequestBody EmployeeCancelOrderRequest request) {
+        return orderService.cancelByEmployee(orderId, request.reason(), request.employeeId());
     }
 
     @DeleteMapping("/{orderId}")

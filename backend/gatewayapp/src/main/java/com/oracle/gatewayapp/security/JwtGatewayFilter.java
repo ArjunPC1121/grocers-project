@@ -37,6 +37,9 @@ public class JwtGatewayFilter implements GlobalFilter {
     private final SecretKey signingKey;
     private final String internalRequestSecret;
 
+    private static final String INTERNAL_SERVICE_HEADER = "X-Internal-Service";
+    private static final String INTERNAL_SECRET_HEADER = "X-Internal-Secret";
+
     public JwtGatewayFilter(@Value("${app.jwt.secret}") String secret,
                             @Value("${app.gateway.internal-secret}") String internalRequestSecret) {
         if (secret == null || secret.getBytes(StandardCharsets.UTF_8).length < 32) {
@@ -49,7 +52,11 @@ public class JwtGatewayFilter implements GlobalFilter {
     @Override
     public Mono<Void> filter(ServerWebExchange exchange, GatewayFilterChain chain) {
         String path = exchange.getRequest().getPath().value();
-        if (exchange.getRequest().getMethod() == HttpMethod.OPTIONS || isPublic(path)) {
+        if (isAuthAppInternalRequest(exchange)) {
+            return chain.filter(exchange);
+        }
+        if (exchange.getRequest().getMethod() == HttpMethod.OPTIONS
+                || isPublic(path, exchange.getRequest().getMethod())) {
             return chain.filter(exchange);
         }
 
@@ -92,11 +99,27 @@ public class JwtGatewayFilter implements GlobalFilter {
         }
     }
 
-    private boolean isPublic(String path) {
-        return path.startsWith("/grocers/api/auth/login/");
+
+
+
+
+    private boolean isPublic(String path, HttpMethod method) {
+        return path.startsWith("/grocers/api/auth/login/")
+                || path.equals("/grocers/api/auth/locked-account/ticket")
+                || path.equals("/grocers/api/auth/locked-account/status")
+                || path.equals("/grocers/api/auth/locked-account/security-question")
+                || path.equals("/grocers/api/auth/locked-account/verify-security-answer")
+                || path.equals("/grocers/api/auth/locked-account/reset-password")
+                || path.equals("/grocers/api/users")
+                || (method == HttpMethod.POST && path.equals("/grocers/api/banks/add"))
+                || (method == HttpMethod.GET
+                && path.startsWith("/grocers/api/products"));
     }
 
     private boolean isAuthorized(String path, String role) {
+        if (path.equals("/grocers/api/users/admin")) {
+            return "ADMIN".equals(role);
+        }
         if (path.matches("/grocers/api/users/\\d+/(failed-attempts|unlock)")) {
             return Set.of("EMPLOYEE", "ADMIN").contains(role);
         }
@@ -110,6 +133,12 @@ public class JwtGatewayFilter implements GlobalFilter {
         if (path.startsWith("/grocers/api/requests")) {
             return Set.of("EMPLOYEE", "ADMIN").contains(role);
         }
+        if (path.startsWith("/grocers/api/assistant")) {
+            return "USER".equals(role);
+        }
+        if (path.startsWith("/grocers/api/chats")) {
+            return Set.of("USER", "EMPLOYEE").contains(role);
+        }
         return Set.of("USER", "EMPLOYEE", "ADMIN").contains(role);
     }
 
@@ -121,5 +150,23 @@ public class JwtGatewayFilter implements GlobalFilter {
     private Mono<Void> reject(ServerWebExchange exchange, HttpStatus status) {
         exchange.getResponse().setStatusCode(status);
         return exchange.getResponse().setComplete();
+    }
+
+    private boolean isAuthAppInternalRequest(ServerWebExchange exchange) {
+        String path = exchange.getRequest().getPath().value();
+
+        HttpMethod method = exchange.getRequest().getMethod();
+        boolean failedLoginUpdate = method == HttpMethod.POST
+                && (path.matches("/grocers/api/users/\\d+/failed-attempts")
+                || path.equals("/grocers/api/users/tickets"));
+        boolean securityRecovery = (method == HttpMethod.GET && path.matches("/grocers/api/users/\\d+/secret-question"))
+                || (method == HttpMethod.POST && path.matches("/grocers/api/users/\\d+/(secret-answer|password-reset)"));
+        return (failedLoginUpdate || securityRecovery)
+                && "authapp".equals(
+                exchange.getRequest().getHeaders()
+                        .getFirst(INTERNAL_SERVICE_HEADER))
+                && internalRequestSecret.equals(
+                exchange.getRequest().getHeaders()
+                        .getFirst(INTERNAL_SECRET_HEADER));
     }
 }

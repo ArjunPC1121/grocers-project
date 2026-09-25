@@ -15,8 +15,10 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestClient;
 
 import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.time.DayOfWeek;
 import java.time.LocalDate;
+import java.util.LinkedHashMap;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
@@ -37,6 +39,7 @@ public class ExternalAdminOperationsService {
     private final RestClient orders;
     private final RestClient carts;
     private final boolean cartProductCleanupEnabled;
+    private final String gatewayInternalSecret;
 
     public ExternalAdminOperationsService(
             @Value("${services.products-url}") String productsUrl,
@@ -45,7 +48,8 @@ public class ExternalAdminOperationsService {
             @Value("${services.requests-url}") String requestsUrl,
             @Value("${services.orders-url}") String ordersUrl,
             @Value("${services.carts-url}") String cartsUrl,
-            @Value("${services.cart-product-cleanup-enabled:false}") boolean cartProductCleanupEnabled) {
+            @Value("${services.cart-product-cleanup-enabled:false}") boolean cartProductCleanupEnabled,
+            @Value("${services.gateway-internal-secret}") String gatewayInternalSecret) {
         this.products = RestClient.create(productsUrl);
         this.employees = RestClient.create(employeesUrl);
         this.users = RestClient.create(usersUrl);
@@ -53,10 +57,11 @@ public class ExternalAdminOperationsService {
         this.orders = RestClient.create(ordersUrl);
         this.carts = RestClient.create(cartsUrl);
         this.cartProductCleanupEnabled = cartProductCleanupEnabled;
+        this.gatewayInternalSecret = gatewayInternalSecret;
     }
 
     public List<Map<String, Object>> products() { return list(products); }
-    public List<Map<String, Object>> employees() { return list(employees); }
+    public List<Map<String, Object>> employees() { return listEmployees(); }
     public List<Map<String, Object>> users() { return list(users); }
     public List<Map<String, Object>> requests() { return listRequests(); }
     public List<Map<String, Object>> orders() { return list(orders); }
@@ -74,21 +79,32 @@ public class ExternalAdminOperationsService {
     }
 
     public Map<String, Object> createEmployee(EmployeeCreateRequest request) {
-        return post(employees, Map.of(
-                "firstName", request.firstName(),
-                "lastName", request.lastName(),
-                "email", request.email(),
-                "password", "welcome123",
-                "mustChangePassword", true,
-                "status", "ACTIVE"));
+        Map<?, ?> response = employees.post().headers(this::employeeHeaders).body(Map.of(
+                        "firstName", request.firstName(),
+                        "lastName", request.lastName(),
+                        "email", request.email(),
+                        "defaultPassword", "welcome123"))
+                .retrieve().body(Map.class);
+        @SuppressWarnings("unchecked")
+        Map<String, Object> result = response == null ? Map.of() : (Map<String, Object>) response;
+        return result;
     }
 
     public void deactivateEmployee(Integer id) {
-        employees.patch().uri("/{id}/status", id).body(Map.of("status", "INACTIVE"))
+        employees.patch().uri("/{id}/status", id).headers(this::employeeHeaders).body(Map.of("status", "INACTIVE"))
                 .retrieve().toBodilessEntity();
     }
 
-    public Map<String, Object> createUser(UserCreateRequest request) { return post(users, request); }
+    public void activateEmployee(Integer id) {
+        employees.patch().uri("/{id}/status", id).headers(this::employeeHeaders).body(Map.of("status", "ACTIVE"))
+                .retrieve().toBodilessEntity();
+    }
+
+    @SuppressWarnings("unchecked")
+    public Map<String, Object> createUser(UserCreateRequest request) {
+        Map<?, ?> response = users.post().uri("/admin").body(request).retrieve().body(Map.class);
+        return response == null ? Map.of() : (Map<String, Object>) response;
+    }
     public Map<String, Object> updateUser(Integer id, UserUpdateRequest request) {
         Map<?, ?> response = users.patch().uri("/{id}", id).body(request).retrieve().body(Map.class);
         @SuppressWarnings("unchecked")
@@ -107,44 +123,123 @@ public class ExternalAdminOperationsService {
             throw new ResourceNotFoundException("Employee request was not found");
         }
 
-        executeProductRequest(request);
-        requests.patch().uri("/{id}/status", id).headers(headers -> adminHeaders(headers, adminId)).body(Map.of("status", "APPROVED"))
-                .retrieve().toBodilessEntity();
+        // RequestApp owns approval and applies the requested product change exactly once.
+        // Calling executeProductRequest here as well would create duplicate products.
+        updateRequestStatus(id, adminId, "APPROVED", null);
         return Map.of("requestId", id, "status", "APPROVED");
     }
 
     public Map<String, Object> rejectRequest(Integer id, Integer adminId, String rejectionReason) {
-        requests.patch().uri("/{id}/status", id).headers(headers -> adminHeaders(headers, adminId))
-                .body(Map.of("status", "REJECTED", "rejectionReason", rejectionReason))
-                .retrieve().toBodilessEntity();
+        updateRequestStatus(id, adminId, "REJECTED", rejectionReason);
         return Map.of("requestId", id, "status", "REJECTED");
+    }
+
+    private void updateRequestStatus(Integer id, Integer adminId, String status, String rejectionReason) {
+        Map<String, String> body = rejectionReason == null
+                ? Map.of("status", status)
+                : Map.of("status", status, "rejectionReason", rejectionReason);
+        requests.patch().uri("/{id}/status", id).headers(headers -> adminHeaders(headers, adminId))
+                .body(body).retrieve().toBodilessEntity();
     }
 
     public DashboardResponse dashboard() {
         List<Map<String, Object>> productRows = products();
         List<Map<String, Object>> employeeRows = employees();
+        List<Map<String, Object>> userRows = users();
         List<Map<String, Object>> requestRows = requests();
         List<Map<String, Object>> orderRows = orders();
 
-        int lowStock = (int) productRows.stream().filter(product -> number(product.get("quantity")).intValue() <= 10).count();
+        List<Map<String, Object>> lowStockItems = productRows.stream()
+                .filter(product -> number(product.get("quantity")).intValue() <= 10)
+                .sorted(Comparator.comparingInt(product -> number(product.get("quantity")).intValue()))
+                .limit(5)
+                .toList();
+        int lowStock = (int) productRows.stream()
+                .filter(product -> number(product.get("quantity")).intValue() <= 10).count();
+        int inventoryUnits = productRows.stream()
+                .mapToInt(product -> number(product.get("quantity")).intValue()).sum();
+        BigDecimal inventoryValue = productRows.stream()
+                .map(product -> decimal(product.get("price"))
+                        .multiply(decimal(product.get("quantity"))))
+                .reduce(BigDecimal.ZERO, BigDecimal::add);
+        Map<String, Integer> categoryInventory = new LinkedHashMap<>();
+        productRows.stream()
+                .sorted(Comparator.comparing(product -> text(product.get("category"))))
+                .forEach(product -> categoryInventory.merge(
+                        text(product.get("category")).isBlank() ? "Other" : text(product.get("category")),
+                        number(product.get("quantity")).intValue(), Integer::sum));
         int activeEmployees = (int) employeeRows.stream()
                 .filter(employee -> !"INACTIVE".equalsIgnoreCase(text(employee.get("status")))).count();
         int pendingRequests = (int) requestRows.stream()
                 .filter(request -> !List.of("APPROVED", "REJECTED").contains(text(request.get("status")).toUpperCase())).count();
-        List<Map<String, Object>> nonCancelled = orderRows.stream()
-                .filter(order -> !"CANCELLED".equalsIgnoreCase(text(order.get("status")))).toList();
-        BigDecimal revenue = nonCancelled.stream().map(order -> decimal(order.get("totalAmount")))
+        List<Map<String, Object>> revenueOrders = orderRows.stream()
+                .filter(this::isRevenueOrder).toList();
+        BigDecimal revenue = revenueOrders.stream().map(order -> decimal(order.get("totalAmount")))
                 .reduce(BigDecimal.ZERO, BigDecimal::add);
+        BigDecimal averageOrderValue = revenueOrders.isEmpty() ? BigDecimal.ZERO
+                : revenue.divide(BigDecimal.valueOf(revenueOrders.size()), 2, RoundingMode.HALF_UP);
+        int fulfilledOrders = (int) orderRows.stream()
+                .filter(order -> "DELIVERED".equalsIgnoreCase(text(order.get("status")))).count();
+        int fulfilmentRate = revenueOrders.isEmpty() ? 0
+                : (int) Math.round((fulfilledOrders * 100.0) / revenueOrders.size());
+        Map<String, Integer> orderStatuses = new java.util.LinkedHashMap<>();
+        orderRows.forEach(order -> orderStatuses.merge(text(order.get("status")).toUpperCase(), 1, Integer::sum));
+        Map<String, Integer> requestStatuses = new LinkedHashMap<>();
+        requestRows.forEach(request -> requestStatuses.merge(text(request.get("status")).toUpperCase(), 1, Integer::sum));
+        Map<Integer, Map<String, Object>> usersById = new java.util.HashMap<>();
+        userRows.forEach(user -> usersById.put(number(user.get("id")).intValue(), user));
+        Map<Integer, Map<String, Object>> employeesById = new java.util.HashMap<>();
+        employeeRows.forEach(employee -> employeesById.put(number(employee.get("id")).intValue(), employee));
+        List<Map<String, Object>> recentOrders = orderRows.stream()
+                .sorted(Comparator.comparing(order -> text(order.get("orderedAt")), Comparator.reverseOrder()))
+                .limit(5)
+                .map(order -> enrichOrder(order, usersById.get(number(order.get("customerId")).intValue())))
+                .toList();
+        List<Map<String, Object>> recentRequests = requestRows.stream()
+                .sorted(Comparator.comparing(request -> requestSortValue(request), Comparator.reverseOrder()))
+                .limit(4)
+                .map(request -> enrichRequest(request,
+                        employeesById.get(number(request.get("employeeId")).intValue())))
+                .toList();
 
-        return new DashboardResponse(productRows.size(), lowStock, activeEmployees, pendingRequests,
-                orderRows.size(), revenue);
+        return new DashboardResponse(productRows.size(), userRows.size(), inventoryUnits, inventoryValue,
+                lowStock, activeEmployees, pendingRequests, orderRows.size(), revenue, averageOrderValue,
+                fulfilledOrders, fulfilmentRate, orderStatuses, requestStatuses, categoryInventory,
+                recentOrders, recentRequests, lowStockItems);
+    }
+
+    private Map<String, Object> enrichOrder(Map<String, Object> order, Map<String, Object> user) {
+        Map<String, Object> enriched = new LinkedHashMap<>(order);
+        if (user != null) {
+            String name = (text(user.get("firstName")) + " " + text(user.get("lastName"))).trim();
+            enriched.put("customerName", name.isBlank() ? "Customer" : name);
+            enriched.put("customerEmail", text(user.get("email")));
+        }
+        return enriched;
+    }
+
+    private Map<String, Object> enrichRequest(Map<String, Object> request, Map<String, Object> employee) {
+        Map<String, Object> enriched = new LinkedHashMap<>(request);
+        if (employee != null) {
+            String name = (text(employee.get("firstName")) + " " + text(employee.get("lastName"))).trim();
+            enriched.put("employeeName", name.isBlank() ? "Employee" : name);
+        }
+        return enriched;
+    }
+
+    private String requestSortValue(Map<String, Object> request) {
+        for (String key : List.of("createdAt", "requestedAt", "updatedAt", "requestId", "id")) {
+            String value = text(request.get(key));
+            if (!value.isBlank()) return value;
+        }
+        return "";
     }
 
     public ReportResponse report(ReportPeriod period, LocalDate referenceDate, Integer productId, Integer customerId) {
         LocalDate from = startOfPeriod(period, referenceDate);
         LocalDate to = endOfPeriod(period, referenceDate);
         List<Map<String, Object>> filtered = orders().stream()
-                .filter(order -> !"CANCELLED".equalsIgnoreCase(text(order.get("status"))))
+                .filter(this::isRevenueOrder)
                 .filter(order -> withinPeriod(order, from, to))
                 .filter(order -> customerId == null || customerId.equals(number(order.get("customerId")).intValue()))
                 .filter(order -> productId == null || containsProduct(order, productId))
@@ -157,16 +252,54 @@ public class ExternalAdminOperationsService {
 
     private void executeProductRequest(EmployeeProductRequest request) {
         String action = text(request.action()).toUpperCase();
-        ProductCommand product = new ProductCommand(request.name(), request.price(), request.quantity(), request.discount());
         switch (action) {
-            case "CREATE" -> createProduct(product);
-            case "UPDATE" -> updateProduct(requiredProductId(request), product);
-            case "RESTOCK" -> products.post().uri("/{id}/increase-quantity", requiredProductId(request))
-                    .body(Map.of("quantity", Objects.requireNonNull(request.quantity(), "quantity is required")))
-                    .retrieve().toBodilessEntity();
+            case "CREATE" -> createProduct(commandFromRequest(request, null));
+            case "UPDATE" -> {
+                Integer productId = requiredProductId(request);
+                updateProduct(productId, commandFromRequest(request, productId));
+            }
+            case "RESTOCK" -> {
+                Integer productId = requiredProductId(request);
+                ProductCommand current = product(productId);
+                Integer amount = Objects.requireNonNull(request.quantity(), "quantity is required");
+                updateProduct(productId, new ProductCommand(current.name(), current.price(), current.quantity() + amount, current.discount()));
+            }
             case "DELETE" -> deleteProduct(requiredProductId(request));
             default -> throw new IllegalArgumentException("Unsupported request action: " + request.action());
         }
+    }
+
+    private ProductCommand commandFromRequest(EmployeeProductRequest request, Integer existingProductId) {
+        ProductCommand current = existingProductId == null ? null : product(existingProductId);
+        String name = request.name() != null ? request.name() : current == null ? null : current.name();
+        BigDecimal price = request.price() != null ? request.price() : current == null ? null : current.price();
+        Integer quantity = request.quantity() != null ? request.quantity() : current == null ? null : current.quantity();
+        Integer discount = request.discount() != null ? request.discount() : current == null ? null : current.discount();
+        if (name == null || price == null || quantity == null || discount == null) {
+            throw new IllegalArgumentException("name, price, quantity, and discount are required for this request action");
+        }
+        return new ProductCommand(name, price, quantity, discount);
+    }
+
+    private ProductCommand product(Integer id) {
+        Map<?, ?> response = products.get().uri("/{id}", id).retrieve().body(Map.class);
+        if (response == null) throw new ResourceNotFoundException("Product was not found");
+        return new ProductCommand(text(response.get("name")), decimal(response.get("price")),
+                number(response.get("quantity")).intValue(), number(response.get("discount")).intValue());
+    }
+
+    @SuppressWarnings("unchecked")
+    private List<Map<String, Object>> listEmployees() {
+        List<?> body = employees.get().headers(this::employeeHeaders).retrieve().body(List.class);
+        if (body == null) return List.of();
+        List<Map<String, Object>> rows = new ArrayList<>();
+        for (Object item : body) if (item instanceof Map<?, ?> map) rows.add((Map<String, Object>) map);
+        return rows;
+    }
+
+    private void employeeHeaders(org.springframework.http.HttpHeaders headers) {
+        headers.set("X-Gateway-Request", gatewayInternalSecret);
+        headers.set("X-Authenticated-Role", "ADMIN");
     }
 
     @SuppressWarnings("unchecked")
@@ -218,6 +351,18 @@ public class ExternalAdminOperationsService {
         if (orderedAt.length() < 10) return false;
         LocalDate date = LocalDate.parse(orderedAt.substring(0, 10));
         return !date.isBefore(from) && !date.isAfter(to);
+    }
+
+    /**
+     * Revenue belongs only to successfully paid orders that entered fulfilment.
+     * Draft, rejected, failed-payment, and cancelled orders are operational data,
+     * but must never inflate sales reports.
+     */
+    private boolean isRevenueOrder(Map<String, Object> order) {
+        return switch (text(order.get("status")).toUpperCase()) {
+            case "PLACED", "SHIPPED", "OUT_FOR_DELIVERY", "DELIVERED" -> true;
+            default -> false;
+        };
     }
 
     private boolean containsProduct(Map<String, Object> order, Integer productId) {

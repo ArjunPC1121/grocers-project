@@ -7,6 +7,9 @@ import lombok.NoArgsConstructor;
 
 import java.sql.Date;
 
+/*
+DTO used to update user details
+ */
 @Data
 @NoArgsConstructor
 @AllArgsConstructor

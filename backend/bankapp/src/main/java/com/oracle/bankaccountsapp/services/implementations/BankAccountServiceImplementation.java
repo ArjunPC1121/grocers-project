@@ -1,5 +1,6 @@
 package com.oracle.bankaccountsapp.services.implementations;
 
+import com.oracle.bankaccountsapp.dtos.BankAccountRequest;
 import com.oracle.bankaccountsapp.entities.BankAccount;
 import com.oracle.bankaccountsapp.exceptions.BankAccountNotFoundException;
 import com.oracle.bankaccountsapp.exceptions.DuplicateAccountNumberException;
@@ -12,7 +13,6 @@ import org.springframework.transaction.annotation.Transactional;
 
 @Service
 public class BankAccountServiceImplementation implements BankAccountService {
-    private static final Double INITIAL_BALANCE = 100000.00;
     private final BankAccountRepository bankAccountRepository;
 
     public BankAccountServiceImplementation(BankAccountRepository bankAccountRepository) {
@@ -21,28 +21,46 @@ public class BankAccountServiceImplementation implements BankAccountService {
 
     @Override
     @Transactional
-    public void createAccount(int userId, String accountNumber) {
-        if (accountNumber == null || accountNumber.isBlank()) {
+    public void add(BankAccountRequest request) {
+        if (request.accountNumber() == null || request.accountNumber().isBlank()) {
             throw new IllegalArgumentException("Account number must not be blank");
         }
-        if (bankAccountRepository.existsById(accountNumber)) {
-            throw new DuplicateAccountNumberException(accountNumber);
+        if (request.phoneNumber() == null || request.phoneNumber().isBlank()) {
+            throw new IllegalArgumentException("Phone number must not be blank");
+        }
+        if (request.pin() == null || request.pin().isBlank()) {
+            throw new IllegalArgumentException("PIN must not be blank");
+        }
+        if (request.balance() == null || !Double.isFinite(request.balance()) || request.balance() < 0) {
+            throw new IllegalArgumentException("Balance must be zero or greater");
+        }
+        if (bankAccountRepository.existsById(request.accountNumber())) {
+            throw new DuplicateAccountNumberException(request.accountNumber());
         }
         BankAccount account = new BankAccount();
-        account.setUserId(userId);
-        account.setAccountNumber(accountNumber);
-        account.setBalance(INITIAL_BALANCE);
+        account.setAccountNumber(request.accountNumber());
+        account.setPhoneNumber(request.phoneNumber());
+        account.setPin(request.pin());
+        account.setBalance(request.balance());
         bankAccountRepository.save(account);
     }
 
     @Override
+    public boolean isAccountLinkedToPhone(String accountNumber, String phoneNumber) {
+        return bankAccountRepository.findByAccountNumberAndPhoneNumber(accountNumber, phoneNumber).isPresent();
+    }
+
+    @Override
     @Transactional
-    public Double deduct(int userId, Double amount) {
+    public Double deduct(String accountNumber, String pin, Double amount) {
         if (amount == null || !Double.isFinite(amount) || amount <= 0) {
             throw new InvalidAmountException();
         }
-        BankAccount account = bankAccountRepository.findByUserId(userId)
-                .orElseThrow(() -> new BankAccountNotFoundException(userId));
+        BankAccount account = bankAccountRepository.findById(accountNumber)
+                .orElseThrow(() -> new BankAccountNotFoundException(accountNumber));
+        if (!account.getPin().equals(pin)) {
+            throw new IllegalArgumentException("Invalid bank PIN");
+        }
         if (account.getBalance() < amount) {
             throw new InsufficientFundsException();
         }
@@ -51,3 +69,4 @@ public class BankAccountServiceImplementation implements BankAccountService {
         return amount;
     }
 }
+

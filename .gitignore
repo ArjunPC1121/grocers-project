@@ -14,9 +14,23 @@
 .apt_generated/
 .springBeans
 .sts4-cache/
+*.lst
+*.jar
+node_modules/
+dist/
+build/
+
 
 # Local-only files
 .env
 .env.*
 *.log
 hs_err_pid*
+
+# Local tool-generated folders
+.build-grocers/
+.codex-finalizer/
+
+
+settings.json
+tasks.json
