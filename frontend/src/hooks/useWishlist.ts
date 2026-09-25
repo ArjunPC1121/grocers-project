@@ -6,6 +6,7 @@ import { useAuth } from "../context/AuthContext";
 export const useWishlist = () => {
     const { user } = useAuth();
 
+    // This small hook keeps wishlist errors and success messages consistent across pages.
     const addToWishlist = async (productId: string) => {
         if (!user) {
             toast.error("Please sign in to add products to wishlist.");

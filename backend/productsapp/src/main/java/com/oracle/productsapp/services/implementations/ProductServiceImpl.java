@@ -363,6 +363,8 @@ public class ProductServiceImpl implements ProductService {
 
         Map uploadResult = cloudinaryImageService.upload(image);
 
+        // The URL is returned to clients; public_id stays internal for future
+        // Cloudinary operations such as image replacement or deletion.
         product.setImageUrl((String) uploadResult.get("secure_url"));
         product.setImagePublicId((String) uploadResult.get("public_id"));
 

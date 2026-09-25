@@ -42,6 +42,7 @@ public class OrderServiceImpl implements OrderService {
             OrderStatus currentStatus,
             OrderStatus newStatus) {
 
+        // Employees can move an order only forward through fulfilment.
         return (currentStatus == OrderStatus.PLACED
                 && newStatus == OrderStatus.SHIPPED)
 
@@ -55,6 +56,7 @@ public class OrderServiceImpl implements OrderService {
     @Override
     @Transactional
     public Order create(CreateOrderRequest request) {
+        // Validate that the user owns an active cart before turning it into an order.
         userClient.checkUserExists(request.customerId());
         CartResponse cart = cartClient.getCart(request.cartId());
 
@@ -79,6 +81,8 @@ public class OrderServiceImpl implements OrderService {
         BigDecimal totalAmount = BigDecimal.ZERO;
 
         for (OrderItemRequest requestItem : request.items()) {
+            // Read the current product details, then store a price/name snapshot on the order.
+            // Later product edits must not change an already-created order total.
             ProductResponse product =
                     productClient.getProduct(requestItem.productId());
 
@@ -164,6 +168,7 @@ public class OrderServiceImpl implements OrderService {
         List<OrderItem> reducedItems = new ArrayList<>();
 
         try {
+            // Product App owns inventory. Reduce each line before payment or cart checkout.
             for (OrderItem item : order.getItems()) {
                 productClient.reduceQuantity(
                         item.getProductId(),
@@ -176,6 +181,7 @@ public class OrderServiceImpl implements OrderService {
             // Temporary: check Order-app console for the real Product-service error.
             exception.printStackTrace();
 
+            // Compensate for any earlier successful reductions in this multi-service flow.
             releaseReducedStock(reducedItems);
 
             order.setStatus(OrderStatus.STOCK_REJECTED);
@@ -184,6 +190,7 @@ public class OrderServiceImpl implements OrderService {
 
         if (order.getPaymentMethod() == PaymentMethod.FUNDS) {
             try {
+                // Debit only after stock has been confirmed for every item.
                 userClient.debit(
                         order.getCustomerId(),
                         order.getTotalAmount(),
@@ -192,6 +199,7 @@ public class OrderServiceImpl implements OrderService {
             } catch (Exception exception) {
                 exception.printStackTrace();
 
+                // Payment failed, so return the inventory that was already reduced.
                 releaseReducedStock(order.getItems());
 
                 order.setStatus(OrderStatus.PAYMENT_FAILED);
@@ -201,11 +209,13 @@ public class OrderServiceImpl implements OrderService {
 
         // Requires cartClient.checkoutCart(Integer cartId).
         // Cart status should change from ACTIVE to CHECKED_OUT.
+        // Lock the source cart after a successful stock and payment workflow.
         cartClient.checkoutCart(order.getCartId());
 
         order.setStatus(OrderStatus.PLACED);
         Order checkedOutOrder = orderRepository.save(order);
 
+        // Notify other services only after the order has been persisted as placed.
         orderCheckoutEventPublisher.publish(
                 new OrderCheckedOutEvent(
                         checkedOutOrder.getId(),
@@ -246,6 +256,7 @@ public class OrderServiceImpl implements OrderService {
         }
 
         if (order.getPaymentMethod() == PaymentMethod.FUNDS) {
+            // Return prepaid funds when a placed order is cancelled.
             userClient.refund(
                     order.getCustomerId(),
                     order.getTotalAmount(),
@@ -253,6 +264,7 @@ public class OrderServiceImpl implements OrderService {
             );
         }
 
+        // Return all purchased units to Product App inventory.
         for (OrderItem item : order.getItems()) {
             productClient.increaseQuantity(
                     item.getProductId(),
@@ -313,6 +325,7 @@ public class OrderServiceImpl implements OrderService {
     }
 
     private void claimableBy(Order order, Integer employeeId) {
+        // Prevent two employees from managing the same order at the same time.
         if (order.getUpdatedByEmployeeId() != null && !employeeId.equals(order.getUpdatedByEmployeeId())) {
             throw new IllegalStateException("This order is already being handled by another employee");
         }
@@ -328,6 +341,7 @@ public class OrderServiceImpl implements OrderService {
     }
 
     private BigDecimal getDiscountedPrice(ProductResponse product) {
+        // Freeze the discounted price to two decimal places at order creation time.
         BigDecimal originalPrice = BigDecimal.valueOf(product.price());
 
         int discount = product.discount() == null
@@ -368,6 +382,7 @@ public class OrderServiceImpl implements OrderService {
 
         claimableBy(order, request.employeeId());
 
+        // Reject skipped or reversed delivery states, for example PLACED directly to DELIVERED.
         if (!isValidEmployeeStatusChange(
                 order.getStatus(),
                 request.status())) {
@@ -381,7 +396,21 @@ public class OrderServiceImpl implements OrderService {
         order.setStatus(request.status());
         order.setUpdatedByEmployeeId(request.employeeId());
 
-        return orderRepository.save(order);
+        Order updatedOrder = orderRepository.save(order);
+
+        // Keep UserApp's Kafka-backed customer order summary in sync with fulfilment updates.
+        orderCheckoutEventPublisher.publish(
+                new OrderCheckedOutEvent(
+                        updatedOrder.getId(),
+                        updatedOrder.getCustomerId(),
+                        updatedOrder.getOrderNumber(),
+                        updatedOrder.getTotalAmount(),
+                        updatedOrder.getStatus().name(),
+                        updatedOrder.getUpdatedAt()
+                )
+        );
+
+        return updatedOrder;
     }
     @Override
     public List<Order> getByStatus(OrderStatus status) {

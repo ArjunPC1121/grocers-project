@@ -16,9 +16,7 @@ const PopularProducts = () => {
     getProducts()
       .then((items) => {
         setProducts(
-          items
-            .filter((product) => product.stock > 0)
-            .sort(
+          items.sort(
               (left, right) =>
                 right.discount - left.discount ||
                 Number(right.id) - Number(left.id),

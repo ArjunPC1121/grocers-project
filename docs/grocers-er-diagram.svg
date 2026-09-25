@@ -1,0 +1,187 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1600" height="900" viewBox="0 0 1600 900" role="img" aria-labelledby="title desc">
+  <title id="title">Grocers concise entity relationship diagram</title>
+  <desc id="desc">A concise ER diagram showing customer shopping, ordering, employee requests, admin notifications, tickets, and funds relationships.</desc>
+  <defs>
+    <marker id="arrow" markerWidth="9" markerHeight="9" refX="8" refY="3" orient="auto" markerUnits="strokeWidth">
+      <path d="M0,0 L0,6 L8,3 z" fill="#455a4c"/>
+    </marker>
+    <style>
+      .bg{fill:#fff}
+      .heading{font:700 28px Arial,sans-serif;fill:#173b2a}
+      .subheading{font:400 14px Arial,sans-serif;fill:#607164}
+      .box{fill:#fff;stroke:#88a28f;stroke-width:1.6}
+      .box-head{fill:#1d5a3a}
+      .box-title{font:700 15px Arial,sans-serif;fill:#fff;letter-spacing:.25px}
+      .field{font:400 12px Arial,sans-serif;fill:#28382e}
+      .pk{font-weight:700;fill:#c65b19}
+      .rel{fill:none;stroke:#455a4c;stroke-width:1.55;marker-end:url(#arrow)}
+      .logical{fill:none;stroke:#7b8794;stroke-width:1.45;stroke-dasharray:6 4;marker-end:url(#arrow)}
+      .label{font:600 12px Arial,sans-serif;fill:#455a4c;paint-order:stroke;stroke:#fff;stroke-width:4px;stroke-linejoin:round}
+      .note{font:400 12px Arial,sans-serif;fill:#607164}
+    </style>
+  </defs>
+
+  <rect class="bg" width="1600" height="900"/>
+  <text x="80" y="58" class="heading">Grocers — Core Entity Relationship Diagram</text>
+  <text x="80" y="84" class="subheading">Customer shopping, fulfilment, employee approvals, and Kafka-powered admin notifications</text>
+
+  <!-- Employee request and notification workflow -->
+  <path class="logical" d="M270 185 L350 185"/>
+  <text x="285" y="170" class="label">submits</text>
+  <path class="logical" d="M570 185 L650 185"/>
+  <text x="585" y="170" class="label">reviews</text>
+  <path class="logical" d="M570 135 C690 80 825 80 930 135"/>
+  <text x="705" y="103" class="label">Kafka: request created</text>
+  <path class="logical" d="M850 185 L930 185"/>
+  <text x="862" y="170" class="label">reads</text>
+  <path class="logical" d="M460 245 C620 285 985 280 1190 340"/>
+  <text x="770" y="280" class="label">requests product change</text>
+
+  <!-- Shopping and order workflow -->
+  <path class="logical" d="M270 415 L350 415"/>
+  <text x="285" y="400" class="label">owns</text>
+  <path class="rel" d="M520 415 L600 415"/>
+  <text x="535" y="400" class="label">contains</text>
+  <path class="logical" d="M770 385 C900 265 1080 265 1190 350"/>
+  <text x="890" y="302" class="label">references</text>
+
+  <path class="logical" d="M270 465 C435 545 655 555 850 455"/>
+  <text x="520" y="555" class="label">places</text>
+  <path class="rel" d="M1030 420 L1110 545"/>
+  <text x="1040" y="485" class="label">contains</text>
+  <path class="logical" d="M1210 545 C1260 505 1290 470 1290 430"/>
+  <text x="1280" y="490" class="label">references</text>
+
+  <!-- Ticket and funds workflow -->
+  <path class="logical" d="M270 470 C360 580 475 650 600 700"/>
+  <text x="415" y="610" class="label">raises ticket</text>
+  <path class="logical" d="M60 205 C15 325 15 710 600 730"/>
+  <text x="28" y="485" class="label">resolves</text>
+  <path class="logical" d="M270 470 C300 830 940 840 1100 760"/>
+  <text x="700" y="817" class="label">wallet / funds</text>
+  <path class="logical" d="M1260 745 L1360 745"/>
+  <text x="1274" y="730" class="label">top-up</text>
+
+  <!-- Nodes -->
+  <g transform="translate(60,110)">
+    <rect class="box" width="210" height="135" rx="12"/>
+    <path class="box-head" d="M12 0H198A12 12 0 0 1 210 12V34H0V12A12 12 0 0 1 12 0Z"/>
+    <text x="15" y="22" class="box-title">EMPLOYEE</text>
+    <text x="15" y="59" class="field"><tspan class="pk">PK</tspan> id</text>
+    <text x="15" y="81" class="field">name · email</text>
+    <text x="15" y="103" class="field">status</text>
+    <text x="15" y="125" class="field">mustChangePassword</text>
+  </g>
+
+  <g transform="translate(350,110)">
+    <rect class="box" width="220" height="135" rx="12"/>
+    <path class="box-head" d="M12 0H208A12 12 0 0 1 220 12V34H0V12A12 12 0 0 1 12 0Z"/>
+    <text x="15" y="22" class="box-title">PRODUCT REQUEST</text>
+    <text x="15" y="59" class="field"><tspan class="pk">PK</tspan> requestId</text>
+    <text x="15" y="81" class="field"><tspan class="pk">FK</tspan> employeeId · productId</text>
+    <text x="15" y="103" class="field">action · quantity</text>
+    <text x="15" y="125" class="field">status</text>
+  </g>
+
+  <g transform="translate(650,110)">
+    <rect class="box" width="200" height="125" rx="12"/>
+    <path class="box-head" d="M12 0H188A12 12 0 0 1 200 12V34H0V12A12 12 0 0 1 12 0Z"/>
+    <text x="15" y="22" class="box-title">ADMIN</text>
+    <text x="15" y="59" class="field"><tspan class="pk">PK</tspan> adminId</text>
+    <text x="15" y="81" class="field">email · role</text>
+    <text x="15" y="103" class="field">password</text>
+  </g>
+
+  <g transform="translate(930,110)">
+    <rect class="box" width="220" height="125" rx="12"/>
+    <path class="box-head" d="M12 0H208A12 12 0 0 1 220 12V34H0V12A12 12 0 0 1 12 0Z"/>
+    <text x="15" y="22" class="box-title">ADMIN NOTIFICATION</text>
+    <text x="15" y="59" class="field"><tspan class="pk">PK</tspan> id</text>
+    <text x="15" y="81" class="field"><tspan class="pk">FK</tspan> requestId · employeeId</text>
+    <text x="15" y="103" class="field">message · read</text>
+  </g>
+
+  <g transform="translate(60,350)">
+    <rect class="box" width="210" height="145" rx="12"/>
+    <path class="box-head" d="M12 0H198A12 12 0 0 1 210 12V34H0V12A12 12 0 0 1 12 0Z"/>
+    <text x="15" y="22" class="box-title">USER</text>
+    <text x="15" y="59" class="field"><tspan class="pk">PK</tspan> id</text>
+    <text x="15" y="81" class="field">name · email</text>
+    <text x="15" y="103" class="field">accountNumber</text>
+    <text x="15" y="125" class="field">funds · accountLocked</text>
+  </g>
+
+  <g transform="translate(350,365)">
+    <rect class="box" width="170" height="105" rx="12"/>
+    <path class="box-head" d="M12 0H158A12 12 0 0 1 170 12V34H0V12A12 12 0 0 1 12 0Z"/>
+    <text x="15" y="22" class="box-title">CART</text>
+    <text x="15" y="59" class="field"><tspan class="pk">PK</tspan> id</text>
+    <text x="15" y="81" class="field"><tspan class="pk">FK</tspan> userId · status</text>
+  </g>
+
+  <g transform="translate(600,365)">
+    <rect class="box" width="170" height="105" rx="12"/>
+    <path class="box-head" d="M12 0H158A12 12 0 0 1 170 12V34H0V12A12 12 0 0 1 12 0Z"/>
+    <text x="15" y="22" class="box-title">CART ITEM</text>
+    <text x="15" y="59" class="field"><tspan class="pk">PK</tspan> id</text>
+    <text x="15" y="81" class="field"><tspan class="pk">FK</tspan> cartId · productId</text>
+  </g>
+
+  <g transform="translate(850,350)">
+    <rect class="box" width="180" height="135" rx="12"/>
+    <path class="box-head" d="M12 0H168A12 12 0 0 1 180 12V34H0V12A12 12 0 0 1 12 0Z"/>
+    <text x="15" y="22" class="box-title">ORDER</text>
+    <text x="15" y="59" class="field"><tspan class="pk">PK</tspan> id</text>
+    <text x="15" y="81" class="field"><tspan class="pk">FK</tspan> customerId · cartId</text>
+    <text x="15" y="103" class="field">status · paymentMethod</text>
+    <text x="15" y="125" class="field">totalAmount</text>
+  </g>
+
+  <g transform="translate(1190,300)">
+    <rect class="box" width="180" height="130" rx="12"/>
+    <path class="box-head" d="M12 0H168A12 12 0 0 1 180 12V34H0V12A12 12 0 0 1 12 0Z"/>
+    <text x="15" y="22" class="box-title">PRODUCT</text>
+    <text x="15" y="59" class="field"><tspan class="pk">PK</tspan> id</text>
+    <text x="15" y="81" class="field">name · category</text>
+    <text x="15" y="103" class="field">price · quantity</text>
+    <text x="15" y="125" class="field">discount · active</text>
+  </g>
+
+  <g transform="translate(1110,545)">
+    <rect class="box" width="200" height="105" rx="12"/>
+    <path class="box-head" d="M12 0H188A12 12 0 0 1 200 12V34H0V12A12 12 0 0 1 12 0Z"/>
+    <text x="15" y="22" class="box-title">ORDER ITEM</text>
+    <text x="15" y="59" class="field"><tspan class="pk">PK</tspan> id</text>
+    <text x="15" y="81" class="field"><tspan class="pk">FK</tspan> orderId · productId</text>
+  </g>
+
+  <g transform="translate(600,660)">
+    <rect class="box" width="200" height="115" rx="12"/>
+    <path class="box-head" d="M12 0H188A12 12 0 0 1 200 12V34H0V12A12 12 0 0 1 12 0Z"/>
+    <text x="15" y="22" class="box-title">TICKET</text>
+    <text x="15" y="59" class="field"><tspan class="pk">PK</tspan> ticketId</text>
+    <text x="15" y="81" class="field"><tspan class="pk">FK</tspan> userId · employeeId</text>
+    <text x="15" y="103" class="field">status · lockedReason</text>
+  </g>
+
+  <g transform="translate(1100,690)">
+    <rect class="box" width="160" height="105" rx="12"/>
+    <path class="box-head" d="M12 0H148A12 12 0 0 1 160 12V34H0V12A12 12 0 0 1 12 0Z"/>
+    <text x="15" y="22" class="box-title">FUNDS</text>
+    <text x="15" y="59" class="field"><tspan class="pk">PK</tspan> id</text>
+    <text x="15" y="81" class="field"><tspan class="pk">FK</tspan> userId</text>
+  </g>
+
+  <g transform="translate(1360,690)">
+    <rect class="box" width="180" height="105" rx="12"/>
+    <path class="box-head" d="M12 0H168A12 12 0 0 1 180 12V34H0V12A12 12 0 0 1 12 0Z"/>
+    <text x="15" y="22" class="box-title">BANK ACCOUNT</text>
+    <text x="15" y="59" class="field"><tspan class="pk">PK</tspan> accountNumber</text>
+    <text x="15" y="81" class="field">balance</text>
+  </g>
+
+  <line x1="80" y1="850" x2="120" y2="850" class="rel"/>
+  <text x="135" y="855" class="note">Direct JPA relationship</text>
+  <line x1="360" y1="850" x2="400" y2="850" class="logical"/>
+  <text x="415" y="855" class="note">Cross-service / ID-based relationship</text>
+</svg>

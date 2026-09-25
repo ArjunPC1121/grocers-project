@@ -1,3 +1,4 @@
+
 package com.oracle.productsapp.services.implementations;
 
 import java.io.IOException;
@@ -18,6 +19,7 @@ public class CloudinaryImageService {
     private final Cloudinary cloudinary;
 
     public Map upload(MultipartFile image) {
+        // Validate the upload before sending bytes to the external image service.
         if (image.isEmpty()) {
             throw new IllegalArgumentException("Image file is required");
         }
@@ -29,6 +31,8 @@ public class CloudinaryImageService {
         }
 
         try {
+            // Store product images under one Cloudinary folder; the response includes
+            // a public URL (secure_url) and a management identifier (public_id).
             return cloudinary.uploader().upload(
                     image.getBytes(),
                     ObjectUtils.asMap(
