@@ -1,3 +1,8 @@
+/**
+ * Component role: Configures a cross-cutting concern such as security, HTTP clients, serialization, or application startup behaviour.
+ *
+ * Maintainer note: this file belongs to gatewayapp. See backend/gatewayapp/README.md for features, API contracts, configuration, and integration rules.
+ */
 package com.oracle.gatewayapp.config;
 
 import org.springframework.beans.factory.annotation.Value;

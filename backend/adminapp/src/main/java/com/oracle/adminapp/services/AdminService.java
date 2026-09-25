@@ -1,3 +1,8 @@
+/**
+ * Component role: Coordinates this service's business workflow, including validation, authorization decisions, persistence, and downstream integration where applicable.
+ *
+ * Maintainer note: this file belongs to adminapp. See backend/adminapp/README.md for features, API contracts, configuration, and integration rules.
+ */
 package com.oracle.adminapp.services;
 
 import com.oracle.adminapp.dto.AdminCreateRequest;
@@ -28,10 +33,14 @@ public class AdminService {
 
     @Transactional(readOnly = true)
     public AdminResponse currentAdmin(Integer adminId) {
+        // The identity comes from Gateway's verified header, not a client-provided ID.
+        // Returning this small response also prevents the password hash from escaping.
         return toResponse(requireAdmin(adminId));
     }
 
     public AdminResponse updateMyProfile(Integer adminId, AdminProfileUpdateRequest request) {
+        // Email is a login identifier, so uniqueness is enforced before mutating any
+        // fields. Exclude the current record to allow an unchanged email address.
         Admin admin = requireAdmin(adminId);
         admins.findByEmailIgnoreCase(request.email())
                 .filter(existing -> !existing.getId().equals(adminId))
@@ -44,6 +53,8 @@ public class AdminService {
 
     public void changeMyPassword(Integer adminId, AdminPasswordChangeRequest request) {
         Admin admin = requireAdmin(adminId);
+        // Never trust the UI's idea of the current password; verify it against the
+        // stored BCrypt hash before accepting a replacement.
         if (!passwordEncoder.matches(request.currentPassword(), admin.getPassword())) {
             throw new IllegalArgumentException("Your current password is incorrect");
         }
@@ -55,6 +66,8 @@ public class AdminService {
 
     @Transactional(readOnly = true)
     public List<AdminResponse> normalAdmins(Integer actorId) {
+        // Super Admin accounts are deliberately excluded from this list so there is
+        // no accidental UI path to edit or delete the account with highest authority.
         requireSuperAdmin(actorId);
         return admins.findAll().stream()
                 .filter(admin -> admin.getRole() == AdminRole.ADMIN)
@@ -73,6 +86,8 @@ public class AdminService {
         admin.setLastName(request.lastName());
         admin.setEmail(request.email().trim().toLowerCase());
         admin.setPassword(passwordEncoder.encode(request.password()));
+        // The API cannot select a role. Every account created here is a normal admin;
+        // SUPER_ADMIN assignment remains a controlled bootstrap/database operation.
         admin.setRole(AdminRole.ADMIN);
         return toResponse(admins.save(admin));
     }
@@ -110,6 +125,7 @@ public class AdminService {
     private Admin requireNormalAdmin(Integer id) {
         Admin admin = admins.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Admin was not found"));
+        // This protects the Super Admin even when a caller discovers its numeric ID.
         if (admin.getRole() != AdminRole.ADMIN) {
             throw new ForbiddenOperationException("The Super Admin account cannot be changed through this endpoint");
         }

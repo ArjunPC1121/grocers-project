@@ -1,3 +1,8 @@
+/**
+ * Component role: Coordinates this service's business workflow, including validation, authorization decisions, persistence, and downstream integration where applicable.
+ *
+ * Maintainer note: this file belongs to authapp. See backend/authapp/README.md for features, API contracts, configuration, and integration rules.
+ */
 package com.oracle.authapp.services;
 
 import com.oracle.authapp.dto.AuthResponse;
@@ -77,6 +82,9 @@ public class AuthService {
         }
         catch(InvalidCredentialsException e)
         {
+            // UserApp owns failed-login counters and the account-lock flag. AuthApp
+            // therefore reports a failed password through Gateway instead of keeping
+            // a second, potentially inconsistent counter in this service.
             HttpHeaders headers = new HttpHeaders();
             headers.set("X-Internal-Service", "authapp");
             headers.set("X-Internal-Secret", internalSecret);
@@ -158,6 +166,8 @@ public class AuthService {
     }
 
     private HttpHeaders internalHeaders() {
+        // These headers are accepted only by Gateway's narrow AuthApp internal route.
+        // Never reuse this pattern for browser requests: normal callers must provide a JWT.
         HttpHeaders headers = new HttpHeaders();
         headers.setContentType(MediaType.APPLICATION_JSON);
         headers.set("X-Internal-Service", "authapp");
@@ -178,6 +188,8 @@ public class AuthService {
     public AuthResponse loginEmployee(LoginRequest request) {
         EmployeeLoginAccount account = employeeAccounts.findByEmailIgnoreCase(request.email())
                 .orElseThrow(InvalidCredentialsException::new);
+        // EmployeeApp controls employment status. Authentication deliberately blocks
+        // inactive employees before checking credentials so deactivated staff cannot sign in.
         if (!"ACTIVE".equalsIgnoreCase(account.getStatus())) {
             throw new EmployeeInactiveException();
         }

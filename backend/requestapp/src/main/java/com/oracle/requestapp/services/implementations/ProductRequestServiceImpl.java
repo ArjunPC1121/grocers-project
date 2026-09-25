@@ -1,3 +1,8 @@
+/**
+ * Component role: Coordinates this service's business workflow, including validation, authorization decisions, persistence, and downstream integration where applicable.
+ *
+ * Maintainer note: this file belongs to requestapp. See backend/requestapp/README.md for features, API contracts, configuration, and integration rules.
+ */
 package com.oracle.requestapp.services.implementations;
 
 import com.oracle.requestapp.dto.CreateProductRequest;
@@ -51,6 +56,9 @@ public class ProductRequestServiceImpl implements ProductRequestService {
                 request.reason(), request.previousValues());
         ProductRequest savedRequest = repository.save(productRequest);
 
+        // Persist before publishing so an admin notification can always link to a
+        // request that exists. AdminApp treats this event as a notification only; it
+        // still retrieves the full request from RequestApp for review.
         eventPublisher.publish(new ProductRequestCreatedEvent(
                 savedRequest.getRequestId(),
                 savedRequest.getEmployeeId(),
@@ -95,6 +103,8 @@ public class ProductRequestServiceImpl implements ProductRequestService {
     @Override
     public ProductRequestResponse updateStatus(Integer requestId, Integer adminId, UpdateRequestStatus update) {
         ProductRequest request = requiredRequest(requestId);
+        // Status changes form a small workflow rather than a freely editable field.
+        // This prevents an already decided request from being approved or rejected again.
         boolean pendingToDecision = request.getStatus() == RequestStatus.PENDING
                 && (update.status() == RequestStatus.PROCESSING || update.status() == RequestStatus.APPROVED
                 || update.status() == RequestStatus.REJECTED);
@@ -107,6 +117,9 @@ public class ProductRequestServiceImpl implements ProductRequestService {
             throw new InvalidRequestStateException("A rejection reason is required");
         }
         if (update.status() == RequestStatus.APPROVED) {
+            // Approval is the point at which the requested product operation becomes
+            // real. Do the remote product change before recording APPROVED so failures
+            // leave the request available for review instead of falsely completed.
             applyProductChange(request);
         }
         request.review(update.status(), update.status() == RequestStatus.REJECTED ? update.rejectionReason().trim() : null, adminId);
@@ -115,6 +128,8 @@ public class ProductRequestServiceImpl implements ProductRequestService {
 
     @SuppressWarnings("unchecked")
     private void applyProductChange(ProductRequest request) {
+        // Each request action maps to the Products service's authoritative mutation API.
+        // Do not add product writes directly to this database; ProductApp owns products.
         switch (request.getAction()) {
             case CREATE -> {
                 ResponseEntity<Map> response = restTemplate.postForEntity(productsUrl, new HttpEntity<>(productPayload(request, null)), Map.class);
@@ -132,6 +147,8 @@ public class ProductRequestServiceImpl implements ProductRequestService {
     }
 
     private Map<String, Object> productPayload(ProductRequest request, Map<String, Object> existing) {
+        // UPDATE requests are partial. Missing requested values retain the current
+        // ProductApp value, while CREATE intentionally has no existing product fallback.
         Map<String, Object> payload = new HashMap<>();
         payload.put("name", value(request.getName(), existing, "name"));
         payload.put("brand", value(request.getBrand(), existing, "brand"));
@@ -160,6 +177,8 @@ public class ProductRequestServiceImpl implements ProductRequestService {
     }
 
     private void validateCreateRequest(CreateProductRequest request) {
+        // Validate by intent so employees provide enough context for a reviewer and
+        // destructive DELETE requests always contain an explanation.
         switch (request.action()) {
             case CREATE -> requireProductDetails(request);
             case UPDATE -> {

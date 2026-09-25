@@ -1,3 +1,8 @@
+/**
+ * Component role: Defines the HTTP boundary for this service. It accepts transport input, reads trusted gateway identity headers where required, and delegates business work to the service layer.
+ *
+ * Maintainer note: this file belongs to authapp. See backend/authapp/README.md for features, API contracts, configuration, and integration rules.
+ */
 package com.oracle.authapp.controllers;
 
 import com.oracle.authapp.dto.LockedAccountTicketRequest;
@@ -30,12 +35,14 @@ public class LockedAccountRecoveryController {
 
     @PostMapping("/ticket")
     public ResponseEntity<Void> raiseTicket(@Valid @RequestBody LockedAccountTicketRequest request) {
+        // This is the assisted fallback after security-question recovery cannot proceed.
         authService.raiseLockedAccountTicket(request);
         return ResponseEntity.status(HttpStatus.CREATED).build();
     }
 
     @GetMapping("/status")
     public ResponseEntity<LockedAccountRecoveryStatus> status(@RequestParam @NotBlank @Email String email) {
+        // The UI uses this to choose between self-service recovery and ticket tracking.
         return ResponseEntity.ok(authService.lockedAccountStatus(email));
     }
 
@@ -44,6 +51,7 @@ public class LockedAccountRecoveryController {
 
     @PostMapping("/verify-security-answer")
     public ResponseEntity<SecurityRecoveryAnswerResponse> verifySecurityAnswer(@Valid @RequestBody SecurityRecoveryAnswerRequest request) {
+        // A successful answer returns a short-lived reset token; it is not a login token.
         return ResponseEntity.ok(authService.verifySecurityAnswer(request));
     }
 

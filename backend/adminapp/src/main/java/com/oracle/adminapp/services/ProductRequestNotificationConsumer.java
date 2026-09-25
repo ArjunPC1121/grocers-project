@@ -1,3 +1,8 @@
+/**
+ * Component role: Coordinates this service's business workflow, including validation, authorization decisions, persistence, and downstream integration where applicable.
+ *
+ * Maintainer note: this file belongs to adminapp. See backend/adminapp/README.md for features, API contracts, configuration, and integration rules.
+ */
 package com.oracle.adminapp.services;
 
 
@@ -35,6 +40,8 @@ public class ProductRequestNotificationConsumer {
                             ProductRequestCreatedEvent.class
                     );
 
+            // Kafka delivery is at-least-once. A request ID is the idempotency key so
+            // retried events do not create duplicate notifications for administrators.
             if (notificationRepository.existsByRequestId(event.requestId())) {
                 return;
             }

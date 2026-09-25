@@ -1,3 +1,8 @@
+/**
+ * Component role: Declares the persistence queries used by the service layer. Spring Data derives or implements these queries against the owning database tables.
+ *
+ * Maintainer note: this file belongs to adminapp. See backend/adminapp/README.md for features, API contracts, configuration, and integration rules.
+ */
 package com.oracle.adminapp.repositories;
 
 import com.oracle.adminapp.entities.Admin;

@@ -1,3 +1,8 @@
+/**
+ * Component role: Defines a service-layer contract. Implementations keep the business workflow separate from the HTTP controller.
+ *
+ * Maintainer note: this file belongs to requestapp. See backend/requestapp/README.md for features, API contracts, configuration, and integration rules.
+ */
 package com.oracle.requestapp.services.abstractions;
 
 import com.oracle.requestapp.dto.CreateProductRequest;

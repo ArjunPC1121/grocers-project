@@ -1,3 +1,8 @@
+/**
+ * Component role: Coordinates this service's business workflow, including validation, authorization decisions, persistence, and downstream integration where applicable.
+ *
+ * Maintainer note: this file belongs to supportassistantapp. See backend/supportassistantapp/README.md for features, API contracts, configuration, and integration rules.
+ */
 package com.oracle.supportassistantapp.services;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
@@ -54,6 +59,8 @@ public class GrocersContextService {
     }
 
     public LiveContext load(AssistantIntent intent, String message, AssistantIdentity identity) {
+        // Fetch only the type of live context required by the classified question.
+        // This reduces cross-service traffic and prevents unrelated personal data exposure.
         try {
             return switch (intent) {
                 case PRODUCT -> productContext(message, identity);
@@ -77,6 +84,8 @@ public class GrocersContextService {
         List<Map<String, Object>> catalogue = getList(products, "", identity);
         Set<String> tokens = classifier.meaningfulTokens(message);
         Double maximumPrice = maximumPrice(message);
+        // Product search is intentionally transparent and deterministic: match useful
+        // terms and optional budget, then show at most four lowest-priced active items.
         List<Map<String, Object>> matches = catalogue.stream()
                 .filter(item -> truthy(item.get("active"), true))
                 .filter(item -> tokens.isEmpty() || tokens.stream().anyMatch(token -> searchable(item).contains(token)))
@@ -130,6 +139,8 @@ public class GrocersContextService {
         if ("USER".equals(identity.role())) {
             return new LiveContext("Product requests belong to the employee and admin workflow.", List.of(), List.of(), List.of("Grocers help"));
         }
+        // Employees use RequestApp's ownership-scoped endpoint; admins use AdminApp's
+        // review view. A user role has no product-request visibility at all.
         String path = "ADMIN".equals(identity.role()) ? "/requests" : "/my";
         RestClient source = "ADMIN".equals(identity.role()) ? admin : requests;
         String link = "ADMIN".equals(identity.role()) ? "/admin/requests" : "/employee/product-requests";
@@ -164,6 +175,8 @@ public class GrocersContextService {
         } else {
             source = admin; path = "/me"; link = "/admin/profile";
         }
+        // Account payloads are reduced before becoming AI evidence. In particular,
+        // password and security-answer fields are never supplied to the model or cards.
         Map<String, Object> account = getMap(source, path, identity);
         Map<String, String> details = new LinkedHashMap<>();
         details.put("Name", name(account));
@@ -212,6 +225,7 @@ public class GrocersContextService {
     }
 
     private Map<String, Object> safeAccount(Map<String, Object> source) {
+        // Explicit allow-list is safer than serializing an evolving account DTO.
         Map<String, Object> safe = new LinkedHashMap<>();
         for (String key : List.of("firstName", "lastName", "email", "status", "funds", "address")) if (source.containsKey(key)) safe.put(key, source.get(key));
         return safe;
@@ -268,6 +282,8 @@ public class GrocersContextService {
     private Map<String, String> scalarDetails(Map<String, Object> row, int limit) { Map<String, String> details = new LinkedHashMap<>(); row.forEach((key, value) -> { if (details.size() < limit && visibleField(key) && value != null && !(value instanceof Map) && !(value instanceof List)) details.put(label(key), text(value)); }); return details; }
     private String label(String key) { return key.replaceAll("([A-Z])", " $1").replace('_', ' ').trim(); }
     private boolean visibleField(String key) {
+        // Cards/evidence must be human-facing, not a raw service dump. Suppress
+        // internal identifiers and sensitive account fields even if a service adds them.
         String normalized = key.replace("_", "").toLowerCase(Locale.ROOT);
         return !(normalized.equals("id") || normalized.endsWith("id") || normalized.equals("version")
                 || normalized.contains("password") || normalized.contains("securityanswer"));

@@ -1,3 +1,8 @@
+/**
+ * Component role: Defines the HTTP boundary for this service. It accepts transport input, reads trusted gateway identity headers where required, and delegates business work to the service layer.
+ *
+ * Maintainer note: this file belongs to requestapp. See backend/requestapp/README.md for features, API contracts, configuration, and integration rules.
+ */
 package com.oracle.requestapp.controllers;
 
 import com.oracle.requestapp.dto.CreateProductRequest;
@@ -26,6 +31,8 @@ public class ProductRequestController {
             @RequestHeader("X-Authenticated-User-Id") Integer employeeId,
             @RequestHeader("X-Authenticated-Role") String role,
             @Valid @RequestBody CreateProductRequest request) {
+        // Gateway supplies these identity headers after JWT validation. Employees can
+        // create a request only for themselves; no employee ID comes from the body.
         requireRole(role, "EMPLOYEE");
         return ResponseEntity.status(HttpStatus.CREATED).body(service.create(employeeId, request));
     }
@@ -42,6 +49,8 @@ public class ProductRequestController {
     public ProductRequestResponse get(@PathVariable Integer id,
                                       @RequestHeader("X-Authenticated-User-Id") Integer callerId,
                                       @RequestHeader("X-Authenticated-Role") String role) {
+        // The service makes the second-level ownership check for employees; admins can
+        // review any request, but customers and unauthenticated callers cannot view one.
         if (!"EMPLOYEE".equals(role) && !"ADMIN".equals(role)) throw new ForbiddenOperationException("Access denied");
         return service.get(id, callerId, role);
     }
@@ -60,6 +69,8 @@ public class ProductRequestController {
                                                @RequestHeader("X-Authenticated-User-Id") Integer adminId,
                                                @RequestHeader("X-Authenticated-Role") String role,
                                                @Valid @RequestBody UpdateRequestStatus request) {
+        // Status changes perform approval/rejection workflow and may mutate ProductApp;
+        // only an administrator may initiate that decision.
         requireRole(role, "ADMIN");
         return service.updateStatus(id, adminId, request);
     }

@@ -92,3 +92,17 @@ Run requests against GatewayApp (`http://localhost:8091`):
 | Locked user | User endpoint using an account where `accountLocked = true` | `403` |
 
 For every successful login request, set the response token in Insomnia as a Bearer token for gateway-protected requests.
+
+## Locked-account recovery API
+
+These public endpoints are intentionally reachable without an access token because the customer cannot sign in while locked.
+
+| Method | Route | Purpose |
+| --- | --- | --- |
+| `POST` | `/grocers/api/auth/locked-account/ticket` | Escalate recovery to an employee support ticket. |
+| `GET` | `/grocers/api/auth/locked-account/status?email=` | Check whether an account is locked and whether an employee ticket is open. |
+| `GET` | `/grocers/api/auth/locked-account/security-question?email=` | Read the recovery question for a locked account. |
+| `POST` | `/grocers/api/auth/locked-account/verify-security-answer` | Verify the answer and receive a short-lived reset token. |
+| `POST` | `/grocers/api/auth/locked-account/reset-password` | Reset the password with the recovery token. |
+
+Recovery calls from AuthApp to UserApp/TicketApp carry the internal service secret. Do not expose that secret to the browser or replace those calls with user-supplied identity headers.

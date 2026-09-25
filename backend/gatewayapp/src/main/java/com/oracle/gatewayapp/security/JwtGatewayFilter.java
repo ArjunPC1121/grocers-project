@@ -1,3 +1,8 @@
+/**
+ * Component role: Configures a cross-cutting concern such as security, HTTP clients, serialization, or application startup behaviour.
+ *
+ * Maintainer note: this file belongs to gatewayapp. See backend/gatewayapp/README.md for features, API contracts, configuration, and integration rules.
+ */
 package com.oracle.gatewayapp.security;
 
 import io.jsonwebtoken.Claims;
@@ -52,6 +57,8 @@ public class JwtGatewayFilter implements GlobalFilter {
     @Override
     public Mono<Void> filter(ServerWebExchange exchange, GatewayFilterChain chain) {
         String path = exchange.getRequest().getPath().value();
+        // AuthApp's recovery calls are the sole passwordless internal exception. They
+        // must match both a limited route set and the configured shared secret.
         if (isAuthAppInternalRequest(exchange)) {
             return chain.filter(exchange);
         }
@@ -81,6 +88,9 @@ public class JwtGatewayFilter implements GlobalFilter {
                 return reject(exchange, HttpStatus.FORBIDDEN);
             }
 
+            // Remove caller-supplied identity headers before injecting values decoded
+            // from the verified token. Downstream services can trust these headers only
+            // because they originate here.
             ServerHttpRequest request = exchange.getRequest().mutate().headers(headers -> {
                 headers.remove(USER_ID_HEADER);
                 headers.remove(EMAIL_HEADER);
@@ -104,6 +114,7 @@ public class JwtGatewayFilter implements GlobalFilter {
 
 
     private boolean isPublic(String path, HttpMethod method) {
+        // Keep this list deliberately narrow. Adding a route here bypasses JWT validation.
         return path.startsWith("/grocers/api/auth/login/")
                 || path.equals("/grocers/api/auth/locked-account/ticket")
                 || path.equals("/grocers/api/auth/locked-account/status")
@@ -117,6 +128,8 @@ public class JwtGatewayFilter implements GlobalFilter {
     }
 
     private boolean isAuthorized(String path, String role) {
+        // Authorization is path-prefix based because Gateway is the common enforcement
+        // point. Owning services must still validate resource-level ownership.
         if (path.equals("/grocers/api/users/admin")) {
             return "ADMIN".equals(role);
         }
@@ -153,6 +166,8 @@ public class JwtGatewayFilter implements GlobalFilter {
     }
 
     private boolean isAuthAppInternalRequest(ServerWebExchange exchange) {
+        // This is not a general service-to-service bypass. It exists only for account
+        // recovery and failed-login state changes which happen before a user has a token.
         String path = exchange.getRequest().getPath().value();
 
         HttpMethod method = exchange.getRequest().getMethod();
