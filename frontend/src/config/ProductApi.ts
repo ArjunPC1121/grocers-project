@@ -48,6 +48,7 @@ export const categorySlug = (value = "") =>
 export const normalizedCategorySlug = (value = "") =>
   categorySlug(value).replace("-and-", "-");
 
+// Turn common shopper words such as "veg" or "bread" into our fixed category slugs.
 const exactCategorySearches: Record<string, string> = {
   "fruit": "fruits-vegetables",
   "fruits": "fruits-vegetables",
@@ -185,6 +186,7 @@ export function categorySlugForExactSearch(query: string): string | undefined {
 export function mapProduct(
   value: ProductResponse | ProductSearchResponse,
 ): Product {
+  // Clamp the discount before calculating the display price, even if the API sends bad data.
   const discount = Math.max(0, Math.min(100, value.discount ?? 0));
   const originalPrice = Number(value.price);
   const salePrice = originalPrice * ((100 - discount) / 100);
@@ -220,6 +222,7 @@ export async function getProducts(): Promise<Product[]> {
   return data.filter((product) => product.active !== false).map(mapProduct);
 }
 
+// Reuse in-flight and completed category requests while the user moves between pages.
 const categoryProductCache = new Map<string, Promise<Product[]>>();
 
 export function getProductsByCategory(category: string): Promise<Product[]> {

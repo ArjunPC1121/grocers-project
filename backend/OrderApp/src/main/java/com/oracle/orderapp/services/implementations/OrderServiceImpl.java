@@ -396,7 +396,21 @@ public class OrderServiceImpl implements OrderService {
         order.setStatus(request.status());
         order.setUpdatedByEmployeeId(request.employeeId());
 
-        return orderRepository.save(order);
+        Order updatedOrder = orderRepository.save(order);
+
+        // Keep UserApp's Kafka-backed customer order summary in sync with fulfilment updates.
+        orderCheckoutEventPublisher.publish(
+                new OrderCheckedOutEvent(
+                        updatedOrder.getId(),
+                        updatedOrder.getCustomerId(),
+                        updatedOrder.getOrderNumber(),
+                        updatedOrder.getTotalAmount(),
+                        updatedOrder.getStatus().name(),
+                        updatedOrder.getUpdatedAt()
+                )
+        );
+
+        return updatedOrder;
     }
     @Override
     public List<Order> getByStatus(OrderStatus status) {
