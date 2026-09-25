@@ -534,7 +534,7 @@ export function ProfilePage() {
                 </div>
 
                 <label className="block">
-                    Email
+                    Phone number
                     <input
                         required
                         type="tel"
@@ -552,12 +552,13 @@ export function ProfilePage() {
                 </label>
 
                 <label className="block">
-                    Phone number
+                    Email
                     <input
                         required
-                        value={profile.phoneNumber}
+                        type="email"
+                        value={profile.email}
                         onChange={(event) =>
-                            setProfile({ ...profile, phoneNumber: event.target.value })
+                            setProfile({ ...profile, email: event.target.value })
                         }
                         className="mt-1 w-full rounded-lg border p-3"
                     />
