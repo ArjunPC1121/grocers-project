@@ -31,7 +31,7 @@ public class CartServiceImpl implements CartService {
     private final CartItemRepository cartItemRepository;
     private final ProductClient productClient;
     private final UserClient userClient;
-
+    //Get all carts
     @Override
     public List<CartResponse> getAllCarts() {
         return cartRepository.findAll()
@@ -39,7 +39,7 @@ public class CartServiceImpl implements CartService {
                 .map(this::toResponse)
                 .toList();
     }
-
+    //Get particular cart
     @Override
     @Transactional(readOnly = true)
     public CartResponse getCart(Integer cartId) {
@@ -47,7 +47,7 @@ public class CartServiceImpl implements CartService {
     }
 
 
-
+    // A user may have one active cart at a time; past carts remain available by ID.
     @Override
     public CartResponse getActiveCartByUser(Integer userId) {
         userClient.checkUserExists(userId);
@@ -58,7 +58,7 @@ public class CartServiceImpl implements CartService {
 
         return toResponse(cart);
     }
-
+    // Reuse the user's active cart or create one on their first add-to-cart action.
     @Override
     public CartResponse addItem(Integer userId, CartItemRequest request) {
         userClient.checkUserExists(userId);
@@ -72,9 +72,7 @@ public class CartServiceImpl implements CartService {
                     return cartRepository.save(newCart);
                 });
 
-        // Calls ProductApp: availableQuantity decreases, reservedQuantity increases.
-
-
+        // Reuse an existing line item so adding the same product increases its quantity.
        CartItem item = cartItemRepository
         .findByCartIdAndProductId(cart.getId(), request.productId())
         .orElseGet(() -> {
@@ -89,6 +87,7 @@ public class CartServiceImpl implements CartService {
 
 int newQuantity = item.getQuantity() + request.quantity();
 
+// ProductApp is the inventory source of truth and rejects quantities it cannot fulfil.
 productClient.checkQuantity(request.productId(), newQuantity);
 
 item.setQuantity(newQuantity);
@@ -107,6 +106,7 @@ cartItemRepository.save(item);
                 .orElseThrow(() -> new ResourceNotFoundException(
                         "Product not found in cart"));
 
+      // Validate the requested final quantity before changing the cart item.
       productClient.checkQuantity(productId, request.quantity());
 
 item.setQuantity(request.quantity());
@@ -126,9 +126,8 @@ cartItemRepository.save(item);
                 .orElseThrow(() -> new ResourceNotFoundException(
                         "Product not found in cart"));
 
-        // Releases reserved quantity back to ProductApp.
-      
-
+        // Deleting the row removes the item from this cart; inventory is checked again
+        // when the customer later adds or changes an item.
         cartItemRepository.delete(item);
     }
 
@@ -145,6 +144,7 @@ cartItemRepository.save(item);
 //             productClient.confirm(item.getProductId(), item.getQuantity());
 //         }
 
+         // A checked-out cart is immutable because future item operations require ACTIVE status.
          cart.setStatus(CartStatus.CHECKED_OUT);
 
          return toResponse(cartRepository.save(cart));
@@ -153,8 +153,7 @@ cartItemRepository.save(item);
     @Override
     public CartResponse cancel(Integer cartId) {
         Cart cart = findActiveCart(cartId);
-
-      
+       // Cancelling preserves the cart history but makes it immutable.
 
 cart.setStatus(CartStatus.CANCELLED);
 
@@ -179,6 +178,7 @@ return toResponse(cartRepository.save(cart));
     private Cart findActiveCart(Integer cartId) {
         Cart cart = findCart(cartId);
 
+        // Prevent edits to carts that have already been checked out or cancelled.
         if (cart.getStatus() != CartStatus.ACTIVE) {
             throw new IllegalArgumentException("Cart is not active");
         }
@@ -228,6 +228,7 @@ public CartResponse decreaseItemQuantity(Integer cartId, Integer productId) {
     @Override
     @Transactional
     public void removeProductFromAllActiveCarts(Integer productId) {
+        // Invoked when a product becomes unavailable or is deleted by ProductApp.
         cartItemRepository.deleteProductFromActiveCarts(
                 productId,
                 CartStatus.ACTIVE
