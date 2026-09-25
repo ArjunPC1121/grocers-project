@@ -24,6 +24,7 @@ const Products = () => {
   const minPrice = searchParams.get("minPrice") || "";
   const maxPrice = searchParams.get("maxPrice") || "";
 
+  // Preload all fixed categories so filters can run locally without another request per change.
   const fetchProducts = async () => {
     setLoading(true);
     try {
@@ -36,6 +37,7 @@ const Products = () => {
     }
   };
 
+  // Keep filter choices in the URL, making the current product view shareable and refresh-safe.
   const updateFilter = (key: string, value: string) => {
     const newParams = new URLSearchParams(searchParams);
     if (value) {
@@ -55,6 +57,7 @@ const Products = () => {
   const hasFilters = category || organic || minPrice || maxPrice;
   const pageSize = 12;
 
+  // Apply every selected filter, sort the result, then paginate it below.
   const filteredProducts = useMemo(() => {
     const minimum = minPrice ? Number(minPrice) : undefined;
     const maximum = maxPrice ? Number(maxPrice) : undefined;

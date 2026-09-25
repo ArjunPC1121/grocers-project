@@ -21,6 +21,7 @@ export type SupportAssistantResponse = {
 };
 
 export async function sendSupportMessage(message: string, conversationId?: string) {
+  // Send the conversation ID back so the service can keep the chat context.
   const { data } = await api.post<SupportAssistantResponse>("/support-assistant/chat", { message, conversationId });
   return data;
 }

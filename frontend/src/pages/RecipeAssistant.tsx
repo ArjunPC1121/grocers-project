@@ -48,6 +48,7 @@ export default function RecipeAssistant() {
     [recommendation],
   );
 
+  // An item is addable only when the recommendation and the current catalog both confirm it exists.
   const availableItems = useMemo(
     () =>
       displayedItems.filter(
@@ -60,6 +61,7 @@ export default function RecipeAssistant() {
     [displayedItems, productsById],
   );
 
+  // Ask for recommendations and product details together so cards can be added to the cart immediately.
   const submit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     const recipe = message.trim();
@@ -114,6 +116,7 @@ export default function RecipeAssistant() {
     }
   };
 
+  // Add products one at a time so each cart update uses the latest server state.
   const addAllAvailable = async () => {
     if (!availableItems.length) return;
     setAddingAll(true);

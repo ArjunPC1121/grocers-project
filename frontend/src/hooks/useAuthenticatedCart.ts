@@ -9,6 +9,7 @@ export function useAuthenticatedCart() {
   const location = useLocation();
   const navigate = useNavigate();
 
+  // Remember the current page so a visitor can continue shopping after sign-in.
   return (product: Product, quantity = 1) => {
     if (!user || user.role !== "CUSTOMER") {
       navigate("/auth", {

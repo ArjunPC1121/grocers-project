@@ -63,6 +63,7 @@ const MyOrders = () => {
     const { user } = useAuth();
     const { clearCart } = useCart();
 
+    // Checkout may link here with this flag; clear the visual cart once and remove the flag from the URL.
     useEffect(() => {
         if (searchParams.get("clearCart")) {
             clearCart();
@@ -70,6 +71,7 @@ const MyOrders = () => {
         }
     }, [clearCart, searchParams, setSearchParams]);
 
+    // Fetch fresh order status whenever the signed-in customer or status tab changes.
     useEffect(() => {
         const loadOrders = async () => {
             if (!user?.id) {
@@ -118,6 +120,7 @@ const MyOrders = () => {
         void loadOrders();
     }, [activeStatus, user?.id]);
 
+    // Ask for a reason because it is shown to staff handling the cancellation.
     const cancelOrder = async (order: CustomerOrderSummary) => {
         const reason = window.prompt("Why would you like to cancel this order?");
 
