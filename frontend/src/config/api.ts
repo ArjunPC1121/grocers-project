@@ -8,5 +8,5 @@ api.interceptors.request.use((config) => { const token = localStorage.getItem("g
 // single service being restarted or by a transient request failure; it must not
 // silently sign an administrator out while they are refreshing a page.
 api.interceptors.response.use((response) => response, (error) => Promise.reject(error));
-export const errorMessage = (error: unknown, fallback = "Something went wrong. Please try again.") => axios.isAxiosError(error) ? error.response?.data?.message || error.response?.data?.error || error.message || fallback : fallback;
+export const errorMessage = (error: unknown, fallback = "Something went wrong. Please try again.") => axios.isAxiosError(error) ? error.response?.data?.message || error.response?.data?.detail || error.response?.data?.error || error.message || fallback : fallback;
 export default api;
