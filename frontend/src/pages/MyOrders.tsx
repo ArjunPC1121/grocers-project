@@ -14,10 +14,6 @@ type CustomerOrderSummary = {
     totalAmount: number;
     status: string;
     checkedOutAt: string;
-    deliveryAddress?: string;
-    paymentMethod?: string;
-    cancellationReason?: string;
-    items: OrderItem[];
 };
 
 type OrderItem = {
@@ -58,6 +54,8 @@ const MyOrders = () => {
     const [loading, setLoading] = useState(true);
     const [activeStatus, setActiveStatus] = useState<string | null>(null);
     const [expandedOrderId, setExpandedOrderId] = useState<number | null>(null);
+    const [orderDetails, setOrderDetails] = useState<Record<number, BackendOrder>>({});
+    const [detailsLoadingId, setDetailsLoadingId] = useState<number | null>(null);
     const [searchParams, setSearchParams] = useSearchParams();
 
     const { user } = useAuth();
@@ -71,11 +69,12 @@ const MyOrders = () => {
         }
     }, [clearCart, searchParams, setSearchParams]);
 
-    // Fetch fresh order status whenever the signed-in customer or status tab changes.
+    // The order list is the Kafka-backed summary stored by UserApp.
     useEffect(() => {
         const loadOrders = async () => {
             if (!user?.id) {
                 setOrders([]);
+                setOrderDetails({});
                 setLoading(false);
                 return;
             }
@@ -83,29 +82,16 @@ const MyOrders = () => {
             setLoading(true);
 
             try {
-                // Gets the latest status directly from OrderApp.
-                const { data } = await api.get<BackendOrder[]>(
-                    `/orders/customers/${user.id}`,
+                const { data } = await api.get<CustomerOrderSummary[]>(
+                    `/users/${user.id}/orders`,
                 );
-
-                const customerOrders: CustomerOrderSummary[] = data.map((order) => ({
-                    orderId: order.id,
-                    orderNumber: order.orderNumber,
-                    totalAmount: order.totalAmount,
-                    status: order.status,
-                    checkedOutAt: order.orderedAt,
-                    deliveryAddress: order.deliveryAddress,
-                    paymentMethod: order.paymentMethod,
-                    cancellationReason: order.cancellationReason,
-                    items: order.items ?? [],
-                }));
 
                 setOrders(
                     activeStatus
-                        ? customerOrders.filter(
+                        ? data.filter(
                             (order) => order.status === activeStatus,
                         )
-                        : customerOrders,
+                        : data,
                 );
             } catch (error: any) {
                 toast.error(
@@ -119,6 +105,30 @@ const MyOrders = () => {
 
         void loadOrders();
     }, [activeStatus, user?.id]);
+
+    const toggleOrderDetails = async (orderId: number) => {
+        if (expandedOrderId === orderId) {
+            setExpandedOrderId(null);
+            return;
+        }
+
+        setExpandedOrderId(orderId);
+
+        if (orderDetails[orderId]) return;
+
+        try {
+            setDetailsLoadingId(orderId);
+            const { data } = await api.get<BackendOrder>(`/orders/${orderId}`);
+            setOrderDetails((previous) => ({ ...previous, [orderId]: data }));
+        } catch (error: any) {
+            toast.error(
+                error.response?.data?.message ||
+                "Unable to load this order's details. Please try again.",
+            );
+        } finally {
+            setDetailsLoadingId(null);
+        }
+    };
 
     // Ask for a reason because it is shown to staff handling the cancellation.
     const cancelOrder = async (order: CustomerOrderSummary) => {
@@ -198,6 +208,8 @@ const MyOrders = () => {
                             (() => {
                                 const isExpanded = expandedOrderId === order.orderId;
                                 const isCancelled = order.status === "CANCELLED";
+                                const details = orderDetails[order.orderId];
+                                const isDetailsLoading = detailsLoadingId === order.orderId;
 
                                 return (
                             <article
@@ -241,7 +253,7 @@ const MyOrders = () => {
                                 <button
                                     type="button"
                                     aria-expanded={isExpanded}
-                                    onClick={() => setExpandedOrderId(isExpanded ? null : order.orderId)}
+                                    onClick={() => void toggleOrderDetails(order.orderId)}
                                     className="mt-4 inline-flex items-center gap-2 text-sm font-medium text-app-green hover:text-app-green/80"
                                 >
                                     {isExpanded ? "Hide details" : "View details"}
@@ -251,9 +263,11 @@ const MyOrders = () => {
                                 {isExpanded && (
                                     <div className="mt-4 border-t border-app-border pt-4">
                                         <h2 className="text-sm font-semibold text-app-green">Order details</h2>
-                                        {order.items.length ? (
+                                        {isDetailsLoading ? (
+                                            <p className="mt-3 text-sm text-app-text-light">Loading order details...</p>
+                                        ) : details?.items?.length ? (
                                             <ul className="mt-3 divide-y divide-app-border rounded-xl border border-app-border">
-                                                {order.items.map((item) => (
+                                                {details.items.map((item) => (
                                                     <li key={item.id ?? item.productId} className="flex items-center justify-between gap-4 p-3 text-sm">
                                                         <div>
                                                             <p className="font-medium text-app-text">{item.productName || `Product #${item.productId}`}</p>
@@ -269,9 +283,9 @@ const MyOrders = () => {
 
                                         <dl className="mt-4 grid gap-3 text-sm sm:grid-cols-2">
                                             <div><dt className="text-app-text-light">Total price</dt><dd className="mt-1 font-semibold text-app-green">{currency}{Number(order.totalAmount).toFixed(2)}</dd></div>
-                                            {order.paymentMethod && <div><dt className="text-app-text-light">Payment method</dt><dd className="mt-1 font-medium text-app-text">{formatStatus(order.paymentMethod)}</dd></div>}
-                                            {order.deliveryAddress && <div className="sm:col-span-2"><dt className="text-app-text-light">Delivery address</dt><dd className="mt-1 font-medium text-app-text">{order.deliveryAddress}</dd></div>}
-                                            {isCancelled && order.cancellationReason && <div className="sm:col-span-2"><dt className="text-red-600">Cancellation reason</dt><dd className="mt-1 text-red-700">{order.cancellationReason}</dd></div>}
+                                            {details?.paymentMethod && <div><dt className="text-app-text-light">Payment method</dt><dd className="mt-1 font-medium text-app-text">{formatStatus(details.paymentMethod)}</dd></div>}
+                                            {details?.deliveryAddress && <div className="sm:col-span-2"><dt className="text-app-text-light">Delivery address</dt><dd className="mt-1 font-medium text-app-text">{details.deliveryAddress}</dd></div>}
+                                            {isCancelled && details?.cancellationReason && <div className="sm:col-span-2"><dt className="text-red-600">Cancellation reason</dt><dd className="mt-1 text-red-700">{details.cancellationReason}</dd></div>}
                                         </dl>
                                     </div>
                                 )}
