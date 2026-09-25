@@ -2,6 +2,10 @@ package com.oracle.productsapp.controller;
 
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
+
+import tools.jackson.core.JacksonException;
+import tools.jackson.databind.ObjectMapper;
 
 import com.oracle.productsapp.dtos.ImageUploadResponse;
 import com.oracle.productsapp.dtos.UploadedImageResponse;
@@ -18,7 +22,9 @@ import com.oracle.productsapp.entities.ProductCategory;
 import com.oracle.productsapp.services.abstractions.ProductService;
 import com.oracle.productsapp.services.implementations.CloudinaryImageService;
 
+import jakarta.validation.ConstraintViolation;
 import jakarta.validation.Valid;
+import jakarta.validation.Validator;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -29,6 +35,8 @@ public class ProductController {
 
     private final ProductService productService;
     private final CloudinaryImageService cloudinaryImageService;
+    private final ObjectMapper objectMapper;
+    private final Validator validator;
 
     @PostMapping
     public ResponseEntity<Product> create(@Valid @RequestBody ProductRequest request) {
@@ -41,10 +49,27 @@ public class ProductController {
      */
     @PostMapping(value = "/with-image", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<Product> createWithImage(
-            @Valid @RequestPart("product") ProductRequest request,
-            @RequestPart("image") MultipartFile image) {
+            @RequestParam("product") String productJson,
+            @RequestParam("image") MultipartFile image) {
+        ProductRequest request = parseAndValidateProduct(productJson);
         return ResponseEntity.status(HttpStatus.CREATED)
                 .body(productService.createWithImage(request, image));
+    }
+
+    private ProductRequest parseAndValidateProduct(String productJson) {
+        try {
+            ProductRequest request = objectMapper.readValue(productJson, ProductRequest.class);
+            Set<ConstraintViolation<ProductRequest>> violations = validator.validate(request);
+            if (!violations.isEmpty()) {
+                ConstraintViolation<ProductRequest> violation = violations.iterator().next();
+                throw new IllegalArgumentException(
+                        violation.getPropertyPath() + ": " + violation.getMessage()
+                );
+            }
+            return request;
+        } catch (JacksonException exception) {
+            throw new IllegalArgumentException("product must contain valid JSON", exception);
+        }
     }
 
     @GetMapping
