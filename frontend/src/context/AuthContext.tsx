@@ -90,7 +90,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       toast.success("Account created. Please sign in.");
       return true;
     } catch (error) {
-      toast.error(errorMessage(error, "Unable to create your account."));
+      const message = errorMessage(error, "Unable to create your account.");
+      toast.error(
+        message === "Bank account number does not exist or is not linked to this phone number"
+          ? "The bank account number is invalid or does not match the phone number entered."
+          : message,
+      );
       return false;
     }
   };
