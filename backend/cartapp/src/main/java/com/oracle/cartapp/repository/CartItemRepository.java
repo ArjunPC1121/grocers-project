@@ -12,8 +12,11 @@ import org.springframework.data.repository.query.Param;
 
 public interface CartItemRepository extends JpaRepository<CartItem, Integer>{
 
+    // Derived Spring Data query used to ensure a product has at most one line item per cart.
     Optional<CartItem> findByCartIdAndProductId(Integer cartId, Integer productId);
     @Modifying(clearAutomatically = true, flushAutomatically = true)
+    // Bulk JPQL delete: removes a removed product only from carts still being edited.
+    // The persistence context is flushed first and cleared afterward to avoid stale items.
     @Query("""
     DELETE FROM CartItem item
     WHERE item.productId = :productId

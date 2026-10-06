@@ -18,12 +18,17 @@ Insert the first administrator manually with a BCrypt password and set its `role
 | PUT, DELETE | `/products/{id}` | Update/delete a product |
 | GET, POST | `/employees` | View/add employees |
 | POST | `/employees/{id}/deactivate` | Set employee status to `INACTIVE` |
+| POST | `/employees/{id}/activate` | Restore employee sign-in access |
 | GET, POST | `/users` | View/create users through UserApp |
 | PATCH, DELETE | `/users/{id}` | Update/delete users through UserApp |
 | GET | `/requests` | View inventory requests |
 | POST | `/requests/{id}/approve` | Apply and approve a product request |
 | POST | `/requests/{id}/reject` | Reject a product request |
 | GET | `/reports` | On-screen daily/weekly/monthly order report |
+| PATCH | `/me` | Update the signed-in administrator's profile |
+| PUT | `/me/password` | Change the signed-in administrator's password |
+| GET, PATCH | `/notifications`, `/notifications/{id}/read` | Read or mark request notifications as read |
+| POST | `/products/{id}/image` | Upload a product image using multipart form data |
 
 `/reports` accepts `period=DAILY|WEEKLY|MONTHLY`, `referenceDate=YYYY-MM-DD`, and optional `productId` / `customerId`.
 
@@ -46,3 +51,11 @@ An employee request must include: `action` (`CREATE`, `UPDATE`, `RESTOCK`, or `D
 
 - `PRODUCT.discount` is an integer percentage between `0` and `100`, defaulting to `0`.
 - `EMPLOYEES.status` is `ACTIVE` or `INACTIVE`, defaulting to `ACTIVE`.
+
+## Feature and integration notes
+
+- **Ownership:** AdminApp owns administrator accounts and admin notifications. Products, users, employees, requests, orders, and reports are coordinated with their owning services through `ExternalAdminOperationsService`.
+- **Roles:** An `ADMIN` may manage store operations. A `SUPER_ADMIN` has the additional authority to create, edit, and remove other normal administrator accounts; normal admins must never see or call these account-management operations.
+- **Request notifications:** RequestApp publishes `product-request-created` to Kafka. `ProductRequestNotificationConsumer` stores an `AdminNotification` and first checks `requestId`, making the consumer safe when Kafka redelivers an event.
+- **Dashboard and reports:** These screens intentionally compose live information from downstream services rather than maintaining copied order or inventory data in AdminApp.
+- **Controller rule:** Keep controllers limited to HTTP concerns. Put role checks and administrator-account rules in `AdminService`; put cross-service calls and their error handling in `ExternalAdminOperationsService`.

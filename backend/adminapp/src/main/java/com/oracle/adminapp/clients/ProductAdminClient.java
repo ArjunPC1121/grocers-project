@@ -1,3 +1,8 @@
+/**
+ * Component role: Encapsulates a call to another service so that endpoint details do not leak into controllers or domain logic.
+ *
+ * Maintainer note: this file belongs to adminapp. See backend/adminapp/README.md for features, API contracts, configuration, and integration rules.
+ */
 package com.oracle.adminapp.clients;
 
 import java.io.IOException;

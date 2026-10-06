@@ -156,6 +156,7 @@ interface CartContextType {
 
 const CartContext = createContext<CartContextType | undefined>(undefined);
 
+// Convert the cart service's product shape into the shape used by the UI.
 const mapProduct = (product: BackendProduct): Product => {
   const discount = product.discount || 0;
 
@@ -184,6 +185,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
   const [cartId, setCartId] = useState<number | null>(null);
   const [isCartOpen, setIsCartOpen] = useState(false);
 
+  // Cart responses contain product IDs only, so fetch product details before rendering items.
   const setCartFromResponse = async (cart: BackendCart) => {
     const { data: backendProducts } =
         await productApi.get<BackendProduct[]>("/products");
@@ -206,6 +208,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
     setItems(mappedItems);
   };
 
+  // Only customers own carts; clear local cart data when another role signs in.
   const loadCart = async () => {
     if (!user || user.role !== "CUSTOMER") {
       setItems([]);
@@ -230,6 +233,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
     void loadCart();
   }, [user?.id, user?.role]);
 
+  // The server is the source of truth for quantities and cart contents.
   const addToCart = async (product: Product, quantity = 1) => {
     if (!user) {
       throw new Error("Please sign in before adding products to cart.");
@@ -273,6 +277,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
     await setCartFromResponse(data);
   };
 
+  // Close the active backend cart only after checkout has completed successfully.
   const checkoutCart = async () => {
     if (!cartId) return;
 

@@ -1,3 +1,8 @@
+/**
+ * Component role: Coordinates this service's business workflow, including validation, authorization decisions, persistence, and downstream integration where applicable.
+ *
+ * Maintainer note: this file belongs to adminapp. See backend/adminapp/README.md for features, API contracts, configuration, and integration rules.
+ */
 package com.oracle.adminapp.services;
 
 import com.oracle.adminapp.dto.DashboardResponse;
@@ -60,6 +65,8 @@ public class ExternalAdminOperationsService {
         this.gatewayInternalSecret = gatewayInternalSecret;
     }
 
+    // These read methods intentionally return the owning services' current payloads.
+    // AdminApp does not duplicate product, user, employee, request, or order tables.
     public List<Map<String, Object>> products() { return list(products); }
     public List<Map<String, Object>> employees() { return listEmployees(); }
     public List<Map<String, Object>> users() { return list(users); }
@@ -79,6 +86,8 @@ public class ExternalAdminOperationsService {
     }
 
     public Map<String, Object> createEmployee(EmployeeCreateRequest request) {
+        // EmployeeApp expects a temporary/default password as part of its account
+        // provisioning contract. Change this in both services if onboarding changes.
         Map<?, ?> response = employees.post().headers(this::employeeHeaders).body(Map.of(
                         "firstName", request.firstName(),
                         "lastName", request.lastName(),
@@ -143,6 +152,8 @@ public class ExternalAdminOperationsService {
     }
 
     public DashboardResponse dashboard() {
+        // Build the dashboard from fresh downstream reads. The calculations below must
+        // tolerate missing/older fields because services may be deployed independently.
         List<Map<String, Object>> productRows = products();
         List<Map<String, Object>> employeeRows = employees();
         List<Map<String, Object>> userRows = users();
@@ -172,6 +183,8 @@ public class ExternalAdminOperationsService {
                 .filter(employee -> !"INACTIVE".equalsIgnoreCase(text(employee.get("status")))).count();
         int pendingRequests = (int) requestRows.stream()
                 .filter(request -> !List.of("APPROVED", "REJECTED").contains(text(request.get("status")).toUpperCase())).count();
+        // Only fulfilment-stage orders count as sales. Cancelled or failed-payment
+        // orders remain useful operationally but must not inflate revenue figures.
         List<Map<String, Object>> revenueOrders = orderRows.stream()
                 .filter(this::isRevenueOrder).toList();
         BigDecimal revenue = revenueOrders.stream().map(order -> decimal(order.get("totalAmount")))
@@ -186,6 +199,8 @@ public class ExternalAdminOperationsService {
         orderRows.forEach(order -> orderStatuses.merge(text(order.get("status")).toUpperCase(), 1, Integer::sum));
         Map<String, Integer> requestStatuses = new LinkedHashMap<>();
         requestRows.forEach(request -> requestStatuses.merge(text(request.get("status")).toUpperCase(), 1, Integer::sum));
+        // Join display names in memory. Order/Request services retain their own IDs;
+        // this enrichment lets the admin UI show people instead of internal numbers.
         Map<Integer, Map<String, Object>> usersById = new java.util.HashMap<>();
         userRows.forEach(user -> usersById.put(number(user.get("id")).intValue(), user));
         Map<Integer, Map<String, Object>> employeesById = new java.util.HashMap<>();
@@ -236,6 +251,8 @@ public class ExternalAdminOperationsService {
     }
 
     public ReportResponse report(ReportPeriod period, LocalDate referenceDate, Integer productId, Integer customerId) {
+        // Filtering happens after retrieving live orders because OrderApp is the source
+        // of truth. Keep date/product/customer semantics here in sync with Reports UI.
         LocalDate from = startOfPeriod(period, referenceDate);
         LocalDate to = endOfPeriod(period, referenceDate);
         List<Map<String, Object>> filtered = orders().stream()

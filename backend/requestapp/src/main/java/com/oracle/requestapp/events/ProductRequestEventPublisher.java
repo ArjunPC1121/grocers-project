@@ -1,3 +1,8 @@
+/**
+ * Component role: Handles an asynchronous cross-service event. Event payloads should remain backward-compatible because producers and consumers deploy independently.
+ *
+ * Maintainer note: this file belongs to requestapp. See backend/requestapp/README.md for features, API contracts, configuration, and integration rules.
+ */
 package com.oracle.requestapp.events;
 
 import com.oracle.requestapp.dto.ProductRequestCreatedEvent;
@@ -28,6 +33,8 @@ public class ProductRequestEventPublisher {
         try {
             String eventJson = objectMapper.writeValueAsString(event);
 
+            // The request ID is the Kafka key. It keeps all notifications for a given
+            // request ordered and gives consumers a stable idempotency identifier.
             kafkaTemplate.send(
                     topic,
                     event.requestId().toString(),

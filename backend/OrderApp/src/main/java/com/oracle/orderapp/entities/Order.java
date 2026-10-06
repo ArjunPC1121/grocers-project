@@ -43,6 +43,7 @@ public class Order {
     @GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "orders_sequence")
     private Integer id;
 
+    // Enables optimistic locking so concurrent order updates cannot silently overwrite each other.
     @Version
     private Long version;
 
@@ -88,6 +89,7 @@ public class Order {
     @Column(name = "updated_at", nullable = false)
     private LocalDateTime updatedAt;
 
+    // Persist and delete order lines together with their parent order.
     @OneToMany(mappedBy = "order", cascade = CascadeType.ALL, orphanRemoval = true)
     @JsonManagedReference
     @ToString.Exclude
@@ -96,6 +98,7 @@ public class Order {
 
     @PrePersist
     private void onCreate() {
+        // Set immutable creation time once, while updatedAt changes on each update.
         LocalDateTime now = LocalDateTime.now();
         if (orderedAt == null) {
             orderedAt = now;

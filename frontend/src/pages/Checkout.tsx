@@ -43,6 +43,7 @@ const Checkout = () => {
     { key: "payment", label: "Payment", icon: CreditCardIcon },
     { key: "review", label: "Review", icon: CheckIcon },
   ];
+  // Start with the saved profile address and offer addresses used on earlier orders.
   useEffect(() => {
     if (!user?.id) return;
 
@@ -55,6 +56,7 @@ const Checkout = () => {
       .catch(() => setPreviousAddresses([]));
   }, [user?.id, user?.address]);
 
+  // Creating an order and checking it out are separate: checkout is where stock and funds change.
   const handlePlaceOrder = async () => {
     if (!user) {
       toast.error("Please sign in before placing an order.");

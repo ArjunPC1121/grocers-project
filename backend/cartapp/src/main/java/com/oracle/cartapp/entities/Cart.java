@@ -21,7 +21,7 @@ import lombok.NoArgsConstructor;
 
 @Data 
 @NoArgsConstructor 
-@AllArgsConstructor 
+@AllArgsConstructor
 @Entity
 @Table(name = "carts")
 public class Cart {
@@ -37,6 +37,8 @@ public class Cart {
     @Column(nullable = false)
     private CartStatus status = CartStatus.ACTIVE;
     
+    // Saving a cart cascades changes to its items; removing an item from this
+    // collection deletes the orphaned cart_items row.
     @OneToMany(mappedBy = "cart", cascade = CascadeType.ALL, orphanRemoval = true)
     @JsonManagedReference
     private List<CartItem> items = new ArrayList<>();

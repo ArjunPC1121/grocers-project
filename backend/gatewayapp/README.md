@@ -59,6 +59,19 @@ $env:JWT_SECRET = "a-long-random-secret-with-at-least-32-characters"
 
 GatewayApp runs on `http://localhost:8091`.
 
+## Current routed features
+
+`application.yml` is the authoritative route list. In addition to the core account, catalogue, cart, order, request, ticket, funds, bank, and recipe routes, it includes:
+
+| Route prefix | Target service | Purpose |
+| --- | --- | --- |
+| `/grocers/api/admin/**` | AdminApp | Administrator operations, dashboard, reports, and notifications. |
+| `/grocers/api/requests/**` | RequestApp | Employee product requests and administrator review. |
+| `/grocers/api/support-assistant/**` | Grocers Help Assistant | Role-aware platform help and narrowly scoped assistant actions. |
+| `/grocers/api/chats/**` | ChatApp | Customer-to-employee live support chat. |
+
+For authenticated requests, the gateway removes any caller-supplied `X-Authenticated-*` headers before adding verified values from the JWT. This prevents a browser client from impersonating another user by forging headers.
+
 ## Insomnia test checklist
 
 Use this base URL:

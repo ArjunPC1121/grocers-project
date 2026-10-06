@@ -1,3 +1,4 @@
+# Maintainer configuration note: settings for gatewayapp. See backend/gatewayapp/README.md before changing ports, security secrets, routes, schema settings, or integration endpoints.
 spring:
   application:
     name: gatewayapp

@@ -14,6 +14,7 @@ public class OrderCheckoutEventPublisher {
     private final KafkaTemplate<String, OrderCheckedOutEvent> kafkaTemplate;
 
     public void publish(OrderCheckedOutEvent event) {
+        // Use the order ID as the Kafka key so events for one order stay partition-ordered.
         kafkaTemplate.send(TOPIC, event.orderId().toString(), event);
     }
 }

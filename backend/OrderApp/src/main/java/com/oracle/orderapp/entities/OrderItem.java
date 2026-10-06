@@ -66,6 +66,7 @@ public class OrderItem {
     @PrePersist
     @PreUpdate
     private void calculateSubtotal() {
+        // Keep the stored line total consistent with the immutable order-time price.
         if (quantity != null && unitPrice != null) {
             subtotal = unitPrice.multiply(BigDecimal.valueOf(quantity));
         }

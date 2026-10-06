@@ -1,3 +1,8 @@
+/**
+ * Component role: Coordinates this service's business workflow, including validation, authorization decisions, persistence, and downstream integration where applicable.
+ *
+ * Maintainer note: this file belongs to supportassistantapp. See backend/supportassistantapp/README.md for features, API contracts, configuration, and integration rules.
+ */
 package com.oracle.supportassistantapp.services;
 
 import com.oracle.supportassistantapp.dto.AssistantAction;
@@ -44,6 +49,8 @@ public class AssistantActionExecutionService {
     }
 
     public Execution execute(String message, AssistantIdentity identity, List<ConversationMemoryService.Turn> history) {
+        // This is an allow-list, not a generic command executor. The assistant may
+        // only mutate data for a role when the target and intent can be identified.
         String lower = message.toLowerCase(Locale.ROOT);
         try {
             if ("USER".equals(identity.role()) && wantsAddToCart(lower)) return addToCart(message, identity, history);
@@ -61,6 +68,8 @@ public class AssistantActionExecutionService {
         ProductMatch match = product(message, identity, history);
         if (match == null) return result("Tell me the exact product name you want to add. I will not guess when more than one product could match.",
                 "/products", "Browse products", "Grocers help");
+        // Quantity is intentionally bounded to protect the cart endpoint from an
+        // accidental or maliciously large number in natural-language input.
         int quantity = quantity(message);
         carts.post().uri("/users/{userId}/items", identity.userId())
                 .headers(headers -> identity(headers, identity))
@@ -84,6 +93,8 @@ public class AssistantActionExecutionService {
         String combined = conversationText(message, history);
         List<Map<String, Object>> matches = orders.stream().filter(order -> mentionsOrder(combined, order)).toList();
         if (matches.isEmpty() && orders.size() == 1 && refersToPrevious(message)) matches = orders;
+        // Never select an order from several plausible matches. The employee must
+        // disambiguate instead of the assistant advancing the wrong customer's order.
         if (matches.size() != 1) return result("Name the order number or customer clearly so I can update exactly one order.",
                 "/employee/orders", "Open Order Operations", "Grocers help");
 
@@ -112,6 +123,8 @@ public class AssistantActionExecutionService {
         String combined = conversationText(message, history);
         List<Map<String, Object>> matches = pending.stream().filter(request -> mentionsRequest(combined, request)).toList();
         if (matches.isEmpty() && pending.size() == 1 && refersToPrevious(message)) matches = pending;
+        // Approval/rejection is irreversible at this layer, so an ambiguous product
+        // name or request type must be clarified rather than guessed.
         if (matches.size() != 1) return result("Name the product and request type clearly so I can change exactly one pending request.",
                 "/admin/requests", "Open Product Requests", "Grocers help");
 
@@ -135,6 +148,8 @@ public class AssistantActionExecutionService {
     }
 
     private ProductMatch product(String message, AssistantIdentity identity, List<ConversationMemoryService.Turn> history) {
+        // First resolve an explicit product name. Pronouns such as "it" may use recent
+        // conversation references, but only when that history identifies one product.
         List<Map<String, Object>> catalogue = getList(products, "", identity).stream()
                 .filter(item -> Boolean.parseBoolean(String.valueOf(item.getOrDefault("active", true))))
                 .toList();
@@ -180,6 +195,8 @@ public class AssistantActionExecutionService {
     }
 
     private String conversationText(String message, List<ConversationMemoryService.Turn> history) {
+        // A short two-turn window supplies context without letting an old conversation
+        // silently change the target of a current action.
         StringBuilder text = new StringBuilder(message.toLowerCase(Locale.ROOT));
         for (int index = Math.max(0, history.size() - 2); index < history.size(); index++) {
             text.append(' ').append(history.get(index).user().toLowerCase(Locale.ROOT));
@@ -244,6 +261,8 @@ public class AssistantActionExecutionService {
     private Object first(Map<String, Object> map, String... keys) { for (String key : keys) if (map.get(key) != null) return map.get(key); return null; }
     private String firstText(Map<String, Object> map, String... keys) { return text(first(map, keys)); }
 
+    // Calls go through Gateway with its internal-request header. Identity is attached
+    // separately per request so downstream services can still apply role/ownership rules.
     private RestClient client(String url, String secret) { return RestClient.builder().baseUrl(url).defaultHeader("X-Gateway-Request", secret).build(); }
     private List<Map<String, Object>> getList(RestClient client, String path, AssistantIdentity identity) {
         RestClient.RequestHeadersSpec<?> request = path.isBlank() ? client.get() : client.get().uri(path);

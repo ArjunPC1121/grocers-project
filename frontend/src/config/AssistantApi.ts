@@ -38,6 +38,7 @@ export interface RecipeRecommendationRequest {
 export async function getRecipeRecommendations(
   request: RecipeRecommendationRequest,
 ): Promise<RecipeRecommendationResponse> {
+  // The assistant turns a meal request into a list of products the store can supply.
   const { data } = await api.post<RecipeRecommendationResponse>(
     "/assistant/recommendations",
     request,

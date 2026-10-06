@@ -17,7 +17,7 @@ public class ProductClient {
 
        this.restClient = RestClient.create(productUrl);
     }
-
+//Calls checkQuantity
     public void checkQuantity(Integer productId, Integer requiredQuantity) {
         ProductAvailabilityResponse product = restClient.get()
                 .uri("/{id}", productId)

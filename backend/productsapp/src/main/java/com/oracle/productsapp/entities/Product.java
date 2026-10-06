@@ -71,6 +71,8 @@ public class Product {
     @Column(name = "image_url", length = 1000)
     private String imageUrl;
     
+    // Cloudinary asset identifier, retained for replacing or deleting the
+    // uploaded image later. It is an internal value, so do not expose it in API JSON.
     @JsonIgnore
     @Column(name = "image_public_id", length = 500)
     private String imagePublicId;

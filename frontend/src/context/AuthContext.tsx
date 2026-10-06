@@ -19,6 +19,7 @@ type CustomerProfileResponse = { id: number; firstName: string; lastName: string
 type EmployeeProfileResponse = { id: number; firstName: string; lastName: string; email: string; mustChangePassword: boolean; status: "ACTIVE" | "INACTIVE" };
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
+// The token tells us who logged in before we fetch that person's fuller profile.
 const readJwtClaims = (token: string): JwtClaims => {
   const payload = token.split(".")[1];
   if (!payload) throw new Error("The login response contains an invalid access token.");
@@ -31,6 +32,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const navigate = useNavigate();
   const [user, setUser] = useState<SessionUser | null>(null);
   const [loading, setLoading] = useState(true);
+  // Restore the last known session on refresh so the user does not need to log in again.
   useEffect(() => {
     try {
       const saved = localStorage.getItem("grocers_session");
@@ -42,6 +44,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   }, []);
 
+  // Keep React state and browser storage in sync whenever user details change.
   const save = (next: SessionUser, token?: string) => {
     setUser(next);
     localStorage.setItem("grocers_session", JSON.stringify(next));
@@ -49,11 +52,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
   const login = async (role: Role, identifier: string, password: string, returnTo?: string) => {
     try {
+      // Each role uses its own login endpoint and profile shape.
       const endpoint = role === "CUSTOMER" ? "/auth/login/user" : role === "EMPLOYEE" ? "/auth/login/employee" : "/auth/login/admin";
       const { data } = await api.post<LoginResponse>(endpoint, { email: identifier, password });
       const claims = readJwtClaims(data.accessToken);
       localStorage.setItem("grocers_access_token", data.accessToken);
       let next: SessionUser;
+      // Build one common session object from the role-specific profile response.
       if (role === "CUSTOMER") {
         const { data: profile } = await api.get<CustomerProfileResponse>(`/users/${claims.sub}`);
         next = { id: String(profile.id), firstName: profile.firstName, lastName: profile.lastName, name: `${profile.firstName} ${profile.lastName}`, email: profile.email, address: profile.address, phone: profile.phoneNumber, role: "CUSTOMER" };
@@ -74,6 +79,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       navigate(next.role === "EMPLOYEE" ? destination(next) : safePath(returnTo) || destination(next), { replace: true });
     } catch (error) {
       localStorage.removeItem("grocers_access_token");
+      // A locked customer account is sent to the recovery flow instead of shown a generic error.
       if (role === "CUSTOMER" && axios.isAxiosError(error) && error.response?.status === 403) {
         const recovery = await api.get("/auth/locked-account/status", { params: { email: identifier } }).then(({ data }) => data).catch(() => null);
         const target = recovery?.ticketOpen ? "/unlock-account" : "/recover-account";

@@ -1,3 +1,8 @@
+/**
+ * Component role: Coordinates this service's business workflow, including validation, authorization decisions, persistence, and downstream integration where applicable.
+ *
+ * Maintainer note: this file belongs to requestapp. See backend/requestapp/README.md for features, API contracts, configuration, and integration rules.
+ */
 package com.oracle.requestapp.services.implementations;
 
 import com.oracle.requestapp.dto.CreateProductRequest;

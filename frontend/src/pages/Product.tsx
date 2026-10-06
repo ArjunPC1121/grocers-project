@@ -35,6 +35,7 @@ const ProductPage = () => {
   const [loading, setLoading] = useState(true);
   const [localQuantity, setLocalQuantity] = useState(1);
 
+  // Reload when the URL product ID changes and ignore late responses from the previous page.
   useEffect(() => {
     let cancelled = false;
 
@@ -75,6 +76,7 @@ const ProductPage = () => {
   if (loading) return <Loading />;
   if (!product) return null;
 
+  // Once an item is in the cart, show its server-backed quantity instead of the local picker value.
   const cartItem = items.find((item) => item.product.id === product.id);
   const inCart = !!cartItem;
   const displayQuantity = inCart ? cartItem.quantity : localQuantity;
